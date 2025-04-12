@@ -1,0 +1,168 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "./generated/prisma-client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String    @id @default(cuid())
+  name            String
+  email           String    @unique
+  password        String
+  role            Role      @default(CONSUMER)
+  phone           String?
+  address         String?
+  profileImage    String?
+  isVerified      Boolean   @default(false)
+  emailVerifiedAt DateTime?
+  createdAt       DateTime  @default(now())
+  tokenVersion    Int       @default(0)
+  products        Product[] @relation("UserProducts") // Relation to products
+  orders          Order[]   // Orders placed by the user
+  reviews         Review[]  // Reviews written by the user
+}
+
+model Market {
+  id          String    @id @default(cuid()) // Market unique ID
+  name        String    @unique // Market name
+  description String?   // Optional description
+  createdAt   DateTime  @default(now()) // Market creation date
+  updatedAt   DateTime  @updatedAt // Market update date
+  sellers     Seller[]  @relation("MarketSellers") // Many-to-many with sellers
+  products    Product[] // Many-to-one relationship with products
+}
+
+model Seller {
+  id         String    @id @default(cuid()) // Seller unique ID
+  name       String    // Seller name
+  email      String    @unique // Seller email
+  password   String    // Seller password (hashed)
+  createdAt  DateTime  @default(now()) // Seller registration date
+  updatedAt  DateTime  @updatedAt // Seller profile last updated date
+  markets    Market[]  @relation("MarketSellers") // Many-to-many with markets
+  products   Product[] // Many-to-one relationship with products
+}
+
+model Product {
+  id                String       @id @default(cuid()) // Product unique ID
+  name              String       // Product name
+  description       String?      // Optional description
+  price             Float        // Product price
+  image             String?      // Product image
+  stock             Int          @default(0) // Available stock
+  soldCount         Int          @default(0) // Number of products sold
+  unit              String?      // Unit of measurement
+  tags              String[]     // Tags for the product
+  category          Category?    @relation(fields: [categoryId], references: [id]) // Optional category for the product
+  categoryId        String?      // Foreign key to category
+  seller            Seller       @relation(fields: [sellerId], references: [id]) // Product's seller (one-to-many)
+  sellerId          String       // Seller ID (foreign key)
+  market            Market       @relation(fields: [marketId], references: [id]) // Product's market (one-to-many)
+  marketId          String       // Market ID (foreign key)
+  orderItems        OrderItem[]  // Order items related to the product
+  ecoCertifications String?      // Eco certifications if any
+  origin            String?      // Product origin
+  sku               String?      // Stock Keeping Unit
+  isActive          Boolean      @default(true) // If the product is active or not
+  createdAt         DateTime     @default(now()) // Product creation date
+  reviews           Review[]     @relation("ProductReviews") // Reviews related to the product
+  user              User?        @relation("UserProducts", fields: [userId], references: [id]) // Add this field to define inverse relation
+  userId            String?      // Foreign key to User
+}
+
+model Category {
+  id       String    @id @default(cuid()) // Category unique ID
+  name     String    @unique // Category name
+  products Product[] // Products in this category
+}
+
+model Order {
+  id              String      @id @default(cuid()) // Order unique ID
+  buyer           User        @relation(fields: [buyerId], references: [id]) // The buyer placing the order
+  buyerId         String      // Foreign key for buyer
+  status          OrderStatus @default(PENDING) // Order status
+  paymentStatus   PaymentStatus @default(PENDING) // Payment status
+  shippingAddress String      // Shipping address for the order
+  notes           String?     // Optional notes for the order
+  totalPrice      Float       // Total price of the order
+  orderItems      OrderItem[] // List of items in the order
+  voucher         Voucher?    @relation("OrderVoucher", fields: [voucherId], references: [id]) // Applied voucher, if any
+  voucherId       String?     // Voucher ID (foreign key)
+  discountApplied Float       @default(0) // Applied discount
+  shippedAt       DateTime?   // Shipment date
+  createdAt       DateTime    @default(now()) // Order creation date
+  transaction     Transaction? @relation("OrderTransaction") // Transaction related to the order
+  transactionId   String?     // Transaction ID (foreign key)
+}
+
+model OrderItem {
+  id        String   @id @default(cuid()) // OrderItem unique ID
+  order     Order    @relation(fields: [orderId], references: [id]) // Order to which the item belongs
+  orderId   String   // Order ID (foreign key)
+  product   Product  @relation(fields: [productId], references: [id]) // Product associated with this order item
+  productId String   // Product ID (foreign key)
+  quantity  Int      // Quantity of the product
+}
+
+model Voucher {
+  id        String   @id @default(cuid()) // Voucher unique ID
+  code      String   @unique // Voucher code
+  discount  Float    // Discount amount or percentage
+  isActive  Boolean  @default(true) // Whether the voucher is active
+  createdAt DateTime @default(now()) // Creation date of the voucher
+  updatedAt DateTime @updatedAt // Last update of the voucher
+  orders    Order[]  @relation("OrderVoucher") // Orders using this voucher
+}
+
+model Review {
+  id        String   @id @default(cuid()) // Review unique ID
+  product   Product  @relation("ProductReviews", fields: [productId], references: [id]) // Product being reviewed
+  productId String   // Product ID (foreign key)
+  user      User     @relation(fields: [userId], references: [id]) // User who wrote the review
+  userId    String   // User ID (foreign key)
+  rating    Int      @default(0) // Rating given to the product
+  comment   String?  // Optional comment for the review
+  createdAt DateTime @default(now()) // Review creation date
+}
+
+model Transaction {
+  id          String   @id @default(cuid()) // Transaction unique ID
+  order       Order    @relation("OrderTransaction", fields: [orderId], references: [id]) // Order related to this transaction
+  orderId     String   @unique // Order ID (foreign key)
+  amount      Float    // Amount of the transaction
+  paymentDate DateTime @default(now()) // Date of the payment
+  status      PaymentStatus @default(PENDING) // Status of the payment
+}
+
+model EventLog {
+  id        String   @id @default(cuid()) // Event log unique ID
+  event     String   // Event description
+  userId    String?  // User associated with this event (optional)
+  productId String?  // Product associated with this event (optional)
+  action    String   // Action performed in the event
+  createdAt DateTime @default(now()) // Event log creation date
+}
+
+enum Role {
+  ADMIN
+  SELLER
+  CONSUMER
+}
+
+enum OrderStatus {
+  PENDING
+  COMPLETED
+  CANCELLED
+  SHIPPED
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
