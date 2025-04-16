@@ -1,4 +1,3 @@
-// src/lib/auth.ts
 import bcrypt from "bcryptjs";
 import jwt, { JwtPayload } from "jsonwebtoken";
 import { randomBytes } from "crypto";
@@ -10,8 +9,8 @@ const JWT_REFRESH_SECRET =
 const ACCESS_TOKEN_EXPIRES_IN = "15m";
 const REFRESH_TOKEN_EXPIRES_IN = "7d";
 
-// --- Custom Role Type (inline) ---
-type Role = "ADMIN" | "USER" | "MODERATOR" | "SELLER"; // Added 'SELLER' role
+// --- Custom Role Type ---
+type Role = "ADMIN" | "USER" | "MODERATOR" | "SELLER" | "CONSUMER";
 
 // --- PASSWORD UTILS ---
 export async function hashPassword(password: string): Promise<string> {
@@ -27,13 +26,13 @@ export async function comparePassword(
 }
 
 // --- TOKEN PAYLOAD TYPES ---
-type AccessTokenPayload = {
+export type AccessTokenPayload = {
   sub: string;
   email: string;
-  role: Role; // Now supports 'SELLER' as well
+  role: Role;
 };
 
-type RefreshTokenPayload = {
+export type RefreshTokenPayload = {
   sub: string;
   version: number;
 };
@@ -77,7 +76,7 @@ export function verifyAccessToken(token: string): AccessTokenPayload {
     throw new Error("Invalid access token");
   }
 
-  const { sub, email, role } = decoded as JwtPayload;
+  const { sub, email, role } = decoded as AccessTokenPayload;
 
   if (
     typeof sub !== "string" ||
@@ -87,7 +86,7 @@ export function verifyAccessToken(token: string): AccessTokenPayload {
     throw new Error("Malformed access token payload");
   }
 
-  return { sub, email, role: role as Role }; // Now works with 'SELLER' role too
+  return { sub, email, role };
 }
 
 export function verifyRefreshToken(token: string): RefreshTokenPayload {
@@ -97,7 +96,7 @@ export function verifyRefreshToken(token: string): RefreshTokenPayload {
     throw new Error("Invalid refresh token");
   }
 
-  const { sub, version } = decoded as JwtPayload;
+  const { sub, version } = decoded as RefreshTokenPayload;
 
   if (typeof sub !== "string" || typeof version !== "number") {
     throw new Error("Malformed refresh token payload");

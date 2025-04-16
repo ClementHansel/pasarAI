@@ -12,7 +12,7 @@ interface ProductsSectionProps {
 }
 
 const ProductsSection: React.FC<ProductsSectionProps> = ({
-  products,
+  products = [], // default empty array if products are undefined
   loading,
 }) => {
   // Group products by category or type (if applicable)

@@ -1,5 +1,4 @@
-// src/app/api/orders/route.ts
-import { NextApiRequest, NextApiResponse } from "next";
+import { NextResponse } from "next/server";
 
 // Define the Order type and Status
 interface Order {
@@ -21,17 +20,15 @@ interface AuditLog {
   timestamp: string; // The timestamp of when the action was performed
 }
 
-// In-memory order store for demonstration (replace with a database in production)
+// In-memory order store (replace with a real database)
 const ordersStore = new Map<string, Order>();
-
-// Audit log storage (this should be stored in a database for production)
 const auditLogs: AuditLog[] = [];
 
-// Helper function to get the order by ID
+// Get order by ID
 const getOrderById = (orderId: string): Order | undefined =>
   ordersStore.get(orderId);
 
-// Function to log actions
+// Log action to audit
 const logAudit = (
   action: string,
   orderId: string,
@@ -39,73 +36,57 @@ const logAudit = (
   reason?: string
 ) => {
   const timestamp = new Date().toISOString();
-  auditLogs.push({
-    action,
-    orderId,
-    user,
-    reason,
-    timestamp,
-  });
+  auditLogs.push({ action, orderId, user, reason, timestamp });
 };
 
-// API Handler for Orders
-const handler = (req: NextApiRequest, res: NextApiResponse) => {
-  const { method } = req;
+// PATCH method for updating order status
+export async function PATCH(req: Request) {
+  try {
+    const {
+      orderIdToUpdate,
+      status,
+      user,
+      cancelReason,
+    }: {
+      orderIdToUpdate: string;
+      status: "pending" | "shipped" | "delivered" | "canceled";
+      user: string;
+      cancelReason?: string;
+    } = await req.json();
 
-  switch (method) {
-    case "PATCH":
-      // Extract necessary data from the request body
-      const {
-        orderIdToUpdate,
-        status,
-        user,
-        cancelReason,
-      }: {
-        orderIdToUpdate: string;
-        status: "pending" | "shipped" | "delivered" | "canceled";
-        user: string;
-        cancelReason?: string;
-      } = req.body;
+    if (!orderIdToUpdate || !status || !user) {
+      return NextResponse.json(
+        { message: "Missing required data to update order status" },
+        { status: 400 }
+      );
+    }
 
-      // Validate required fields
-      if (!orderIdToUpdate || !status || !user) {
-        return res
-          .status(400)
-          .json({ message: "Missing required data to update order status" });
-      }
+    const orderToUpdate = getOrderById(orderIdToUpdate);
+    if (!orderToUpdate) {
+      return NextResponse.json({ message: "Order not found" }, { status: 404 });
+    }
 
-      // Fetch the order to update
-      const orderToUpdate = getOrderById(orderIdToUpdate);
-      if (!orderToUpdate) {
-        return res.status(404).json({ message: "Order not found" });
-      }
+    if (status === "canceled" && orderToUpdate.status !== "pending") {
+      return NextResponse.json(
+        { message: "Only pending orders can be canceled" },
+        { status: 400 }
+      );
+    }
 
-      // Order Status Control: Only allow cancellation if the order is "pending"
-      if (status === "canceled" && orderToUpdate.status !== "pending") {
-        return res
-          .status(400)
-          .json({ message: "Only pending orders can be canceled" });
-      }
+    orderToUpdate.status = status;
+    if (status === "canceled") {
+      orderToUpdate.cancelReason = cancelReason || "No reason provided";
+      logAudit("CANCEL_ORDER", orderIdToUpdate, user, cancelReason);
+    }
 
-      // Update order status and reason if canceling
-      orderToUpdate.status = status;
-      if (status === "canceled") {
-        orderToUpdate.cancelReason = cancelReason || "No reason provided";
-      }
+    ordersStore.set(orderIdToUpdate, orderToUpdate);
 
-      // Log the cancellation action in the audit logs
-      if (status === "canceled") {
-        logAudit("CANCEL_ORDER", orderIdToUpdate, user, cancelReason);
-      }
-
-      // Save the updated order
-      ordersStore.set(orderIdToUpdate, orderToUpdate);
-
-      return res.status(200).json(orderToUpdate);
-
-    default:
-      return res.status(405).json({ message: "Method Not Allowed" });
+    return NextResponse.json(orderToUpdate);
+  } catch (error) {
+    console.error("Error processing order:", error);
+    return NextResponse.json(
+      { message: "Internal server error" },
+      { status: 500 }
+    );
   }
-};
-
-export default handler;
+}

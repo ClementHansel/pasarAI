@@ -1,13 +1,13 @@
 // src/app/api/auth/login/route.ts
 
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, Role } from "@prisma/client"; // Use Prisma Role enum directly
 import {
   comparePassword,
   generateAccessToken,
   generateRefreshToken,
+  verifyRefreshToken, // Import the centralized verifyRefreshToken function
 } from "@/lib/auth/authUtils";
-import jwt, { JwtPayload } from "jsonwebtoken";
 
 // Initialize Prisma client
 const prisma = new PrismaClient();
@@ -15,7 +15,23 @@ const prisma = new PrismaClient();
 export async function POST(req: Request) {
   try {
     // Parse incoming JSON data
-    const { email, password } = await req.json();
+    const { email, password, refreshToken } = await req.json(); // Assuming refreshToken is passed in the request body
+
+    // If refreshToken is provided, verify it first
+    if (refreshToken) {
+      try {
+        const { sub, version } = verifyRefreshToken(refreshToken); // Verify refresh token
+        console.log("Refresh token verified", { sub, version });
+
+        // Optionally, handle any logic if refreshToken is valid.
+        // For example, you can check if the user associated with `sub` exists and is active.
+      } catch {
+        return NextResponse.json(
+          { error: "Invalid refresh token" },
+          { status: 401 }
+        );
+      }
+    }
 
     // Input validation
     if (!email || !password) {
@@ -35,11 +51,11 @@ export async function POST(req: Request) {
         password: true,
         role: true,
         tokenVersion: true,
-        isVerified: true, // Check if the user is verified
+        isVerified: true,
       },
     });
 
-    // Check if the user exists and if the password matches
+    // Check if the user exists and password is correct
     if (!user || !(await comparePassword(password, user.password))) {
       return NextResponse.json(
         { error: "Invalid credentials" },
@@ -47,7 +63,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // Optional: Check if the user is verified
+    // Check if the user is verified
     if (!user.isVerified) {
       return NextResponse.json(
         { error: "Account not verified" },
@@ -55,63 +71,38 @@ export async function POST(req: Request) {
       );
     }
 
-    // Generate JWT tokens
+    // Use Prisma Role enum type directly
+    const userRole: Role = user.role;
+
+    // Generate tokens
     const accessToken = generateAccessToken({
       id: user.id,
       email: user.email,
-      role: user.role,
+      role: userRole,
     });
 
-    const refreshToken = generateRefreshToken({
+    const newRefreshToken = generateRefreshToken({
       id: user.id,
-      tokenVersion: user.tokenVersion, // Include token version
+      tokenVersion: user.tokenVersion,
     });
 
-    // Return the response with user data and tokens
     return NextResponse.json({
       message: "Login successful",
       user: {
         id: user.id,
         name: user.name,
         email: user.email,
-        role: user.role, // Include role in response
+        role: userRole,
       },
       accessToken,
-      refreshToken,
+      refreshToken: newRefreshToken,
     });
-  } catch (error) {
-    console.error("Login Error:", error);
+  } catch (err) {
+    console.error("Login Error:", err); // Logging the error for internal use
+    // Send a generic error message to the client for security reasons
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
     );
-  }
-}
-
-// --- Verify Refresh Token Utility ---
-export function verifyRefreshToken(token: string): {
-  sub: string;
-  version: number;
-} {
-  try {
-    const decoded = jwt.verify(
-      token,
-      process.env.JWT_REFRESH_SECRET || "dev_refresh_secret"
-    );
-
-    if (typeof decoded !== "object" || decoded === null) {
-      throw new Error("Invalid refresh token");
-    }
-
-    const { sub, version } = decoded as JwtPayload;
-
-    if (typeof sub !== "string" || typeof version !== "number") {
-      throw new Error("Malformed refresh token");
-    }
-
-    return { sub, version };
-  } catch (error) {
-    console.error("Refresh Token Error:", error);
-    throw new Error("Invalid refresh token");
   }
 }

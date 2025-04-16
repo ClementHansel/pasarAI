@@ -1,7 +1,7 @@
 // src/components/market/MarketList.tsx
 
+import { Product } from "@prisma/client";
 import React, { useEffect, useState } from "react";
-import { Product } from "../../../prisma/generated/prisma-client";
 
 export default function MarketList() {
   // Set the state to be an array of Product objects

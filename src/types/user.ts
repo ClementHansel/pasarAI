@@ -1,20 +1,22 @@
 // src/types/user.ts
 
+import { Role } from "@prisma/client"; // Import Prisma enum Role
+
 export type User = {
   id: number;
   email: string;
   name: string | null;
   createdAt: Date;
   updatedAt: Date;
-  lastLoginAt?: Date | null; // Track last login time
-  profileImageUrl?: string | null; // Optional profile image URL
-  role: UserRole; // User role (e.g., 'admin', 'user')
+  lastLoginAt?: Date | null;
+  profileImageUrl?: string | null;
+  role: Role; // Use Prisma Role enum
 };
 
 export type CreateUserInput = {
   email: string;
   name?: string | null;
-  password: string; // Ensure password field for user creation
+  password: string;
 };
 
 export type UpdateUserInput = {
@@ -37,10 +39,9 @@ export type Post = {
   updatedAt: Date;
 };
 
-// Role-based Access Control (RBAC) - Different roles users can have
-export type UserRole = "user" | "admin" | "manager";
+// ✅ Use Prisma enum Role instead of string union
+export type UserRole = Role;
 
-// Error handling types for user-related operations
 export type UserCreationError = {
   emailAlreadyExists?: boolean;
   invalidEmailFormat?: boolean;
@@ -56,7 +57,7 @@ export type UserAuthenticationError = {
 export type JwtPayload = {
   userId: number;
   email: string;
-  role: UserRole;
-  iat: number; // issued at timestamp
-  exp: number; // expiration timestamp
+  role: Role; // ✅ Align JWT payload with enum
+  iat: number;
+  exp: number;
 };

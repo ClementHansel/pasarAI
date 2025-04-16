@@ -1,10 +1,10 @@
 // src/app/(dashboard)/page.tsx
-import Stats from "@/components/dashboard/Stats";
 import React from "react";
+import Stats from "@/components/dashboard/Stats";
 
-const DashboardPage = () => {
+const DashboardPage: React.FC = () => {
   return (
-    <div className="p-4">
+    <div className="p-4 max-w-7xl mx-auto">
       {/* Dashboard Header */}
       <header className="mb-6">
         <h1 className="text-3xl font-semibold">Dashboard</h1>
@@ -17,9 +17,9 @@ const DashboardPage = () => {
         <Stats /> {/* Stats component will display key metrics */}
       </section>
 
-      {/* Additional sections or widgets can be added here */}
+      {/* Additional widgets can be added below */}
       <section>
-        {/* Add additional widgets here like recent orders, user activity, etc. */}
+        {/* e.g., Recent Orders, System Status, User Activity, etc. */}
       </section>
     </div>
   );

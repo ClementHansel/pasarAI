@@ -29,10 +29,12 @@ model Market {
   id          String    @id @default(cuid()) // Market unique ID
   name        String    @unique // Market name
   description String?   // Optional description
+  location    String    @default("Unknown")
   createdAt   DateTime  @default(now()) // Market creation date
   updatedAt   DateTime  @updatedAt // Market update date
   sellers     Seller[]  @relation("MarketSellers") // Many-to-many with sellers
   products    Product[] // Many-to-one relationship with products
+  revenue     Float     @default(0.0)
 }
 
 model Seller {

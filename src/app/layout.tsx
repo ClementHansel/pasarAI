@@ -30,7 +30,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-white text-black min-h-screen flex flex-col`}
       >
         <CartProvider>
-          {/* ✅ HEADER */}
+          {/* HEADER */}
           <header className="w-full p-4 bg-gray-100 shadow-md flex justify-between items-center">
             <Link href="/" className="text-2xl font-bold">
               PasarAI
@@ -38,10 +38,10 @@ export default function RootLayout({
             {/* Add nav or cart icon here if needed */}
           </header>
 
-          {/* ✅ MAIN CONTENT */}
+          {/* MAIN CONTENT */}
           <main className="flex-grow container mx-auto p-4">{children}</main>
 
-          {/* ✅ FOOTER */}
+          {/* FOOTER */}
           <footer className="w-full p-4 bg-gray-100 text-center text-sm">
             © {new Date().getFullYear()} PasarAI. All rights reserved.
           </footer>

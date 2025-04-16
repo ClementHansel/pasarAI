@@ -1,4 +1,5 @@
-// src/components/dashboard/Stats.tsx
+"use client";
+
 import React, { useEffect, useState } from "react";
 
 interface StatsData {
@@ -7,26 +8,31 @@ interface StatsData {
   totalOrders: number;
 }
 
-const Stats = () => {
-  // Mock data for now, you can replace this with dynamic data or API calls
+const Stats: React.FC = () => {
   const [stats, setStats] = useState<StatsData | null>(null);
 
   useEffect(() => {
-    // Simulating data fetch, replace this with API or context fetching
     const fetchStats = () => {
-      const mockStats: StatsData = {
-        totalSales: 125000, // Mock total sales amount
-        activeUsers: 350, // Mock active users
-        totalOrders: 1500, // Mock total orders
-      };
-      setStats(mockStats);
+      // Simulated delay (remove in prod)
+      setTimeout(() => {
+        const mockStats: StatsData = {
+          totalSales: 125000,
+          activeUsers: 350,
+          totalOrders: 1500,
+        };
+        setStats(mockStats);
+      }, 500);
     };
 
-    fetchStats(); // Simulate fetching data when the component mounts
+    fetchStats();
   }, []);
 
   if (!stats) {
-    return <div>Loading...</div>; // Show loading state while stats are being fetched
+    return (
+      <div className="py-8 text-center text-gray-500">
+        Loading dashboard stats...
+      </div>
+    );
   }
 
   return (
