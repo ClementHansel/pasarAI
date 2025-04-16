@@ -9,12 +9,15 @@ import {
 } from "@/lib/auth/authUtils";
 import jwt, { JwtPayload } from "jsonwebtoken";
 
+// Initialize Prisma client
 const prisma = new PrismaClient();
 
 export async function POST(req: Request) {
   try {
+    // Parse incoming JSON data
     const { email, password } = await req.json();
 
+    // Input validation
     if (!email || !password) {
       return NextResponse.json(
         { error: "Missing email or password" },
@@ -22,6 +25,7 @@ export async function POST(req: Request) {
       );
     }
 
+    // Retrieve the user from the database
     const user = await prisma.user.findUnique({
       where: { email },
       select: {
@@ -31,10 +35,11 @@ export async function POST(req: Request) {
         password: true,
         role: true,
         tokenVersion: true,
-        isVerified: true,
+        isVerified: true, // Check if the user is verified
       },
     });
 
+    // Check if the user exists and if the password matches
     if (!user || !(await comparePassword(password, user.password))) {
       return NextResponse.json(
         { error: "Invalid credentials" },
@@ -50,6 +55,7 @@ export async function POST(req: Request) {
       );
     }
 
+    // Generate JWT tokens
     const accessToken = generateAccessToken({
       id: user.id,
       email: user.email,
@@ -58,16 +64,17 @@ export async function POST(req: Request) {
 
     const refreshToken = generateRefreshToken({
       id: user.id,
-      tokenVersion: user.tokenVersion, // Now we have tokenVersion
+      tokenVersion: user.tokenVersion, // Include token version
     });
 
+    // Return the response with user data and tokens
     return NextResponse.json({
       message: "Login successful",
       user: {
         id: user.id,
         name: user.name,
         email: user.email,
-        role: user.role,
+        role: user.role, // Include role in response
       },
       accessToken,
       refreshToken,
@@ -81,6 +88,7 @@ export async function POST(req: Request) {
   }
 }
 
+// --- Verify Refresh Token Utility ---
 export function verifyRefreshToken(token: string): {
   sub: string;
   version: number;

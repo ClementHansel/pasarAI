@@ -1,3 +1,4 @@
+// src/lib/auth.ts
 import bcrypt from "bcryptjs";
 import jwt, { JwtPayload } from "jsonwebtoken";
 import { randomBytes } from "crypto";
@@ -10,7 +11,7 @@ const ACCESS_TOKEN_EXPIRES_IN = "15m";
 const REFRESH_TOKEN_EXPIRES_IN = "7d";
 
 // --- Custom Role Type (inline) ---
-type Role = "ADMIN" | "USER" | "MODERATOR"; // Extend if needed
+type Role = "ADMIN" | "USER" | "MODERATOR" | "SELLER"; // Added 'SELLER' role
 
 // --- PASSWORD UTILS ---
 export async function hashPassword(password: string): Promise<string> {
@@ -29,7 +30,7 @@ export async function comparePassword(
 type AccessTokenPayload = {
   sub: string;
   email: string;
-  role: Role;
+  role: Role; // Now supports 'SELLER' as well
 };
 
 type RefreshTokenPayload = {
@@ -86,7 +87,7 @@ export function verifyAccessToken(token: string): AccessTokenPayload {
     throw new Error("Malformed access token payload");
   }
 
-  return { sub, email, role: role as Role };
+  return { sub, email, role: role as Role }; // Now works with 'SELLER' role too
 }
 
 export function verifyRefreshToken(token: string): RefreshTokenPayload {
@@ -117,6 +118,11 @@ export function hasRole(user: { role: Role }, requiredRole: Role): boolean {
 
 export function isAdmin(user: { role: Role }): boolean {
   return user.role === "ADMIN";
+}
+
+// Additional Role-Specific Checks
+export function isSeller(user: { role: Role }): boolean {
+  return user.role === "SELLER"; // Check if user is a seller
 }
 
 // --- OTP / MAGIC LINK UTILS ---

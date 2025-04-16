@@ -1,6 +1,5 @@
 generator client {
   provider = "prisma-client-js"
-  output   = "./generated/prisma-client"
 }
 
 datasource db {
@@ -21,9 +20,9 @@ model User {
   emailVerifiedAt DateTime?
   createdAt       DateTime  @default(now())
   tokenVersion    Int       @default(0)
-  products        Product[] @relation("UserProducts") // Relation to products
   orders          Order[]   // Orders placed by the user
   reviews         Review[]  // Reviews written by the user
+  eventLogs       EventLog[]
 }
 
 model Market {
@@ -37,14 +36,22 @@ model Market {
 }
 
 model Seller {
-  id         String    @id @default(cuid()) // Seller unique ID
-  name       String    // Seller name
-  email      String    @unique // Seller email
-  password   String    // Seller password (hashed)
-  createdAt  DateTime  @default(now()) // Seller registration date
-  updatedAt  DateTime  @updatedAt // Seller profile last updated date
-  markets    Market[]  @relation("MarketSellers") // Many-to-many with markets
-  products   Product[] // Many-to-one relationship with products
+  id              String    @id @default(cuid()) // Seller unique ID
+  name            String    // Seller name
+  email           String    @unique // Seller email
+  password        String    // Seller password (hashed)
+  role            Role      @default(SELLER) // Role for clarity
+  phone           String?   // Optional phone number
+  address         String?   // Optional address
+  profileImage    String?   // Optional profile picture URL
+  isVerified      Boolean   @default(false) // Verification status
+  emailVerifiedAt DateTime? // Timestamp of email verification
+  tokenVersion    Int       @default(0) // For managing session tokens
+  createdAt       DateTime  @default(now()) // Seller registration date
+  updatedAt       DateTime  @updatedAt // Seller profile last updated date
+  markets         Market[]  @relation("MarketSellers") // Many-to-many with markets
+  products        Product[] // Many-to-one relationship with products
+  eventLogs       EventLog[]
 }
 
 model Product {
@@ -56,7 +63,7 @@ model Product {
   stock             Int          @default(0) // Available stock
   soldCount         Int          @default(0) // Number of products sold
   unit              String?      // Unit of measurement
-  tags              String[]     // Tags for the product
+  tags              Tag[]        @relation("ProductTags")
   category          Category?    @relation(fields: [categoryId], references: [id]) // Optional category for the product
   categoryId        String?      // Foreign key to category
   seller            Seller       @relation(fields: [sellerId], references: [id]) // Product's seller (one-to-many)
@@ -66,18 +73,23 @@ model Product {
   orderItems        OrderItem[]  // Order items related to the product
   ecoCertifications String?      // Eco certifications if any
   origin            String?      // Product origin
-  sku               String?      // Stock Keeping Unit
+  sku               String?      @unique // Stock Keeping Unit
   isActive          Boolean      @default(true) // If the product is active or not
   createdAt         DateTime     @default(now()) // Product creation date
   reviews           Review[]     @relation("ProductReviews") // Reviews related to the product
-  user              User?        @relation("UserProducts", fields: [userId], references: [id]) // Add this field to define inverse relation
-  userId            String?      // Foreign key to User
+  eventLogs         EventLog[]
 }
 
 model Category {
   id       String    @id @default(cuid()) // Category unique ID
   name     String    @unique // Category name
   products Product[] // Products in this category
+}
+
+model Tag {
+  id       String    @id @default(cuid())
+  name     String    @unique
+  products Product[] @relation("ProductTags")
 }
 
 model Order {
@@ -97,11 +109,12 @@ model Order {
   createdAt       DateTime    @default(now()) // Order creation date
   transaction     Transaction? @relation("OrderTransaction") // Transaction related to the order
   transactionId   String?     // Transaction ID (foreign key)
+  eventLogs       EventLog[]
 }
 
 model OrderItem {
   id        String   @id @default(cuid()) // OrderItem unique ID
-  order     Order    @relation(fields: [orderId], references: [id]) // Order to which the item belongs
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade) // Order to which the item belongs
   orderId   String   // Order ID (foreign key)
   product   Product  @relation(fields: [productId], references: [id]) // Product associated with this order item
   productId String   // Product ID (foreign key)
@@ -141,8 +154,14 @@ model Transaction {
 model EventLog {
   id        String   @id @default(cuid()) // Event log unique ID
   event     String   // Event description
-  userId    String?  // User associated with this event (optional)
-  productId String?  // Product associated with this event (optional)
+  user      User?    @relation(fields: [userId], references: [id])
+  userId    String?
+  product   Product? @relation(fields: [productId], references: [id])
+  productId String?
+  seller    Seller?  @relation(fields: [sellerId], references: [id])
+  sellerId  String?
+  order     Order?   @relation(fields: [orderId], references: [id])
+  orderId   String?
   action    String   // Action performed in the event
   createdAt DateTime @default(now()) // Event log creation date
 }
