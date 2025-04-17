@@ -15,11 +15,11 @@ export default function DashboardLayoutClient({
   return (
     <div className="flex flex-col min-h-screen bg-gray-100 dark:bg-gray-900">
       {/* Header */}
-      <header className="w-full bg-white dark:bg-gray-800 shadow z-10">
+      <div className="w-full bg-white dark:bg-gray-800 shadow z-10">
         <div className="px-4 py-3">
           <Header />
         </div>
-      </header>
+      </div>
 
       {/* Main layout: Sidebar + Content */}
       <div className="flex flex-1 overflow-hidden">
@@ -31,11 +31,11 @@ export default function DashboardLayoutClient({
       </div>
 
       {/* Footer */}
-      <footer className="w-full bg-white dark:bg-gray-800 shadow mt-auto">
+      <div className="w-full bg-white dark:bg-gray-800 shadow mt-auto">
         <div className="px-4 py-3">
           <Footer />
         </div>
-      </footer>
+      </div>
     </div>
   );
 }
