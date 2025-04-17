@@ -8,7 +8,7 @@ export type Product = {
   price: number; // Price of the product
   stock: number; // Stock count (for real-time stock management)
   isAvailable: boolean; // Availability status (in stock or out of stock)
-  category: string; // Category the product belongs to (e.g., electronics, clothing)
+  category?: Category; // Category the product belongs to (e.g., electronics, clothing)
   tags: string[]; // Tags for filtering (e.g., sale, new arrival, eco-friendly)
   imageUrls: string[]; // Array of URLs for product images (for multiple images)
   createdAt: Date; // When the product was created

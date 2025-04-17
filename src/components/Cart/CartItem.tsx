@@ -1,9 +1,9 @@
-import React, { useState } from "react";
-import { CartItem as CartItemType } from "../../context/CartContext";
+import React, { useState, useEffect } from "react";
 import toast from "react-hot-toast";
+import type { CartItem } from "../../types/cart";
 
 interface CartItemProps {
-  item: CartItemType;
+  item: CartItem;
   removeFromCart: (id: string) => void;
   updateCart: (id: string, quantity: number) => void;
 }
@@ -15,8 +15,12 @@ const CartItem: React.FC<CartItemProps> = ({
 }) => {
   const [quantity, setQuantity] = useState(item.quantity);
 
+  useEffect(() => {
+    setQuantity(item.quantity);
+  }, [item]);
+
   const handleQuantityChange = async (newQuantity: number) => {
-    if (newQuantity < 1) return;
+    if (newQuantity < 1) return; // Prevent quantity from going below 1
 
     setQuantity(newQuantity);
     updateCart(item.id, newQuantity);

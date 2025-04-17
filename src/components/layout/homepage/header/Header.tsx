@@ -1,4 +1,5 @@
 // src/components/layout/homepage/header/Header.tsx
+"use client";
 
 import React from "react";
 import Logo from "./Logo";

@@ -1,4 +1,5 @@
 // src/components/dashboard/FinancialOverview/RefundsReturns.tsx
+"use client";
 import React, { useEffect, useState } from "react";
 
 const RefundsReturns: React.FC = () => {

@@ -1,4 +1,5 @@
 // src/components/dashboard/FinancialOverview/NetProfit.tsx
+"use client";
 import React, { useEffect, useState } from "react";
 
 const NetProfit: React.FC = () => {

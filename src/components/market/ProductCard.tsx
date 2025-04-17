@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { useCart } from "@/context/CartContext";
+import toast from "react-hot-toast";
 
 interface ProductCardProps {
   id: string;
@@ -23,7 +23,6 @@ const ProductCard: React.FC<ProductCardProps> = ({
   rating = 0,
 }) => {
   const router = useRouter();
-  const { addToCart } = useCart();
   const [isImageLoaded, setIsImageLoaded] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
 
@@ -34,11 +33,25 @@ const ProductCard: React.FC<ProductCardProps> = ({
   const handleAddToCart = async () => {
     setIsAdding(true);
     try {
-      addToCart({ id, name, price, quantity: 1 });
-      alert(`${name} added to cart!`);
+      const res = await fetch("/api/cart", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          id,
+          name,
+          price,
+          quantity: 1,
+        }),
+      });
+
+      if (!res.ok) throw new Error("Failed to add to cart");
+
+      toast.success(`${name} added to cart!`);
     } catch (error) {
       console.error("Error adding product to cart", error);
-      alert("Failed to add to cart.");
+      toast.error("Failed to add to cart.");
     } finally {
       setIsAdding(false);
     }

@@ -1,4 +1,5 @@
 // src/components/dashboard/OrdersInventory/TotalOrders.tsx
+"use client";
 import React, { useState, useEffect } from "react";
 
 const TotalOrders: React.FC = () => {

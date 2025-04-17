@@ -1,4 +1,5 @@
 // src/components/dashboard/ShippingDelivery/ShippingProviderPerformance.tsx
+"use client";
 import React, { useState, useEffect } from "react";
 
 interface ShippingProvider {

@@ -1,4 +1,5 @@
 // src/components/dashboard/ShippingDelivery/ShippingCostPerItem.tsx
+"use client";
 import React, { useState, useEffect } from "react";
 
 interface Order {

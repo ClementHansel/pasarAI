@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "@/styles/globals.css";
-import { CartProvider } from "@/context/CartContext";
 import Link from "next/link";
 
 const geistSans = Geist({
@@ -29,23 +28,21 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-white text-black min-h-screen flex flex-col`}
       >
-        <CartProvider>
-          {/* HEADER */}
-          <header className="w-full p-4 bg-gray-100 shadow-md flex justify-between items-center">
-            <Link href="/" className="text-2xl font-bold">
-              PasarAI
-            </Link>
-            {/* Add nav or cart icon here if needed */}
-          </header>
+        {/* HEADER */}
+        <header className="w-full p-4 bg-gray-100 shadow-md flex justify-between items-center">
+          <Link href="/" className="text-2xl font-bold">
+            PasarAI
+          </Link>
+          {/* Add nav or cart icon here if needed */}
+        </header>
 
-          {/* MAIN CONTENT */}
-          <main className="flex-grow container mx-auto p-4">{children}</main>
+        {/* MAIN CONTENT */}
+        <main className="flex-grow container mx-auto p-4">{children}</main>
 
-          {/* FOOTER */}
-          <footer className="w-full p-4 bg-gray-100 text-center text-sm">
-            © {new Date().getFullYear()} PasarAI. All rights reserved.
-          </footer>
-        </CartProvider>
+        {/* FOOTER */}
+        <footer className="w-full p-4 bg-gray-100 text-center text-sm">
+          © {new Date().getFullYear()} PasarAI. All rights reserved.
+        </footer>
       </body>
     </html>
   );

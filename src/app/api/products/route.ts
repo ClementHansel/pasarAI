@@ -1,22 +1,18 @@
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
-import { z } from "zod"; // For input validation
+import { z } from "zod";
 
 const prisma = new PrismaClient();
 
-// Zod schema for product creation and update validation
 const productSchema = z.object({
-  name: z.string().min(3, "Product name must be at least 3 characters long"),
+  name: z.string().min(3),
   description: z.string().optional(),
-  price: z
-    .number()
-    .positive("Price must be a positive number")
-    .min(0.01, "Price must be greater than zero"),
+  price: z.number().positive().min(0.01),
   image: z.string().url().optional(),
   stock: z.number().int().positive().optional(),
   soldCount: z.number().int().optional(),
   unit: z.string().optional(),
-  tags: z.array(z.string()).optional(), // Array of strings
+  tags: z.array(z.string()).optional(),
   categoryId: z.string().optional(),
   ecoCertifications: z.string().optional(),
   origin: z.string().optional(),
@@ -26,42 +22,54 @@ const productSchema = z.object({
   marketId: z.string(),
 });
 
-// Get all products
+function formatTagsForCreateOrUpdate(tags?: string[]) {
+  if (!tags || tags.length === 0) return undefined;
+
+  return {
+    connectOrCreate: tags.map((tagName) => ({
+      where: { name: tagName },
+      create: { name: tagName },
+    })),
+  };
+}
+
+// GET: Fetch all products
 export async function GET() {
   try {
     const products = await prisma.product.findMany({
       include: {
-        category: true, // Include category information
-        seller: true, // Include seller information
-        reviews: true, // Include reviews
+        category: true,
+        seller: true,
+        reviews: true,
+        tags: true,
       },
     });
     return NextResponse.json(products);
   } catch (error) {
-    console.error("Error fetching products:", error);
+    console.error("GET error:", error);
     return NextResponse.json(
-      { error: "An error occurred while fetching products" },
+      { error: "Failed to fetch products" },
       { status: 500 }
     );
   }
 }
 
-// Create a new product
+// POST: Create product
 export async function POST(req: Request) {
   try {
-    // Parse and validate request body
     const body = await req.json();
-    const parsedBody = productSchema.safeParse(body);
+    const parsed = productSchema.safeParse(body);
 
-    if (!parsedBody.success) {
-      const errorMessages = parsedBody.error.errors.map((err) => err.message);
+    if (!parsed.success) {
+      const errorMessages = parsed.error.errors
+        .map((e) => e.message)
+        .join(", ");
       return NextResponse.json(
-        { error: `Validation failed: ${errorMessages.join(", ")}` },
+        { error: `Validation failed: ${errorMessages}` },
         { status: 400 }
       );
     }
 
-    // Destructure validated data
     const {
       name,
       description,
@@ -78,21 +86,18 @@ export async function POST(req: Request) {
       isActive,
       sellerId,
       marketId,
-    } = parsedBody.data;
+    } = parsed.data;
 
-    // Check if the product already exists (based on sku)
-    const existingProduct = await prisma.product.findFirst({
-      where: { sku },
-    });
-
-    if (existingProduct) {
-      return NextResponse.json(
-        { error: "Product with this SKU already exists" },
-        { status: 409 }
-      );
+    if (sku) {
+      const existing = await prisma.product.findFirst({ where: { sku } });
+      if (existing) {
+        return NextResponse.json(
+          { error: "Product with this SKU already exists" },
+          { status: 409 }
+        );
+      }
     }
 
-    // Create new product
     const newProduct = await prisma.product.create({
       data: {
         name,
@@ -109,28 +114,28 @@ export async function POST(req: Request) {
         isActive,
         sellerId,
         marketId,
-        tags: {
-          create: tags?.map((tag: string) => ({ name: tag })), // Ensure tags are created with explicit type
-        },
+        tags: formatTagsForCreateOrUpdate(tags),
       },
+      include: { tags: true },
     });
 
     return NextResponse.json(
-      { message: "Product created successfully", product: newProduct },
+      { message: "Product created", product: newProduct },
       { status: 201 }
     );
   } catch (error) {
-    console.error("Error creating product:", error);
+    console.error("POST error:", error);
     return NextResponse.json(
-      { error: "An internal error occurred while creating the product" },
+      { error: "Failed to create product" },
       { status: 500 }
     );
   }
 }
 
-// Update an existing product
+// PUT: Update product
 export async function PUT(req: Request) {
   try {
+    const body = await req.json();
     const {
       id,
       name,
@@ -147,9 +152,8 @@ export async function PUT(req: Request) {
       sku,
       isActive,
       sellerId,
-    } = await req.json();
+    } = body;
 
-    // Validate required fields
     if (!id || !name || !price || !sku || !sellerId) {
       return NextResponse.json(
         { error: "Missing required fields" },
@@ -157,17 +161,13 @@ export async function PUT(req: Request) {
       );
     }
 
-    // Check if the product exists
-    const existingProduct = await prisma.product.findUnique({
-      where: { id },
-    });
-
-    if (!existingProduct) {
+    const existing = await prisma.product.findUnique({ where: { id } });
+    if (!existing) {
       return NextResponse.json({ error: "Product not found" }, { status: 404 });
     }
 
-    // Update the product
-    const updatedProduct = await prisma.product.update({
+    // Disconnect all current tags and replace them
+    const updated = await prisma.product.update({
       where: { id },
       data: {
         name,
@@ -184,29 +184,27 @@ export async function PUT(req: Request) {
         isActive,
         sellerId,
         tags: {
-          set: tags?.map((tag: string) => ({ name: tag })), // Replace old tags with new ones, explicitly typing
+          set: [], // Remove old tags first
+          ...formatTagsForCreateOrUpdate(tags),
         },
       },
+      include: { tags: true },
     });
 
-    return NextResponse.json({
-      message: "Product updated successfully",
-      product: updatedProduct,
-    });
+    return NextResponse.json({ message: "Product updated", product: updated });
   } catch (error) {
-    console.error("Error updating product:", error);
+    console.error("PUT error:", error);
     return NextResponse.json(
-      { error: "An internal error occurred while updating the product" },
+      { error: "Failed to update product" },
       { status: 500 }
     );
   }
 }
 
-// Delete an existing product
+// DELETE: Remove product
 export async function DELETE(req: Request) {
   try {
     const { id } = await req.json();
-
     if (!id) {
       return NextResponse.json(
         { error: "Product ID is required" },
@@ -214,25 +212,17 @@ export async function DELETE(req: Request) {
       );
     }
 
-    // Check if the product exists
-    const existingProduct = await prisma.product.findUnique({
-      where: { id },
-    });
-
-    if (!existingProduct) {
+    const existing = await prisma.product.findUnique({ where: { id } });
+    if (!existing) {
       return NextResponse.json({ error: "Product not found" }, { status: 404 });
     }
 
-    // Delete the product
-    await prisma.product.delete({
-      where: { id },
-    });
-
-    return NextResponse.json({ message: "Product deleted successfully" });
+    await prisma.product.delete({ where: { id } });
+    return NextResponse.json({ message: "Product deleted" });
   } catch (error) {
-    console.error("Error deleting product:", error);
+    console.error("DELETE error:", error);
     return NextResponse.json(
-      { error: "An internal error occurred while deleting the product" },
+      { error: "Failed to delete product" },
       { status: 500 }
     );
   }

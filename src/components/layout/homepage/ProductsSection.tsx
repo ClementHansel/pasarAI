@@ -1,5 +1,3 @@
-// src/components/layout/homepage/ProductsSection.tsx
-
 "use client";
 
 import React from "react";
@@ -12,19 +10,19 @@ interface ProductsSectionProps {
 }
 
 const ProductsSection: React.FC<ProductsSectionProps> = ({
-  products = [], // default empty array if products are undefined
+  products = [],
   loading,
 }) => {
-  // Group products by category or type (if applicable)
-  // Example: New Arrivals, Best Sellers, On Sale
-  // You can implement filtering or grouping logic based on your data structure
+  // Group products by category name
   const newArrivals = products.filter(
-    (product) => product.category === "New Arrivals"
+    (product) => product.category?.name === "New Arrivals"
   );
   const bestSellers = products.filter(
-    (product) => product.category === "Best Sellers"
+    (product) => product.category?.name === "Best Sellers"
   );
-  const onSale = products.filter((product) => product.category === "On Sale");
+  const onSale = products.filter(
+    (product) => product.category?.name === "On Sale"
+  );
 
   return (
     <section className="py-8">

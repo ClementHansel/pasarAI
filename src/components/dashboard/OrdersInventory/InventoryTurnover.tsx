@@ -1,4 +1,5 @@
 // src/components/dashboard/OrdersInventory/InventoryTurnover.tsx
+"use client";
 import React, { useState, useEffect } from "react";
 
 const InventoryTurnover: React.FC = () => {

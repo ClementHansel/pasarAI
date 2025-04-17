@@ -1,4 +1,5 @@
 // src/components/dashboard/SalesPerformance/TotalSales.tsx
+"use client";
 import React, { useEffect, useState } from "react";
 
 // Placeholder data, replace with real data or API integration later

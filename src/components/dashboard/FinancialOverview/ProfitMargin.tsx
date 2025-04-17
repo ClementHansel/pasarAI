@@ -1,4 +1,5 @@
 // src/components/dashboard/FinancialOverview/ProfitMargin.tsx
+"use client";
 import React, { useEffect, useState } from "react";
 
 const ProfitMargin: React.FC = () => {

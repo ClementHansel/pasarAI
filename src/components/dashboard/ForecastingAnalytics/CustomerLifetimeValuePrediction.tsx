@@ -1,4 +1,5 @@
 // src/components/dashboard/ForecastingAnalytics/CustomerLifetimeValuePrediction.tsx
+"use client";
 import React, { useState, useEffect } from "react";
 import { Line } from "react-chartjs-2";
 import {

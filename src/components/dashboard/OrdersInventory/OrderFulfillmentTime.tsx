@@ -1,4 +1,5 @@
 // src/components/dashboard/OrdersInventory/OrderFulfillmentTime.tsx
+"use client";
 import React, { useState, useEffect } from "react";
 
 const OrderFulfillmentTime: React.FC = () => {

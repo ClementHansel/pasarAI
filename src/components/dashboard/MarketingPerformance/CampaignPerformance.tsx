@@ -1,4 +1,5 @@
 // src/components/dashboard/MarketingPerformance/CampaignPerformance.tsx
+"use client";
 import React, { useEffect, useState } from "react";
 
 interface Campaign {

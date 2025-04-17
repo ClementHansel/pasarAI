@@ -1,4 +1,5 @@
 // src/components/dashboard/CustomerInsights/TopCustomers.tsx
+"use client";
 import React, { useState, useEffect } from "react";
 
 interface Customer {

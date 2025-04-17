@@ -5,7 +5,7 @@ import { ArrowDownRight, ArrowUpRight } from "lucide-react";
 
 interface PackageDamageRateProps {
   damageRate: number; // e.g., 1.2 (percentage)
-  trend: "up" | "down";
+  trend: "up" | "down"; // e.g., "up" or "down"
   comparison: string; // e.g., "compared to last month"
 }
 
@@ -14,6 +14,7 @@ const PackageDamageRate: React.FC<PackageDamageRateProps> = ({
   trend,
   comparison,
 }) => {
+  // Ensure that trend is properly handled
   const TrendIcon = trend === "up" ? ArrowUpRight : ArrowDownRight;
   const trendColor = trend === "up" ? "text-red-500" : "text-green-500";
 

@@ -1,7 +1,7 @@
 "use client";
-
 import React, { useEffect, useState } from "react";
 
+// Define StatsData interface
 interface StatsData {
   totalSales: number;
   activeUsers: number;
@@ -10,10 +10,12 @@ interface StatsData {
 
 const Stats: React.FC = () => {
   const [stats, setStats] = useState<StatsData | null>(null);
+  const [isClient, setIsClient] = useState(false); // Flag to detect client-side rendering
 
   useEffect(() => {
+    setIsClient(true); // Set the flag to true once the component is mounted on the client-side
+
     const fetchStats = () => {
-      // Simulated delay (remove in prod)
       setTimeout(() => {
         const mockStats: StatsData = {
           totalSales: 125000,
@@ -26,6 +28,10 @@ const Stats: React.FC = () => {
 
     fetchStats();
   }, []);
+
+  if (!isClient) {
+    return null; // Render nothing on the server
+  }
 
   if (!stats) {
     return (

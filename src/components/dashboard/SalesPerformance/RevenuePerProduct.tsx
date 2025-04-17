@@ -1,4 +1,5 @@
 // src/components/dashboard/SalesPerformance/RevenuePerProduct.tsx
+"use client";
 import React, { useEffect, useState } from "react";
 
 // Define a type for the revenue data

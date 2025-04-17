@@ -1,4 +1,5 @@
 // src/components/dashboard/MarketingPerformance/EmailMarketingStats.tsx
+"use client";
 import React, { useEffect, useState } from "react";
 
 interface EmailStats {

@@ -1,4 +1,5 @@
 // src/components/dashboard/ShippingDelivery/DeliveryTimes.tsx
+"use client";
 import React, { useState, useEffect } from "react";
 
 const DeliveryTimes: React.FC = () => {

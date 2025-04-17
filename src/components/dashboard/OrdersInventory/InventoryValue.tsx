@@ -1,4 +1,5 @@
 // src/components/dashboard/OrdersInventory/InventoryValue.tsx
+"use client";
 import React, { useState, useEffect } from "react";
 
 interface Product {
