@@ -36,6 +36,7 @@ function formatTagsForCreateOrUpdate(tags?: string[]) {
 // GET: Fetch all products
 export async function GET() {
   try {
+    console.log("Fetching products from Prisma...");
     const products = await prisma.product.findMany({
       include: {
         category: true,
