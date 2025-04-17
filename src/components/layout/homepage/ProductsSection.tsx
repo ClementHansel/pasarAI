@@ -5,22 +5,28 @@ import ProductRow from "@/components/layout/homepage/ProductRow";
 import { Product } from "@/types/product";
 
 interface ProductsSectionProps {
-  products: Product[];
+  products: Product[] | undefined;
   loading: boolean;
 }
 
 const ProductsSection: React.FC<ProductsSectionProps> = ({
-  products = [],
+  products,
   loading,
 }) => {
+  // Ensure products is always an array
+  const safeProducts = Array.isArray(products) ? products : [];
+
+  // Debug: log to help detect issues in production
+  console.log("ProductsSection received products:", safeProducts);
+
   // Group products by category name
-  const newArrivals = products.filter(
+  const newArrivals = safeProducts.filter(
     (product) => product.category?.name === "New Arrivals"
   );
-  const bestSellers = products.filter(
+  const bestSellers = safeProducts.filter(
     (product) => product.category?.name === "Best Sellers"
   );
-  const onSale = products.filter(
+  const onSale = safeProducts.filter(
     (product) => product.category?.name === "On Sale"
   );
 
@@ -28,11 +34,19 @@ const ProductsSection: React.FC<ProductsSectionProps> = ({
     <section className="py-8">
       {loading ? (
         <p>Loading products...</p>
+      ) : safeProducts.length === 0 ? (
+        <p>No products available at the moment.</p>
       ) : (
         <>
-          <ProductRow title="New Arrivals" products={newArrivals} />
-          <ProductRow title="Best Sellers" products={bestSellers} />
-          <ProductRow title="On Sale" products={onSale} />
+          {newArrivals.length > 0 && (
+            <ProductRow title="New Arrivals" products={newArrivals} />
+          )}
+          {bestSellers.length > 0 && (
+            <ProductRow title="Best Sellers" products={bestSellers} />
+          )}
+          {onSale.length > 0 && (
+            <ProductRow title="On Sale" products={onSale} />
+          )}
         </>
       )}
     </section>

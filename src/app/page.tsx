@@ -23,9 +23,18 @@ const HomePage = () => {
       try {
         const res = await fetch("/api/products");
         const data = await res.json();
-        setProducts(data);
+
+        // Safe assignment — ensures `products` is always an array
+        const productsData = Array.isArray(data)
+          ? data
+          : Array.isArray(data.products)
+          ? data.products
+          : [];
+
+        setProducts(productsData);
       } catch (error) {
         console.error("Error fetching products:", error);
+        setProducts([]); // prevent undefined usage
       } finally {
         setLoading(false);
       }

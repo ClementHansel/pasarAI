@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@netlify/plugin-nextjs": "^5.10.6",
     "@prisma/client": "^6.6.0",
     "@radix-ui/react-popover": "^1.1.7",
     "@radix-ui/react-progress": "^1.1.3",
