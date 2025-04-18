@@ -9,6 +9,9 @@
     "lint": "next lint",
     "seed": "ts-node prisma/seed.ts"
   },
+  "prisma": {
+    "seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts"
+  },
   "dependencies": {
     "@netlify/plugin-nextjs": "^5.10.6",
     "@prisma/client": "^6.6.0",
