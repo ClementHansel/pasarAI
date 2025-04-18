@@ -12,6 +12,7 @@ interface ProductCardProps {
   description: string;
   imageUrl: string;
   rating?: number;
+  labels?: { name: string; id: string };
 }
 
 const ProductCard: React.FC<ProductCardProps> = ({
@@ -21,6 +22,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
   description,
   imageUrl,
   rating = 0,
+  labels = { name: "No Label", id: "" },
 }) => {
   const router = useRouter();
   const [isImageLoaded, setIsImageLoaded] = useState(false);
@@ -43,6 +45,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
           name,
           price,
           quantity: 1,
+          labels,
         }),
       });
 
@@ -90,6 +93,9 @@ const ProductCard: React.FC<ProductCardProps> = ({
           {Array.from({ length: 5 }, (_, index) => (
             <span key={index}>{index < rating ? "★" : "☆"}</span>
           ))}
+        </div>
+        <div className="text-sm mt-2">
+          {labels.name} {/* Display label name */}
         </div>
       </div>
       <button

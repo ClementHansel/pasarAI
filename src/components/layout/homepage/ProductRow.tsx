@@ -13,6 +13,7 @@ interface ProductRowProps {
     price: number;
     description: string;
     imageUrls: string[];
+    labels?: { name: string; id: string };
   }>;
 }
 
@@ -29,6 +30,7 @@ const ProductRow: React.FC<ProductRowProps> = ({ title, products }) => {
             price={product.price}
             description={product.description}
             imageUrl={product.imageUrls[0]} // Use the first image in imageUrls
+            labels={product.labels}
           />
         ))}
       </div>

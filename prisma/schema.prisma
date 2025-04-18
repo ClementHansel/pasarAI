@@ -22,70 +22,77 @@ model User {
   tokenVersion    Int       @default(0)
   orders          Order[]   // Orders placed by the user
   reviews         Review[]  // Reviews written by the user
-  eventLogs       EventLog[]
+  eventLogs       EventLog[] // Event logs related to user actions
 }
 
 model Market {
-  id          String    @id @default(cuid()) // Market unique ID
-  name        String    @unique // Market name
-  description String?   // Optional description
+  id          String    @id @default(cuid())
+  name        String    @unique
+  description String?
   location    String    @default("Unknown")
-  createdAt   DateTime  @default(now()) // Market creation date
-  updatedAt   DateTime  @updatedAt // Market update date
-  sellers     Seller[]  @relation("MarketSellers") // Many-to-many with sellers
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  sellers     Seller[]  @relation("MarketSellers")
   products    Product[] // Many-to-one relationship with products
   revenue     Float     @default(0.0)
 }
 
 model Seller {
-  id              String    @id @default(cuid()) // Seller unique ID
-  name            String    // Seller name
-  email           String    @unique // Seller email
-  password        String    // Seller password (hashed)
-  role            Role      @default(SELLER) // Role for clarity
-  phone           String?   // Optional phone number
-  address         String?   // Optional address
-  profileImage    String?   // Optional profile picture URL
-  isVerified      Boolean   @default(false) // Verification status
-  emailVerifiedAt DateTime? // Timestamp of email verification
-  tokenVersion    Int       @default(0) // For managing session tokens
-  createdAt       DateTime  @default(now()) // Seller registration date
-  updatedAt       DateTime  @updatedAt // Seller profile last updated date
-  markets         Market[]  @relation("MarketSellers") // Many-to-many with markets
+  id              String    @id @default(cuid())
+  name            String
+  email           String    @unique
+  password        String
+  role            Role      @default(SELLER)
+  phone           String?
+  address         String?
+  profileImage    String?
+  isVerified      Boolean   @default(false)
+  emailVerifiedAt DateTime?
+  tokenVersion    Int       @default(0)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  markets         Market[]  @relation("MarketSellers")
   products        Product[] // Many-to-one relationship with products
-  eventLogs       EventLog[]
+  eventLogs       EventLog[] // Event logs related to seller actions
 }
 
 model Product {
-  id                String       @id @default(cuid()) // Product unique ID
-  name              String       // Product name
-  description       String?      // Optional description
-  price             Float        // Product price
-  image             String?      // Product image
-  stock             Int          @default(0) // Available stock
-  soldCount         Int          @default(0) // Number of products sold
-  unit              String?      // Unit of measurement
+  id                String       @id @default(cuid())
+  name              String
+  description       String?
+  price             Float
+  originalPrice     Float?       // Original price before any discounts
+  image             String?
+  stock             Int          @default(0)
+  soldCount         Int          @default(0)
+  unit              String?
   tags              Tag[]        @relation("ProductTags")
-  category          Category?    @relation(fields: [categoryId], references: [id]) // Optional category for the product
-  categoryId        String?      // Foreign key to category
-  seller            Seller       @relation(fields: [sellerId], references: [id]) // Product's seller (one-to-many)
-  sellerId          String       // Seller ID (foreign key)
-  market            Market       @relation(fields: [marketId], references: [id]) // Product's market (one-to-many)
-  marketId          String       // Market ID (foreign key)
-  orderItems        OrderItem[]  // Order items related to the product
-  ecoCertifications String?      // Eco certifications if any
-  origin            String?      // Product origin
-  sku               String?      @unique // Stock Keeping Unit
-  isActive          Boolean      @default(true) // If the product is active or not
-  createdAt         DateTime     @default(now()) // Product creation date
-  reviews           Review[]     @relation("ProductReviews") // Reviews related to the product
+  category          Category?    @relation(fields: [categoryId], references: [id])
+  categoryId        String?
+  seller            Seller       @relation(fields: [sellerId], references: [id])
+  sellerId          String
+  market            Market       @relation(fields: [marketId], references: [id])
+  marketId          String
+  orderItems        OrderItem[]
+  ecoCertifications String?
+  origin            String?
+  sku               String?      @unique
+  isActive          Boolean      @default(true)
+  createdAt         DateTime     @default(now())
+  reviews           Review[]     @relation("ProductReviews")
   eventLogs         EventLog[]
+  labels            Label[]      @relation("ProductLabels")
+  isNewArrival      Boolean      @default(false) // Flag for new arrivals (product created within 24 hours)
+  isBestSeller      Boolean      @default(false) // Flag for best sellers (manually set or calculated)
+  isOnSale          Boolean      @default(false) // Flag for sale products (discount or voucher)
+  isFeatured        Boolean      @default(false) // Flag for featured products (based on seller promotional package)
 }
 
 model Category {
-  id       String    @id @default(cuid()) // Category unique ID
-  name     String    @unique // Category name
+  id       String    @id @default(cuid())
+  name     String    @unique
   products Product[] // Products in this category
+  label     String?  // Optional: "Best Seller", "New Arrival", etc.
 }
 
 model Tag {
@@ -94,68 +101,74 @@ model Tag {
   products Product[] @relation("ProductTags")
 }
 
+model Label {
+  id    String   @id @default(cuid())
+  name  String   @unique // Label name (e.g., "New Arrival", "Best Seller", etc.)
+  products Product[] @relation("ProductLabels")
+}
+
 model Order {
-  id              String      @id @default(cuid()) // Order unique ID
-  buyer           User        @relation(fields: [buyerId], references: [id]) // The buyer placing the order
-  buyerId         String      // Foreign key for buyer
-  status          OrderStatus @default(PENDING) // Order status
-  paymentStatus   PaymentStatus @default(PENDING) // Payment status
-  shippingAddress String      // Shipping address for the order
-  notes           String?     // Optional notes for the order
-  totalPrice      Float       // Total price of the order
-  orderItems      OrderItem[] // List of items in the order
-  voucher         Voucher?    @relation("OrderVoucher", fields: [voucherId], references: [id]) // Applied voucher, if any
-  voucherId       String?     // Voucher ID (foreign key)
-  discountApplied Float       @default(0) // Applied discount
-  shippedAt       DateTime?   // Shipment date
-  createdAt       DateTime    @default(now()) // Order creation date
-  transaction     Transaction? @relation("OrderTransaction") // Transaction related to the order
-  transactionId   String?     // Transaction ID (foreign key)
+  id              String      @id @default(cuid())
+  buyer           User        @relation(fields: [buyerId], references: [id])
+  buyerId         String
+  status          OrderStatus @default(PENDING)
+  paymentStatus   PaymentStatus @default(PENDING)
+  shippingAddress String
+  notes           String?
+  totalPrice      Float
+  orderItems      OrderItem[]
+  voucher         Voucher?    @relation("OrderVoucher", fields: [voucherId], references: [id])
+  voucherId       String?
+  discountApplied Float       @default(0)
+  shippedAt       DateTime?
+  createdAt       DateTime    @default(now())
+  transaction     Transaction? @relation("OrderTransaction")
+  transactionId   String?
   eventLogs       EventLog[]
 }
 
 model OrderItem {
-  id        String   @id @default(cuid()) // OrderItem unique ID
-  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade) // Order to which the item belongs
-  orderId   String   // Order ID (foreign key)
-  product   Product  @relation(fields: [productId], references: [id]) // Product associated with this order item
-  productId String   // Product ID (foreign key)
-  quantity  Int      // Quantity of the product
+  id        String   @id @default(cuid())
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId   String
+  product   Product  @relation(fields: [productId], references: [id])
+  productId String
+  quantity  Int
 }
 
 model Voucher {
-  id        String   @id @default(cuid()) // Voucher unique ID
-  code      String   @unique // Voucher code
+  id        String   @id @default(cuid())
+  code      String   @unique
   discount  Float    // Discount amount or percentage
-  isActive  Boolean  @default(true) // Whether the voucher is active
-  createdAt DateTime @default(now()) // Creation date of the voucher
-  updatedAt DateTime @updatedAt // Last update of the voucher
-  orders    Order[]  @relation("OrderVoucher") // Orders using this voucher
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  orders    Order[]  @relation("OrderVoucher")
 }
 
 model Review {
-  id        String   @id @default(cuid()) // Review unique ID
-  product   Product  @relation("ProductReviews", fields: [productId], references: [id]) // Product being reviewed
-  productId String   // Product ID (foreign key)
-  user      User     @relation(fields: [userId], references: [id]) // User who wrote the review
-  userId    String   // User ID (foreign key)
-  rating    Int      @default(0) // Rating given to the product
-  comment   String?  // Optional comment for the review
-  createdAt DateTime @default(now()) // Review creation date
+  id        String   @id @default(cuid())
+  product   Product  @relation("ProductReviews", fields: [productId], references: [id])
+  productId String
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  rating    Int      @default(0)
+  comment   String?
+  createdAt DateTime @default(now())
 }
 
 model Transaction {
-  id          String   @id @default(cuid()) // Transaction unique ID
-  order       Order    @relation("OrderTransaction", fields: [orderId], references: [id]) // Order related to this transaction
-  orderId     String   @unique // Order ID (foreign key)
-  amount      Float    // Amount of the transaction
-  paymentDate DateTime @default(now()) // Date of the payment
-  status      PaymentStatus @default(PENDING) // Status of the payment
+  id          String   @id @default(cuid())
+  order       Order    @relation("OrderTransaction", fields: [orderId], references: [id])
+  orderId     String   @unique
+  amount      Float
+  paymentDate DateTime @default(now())
+  status      PaymentStatus @default(PENDING)
 }
 
 model EventLog {
-  id        String   @id @default(cuid()) // Event log unique ID
-  event     String   // Event description
+  id        String   @id @default(cuid())
+  event     String
   user      User?    @relation(fields: [userId], references: [id])
   userId    String?
   product   Product? @relation(fields: [productId], references: [id])
@@ -164,8 +177,8 @@ model EventLog {
   sellerId  String?
   order     Order?   @relation(fields: [orderId], references: [id])
   orderId   String?
-  action    String   // Action performed in the event
-  createdAt DateTime @default(now()) // Event log creation date
+  action    String
+  createdAt DateTime @default(now())
 }
 
 enum Role {

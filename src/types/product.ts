@@ -1,11 +1,14 @@
 // src/types/product.ts
 
+import { Label } from "@prisma/client";
+
 // Product Types
 export type Product = {
   id: number; // Unique identifier for the product
   name: string; // Name of the product
   description: string; // Description of the product
   price: number; // Price of the product
+  originalPrice: number | null;
   stock: number; // Stock count (for real-time stock management)
   isAvailable: boolean; // Availability status (in stock or out of stock)
   category?: Category; // Category the product belongs to (e.g., electronics, clothing)
@@ -16,6 +19,10 @@ export type Product = {
   lastSoldAt?: Date | null; // Last time the product was sold (for analytics)
   rating: number; // Average rating of the product (e.g., out of 5)
   reviews: Review[]; // Reviews associated with the product
+  labels: Label;
+  discount?: number;
+  isFeatured?: boolean;
+  isActive?: boolean;
 };
 
 // Product creation input type (for creating new products)
