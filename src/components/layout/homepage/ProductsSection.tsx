@@ -20,14 +20,16 @@ const ProductsSection: React.FC<ProductsSectionProps> = ({
   console.log("ProductsSection received products:", safeProducts);
 
   // Group products by label name (not category)
-  const newArrivals = safeProducts.filter(
-    (product) => product.labels?.name === "New Arrivals"
+  const newArrivals = safeProducts.filter((product) =>
+    product.labels?.some((l) => l.name === "New Arrivals")
   );
-  const bestSellers = safeProducts.filter(
-    (product) => product.labels?.name === "Best Sellers"
+
+  const bestSellers = safeProducts.filter((product) =>
+    product.labels?.some((l) => l.name === "Best Sellers")
   );
-  const onSale = safeProducts.filter(
-    (product) => product.labels?.name === "On Sale"
+
+  const onSale = safeProducts.filter((product) =>
+    product.labels?.some((l) => l.name === "On Sale")
   );
 
   return (

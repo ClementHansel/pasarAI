@@ -19,7 +19,7 @@ export type Product = {
   lastSoldAt?: Date | null; // Last time the product was sold (for analytics)
   rating: number; // Average rating of the product (e.g., out of 5)
   reviews: Review[]; // Reviews associated with the product
-  labels: Label;
+  labels: Label[];
   discount?: number;
   isFeatured?: boolean;
   isActive?: boolean;

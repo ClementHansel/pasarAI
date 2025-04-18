@@ -13,7 +13,7 @@ interface ProductRowProps {
     price: number;
     description: string;
     imageUrls: string[];
-    labels?: { name: string; id: string };
+    labels?: { name: string; id: string }[];
   }>;
 }
 
@@ -22,17 +22,22 @@ const ProductRow: React.FC<ProductRowProps> = ({ title, products }) => {
     <section className="py-8">
       <h2 className="text-2xl font-bold mb-4">{title}</h2>
       <div className="flex overflow-x-auto gap-4">
-        {products.map((product) => (
-          <ProductCard
-            key={product.id}
-            id={product.id.toString()} // Convert id to string here
-            name={product.name}
-            price={product.price}
-            description={product.description}
-            imageUrl={product.imageUrls[0]} // Use the first image in imageUrls
-            labels={product.labels}
-          />
-        ))}
+        {products.map((product) => {
+          const imageUrl = product.imageUrls?.[0] || "/placeholder.png";
+          const label = product.labels?.[0]; // Optional
+
+          return (
+            <ProductCard
+              key={product.id}
+              id={product.id.toString()}
+              name={product.name}
+              price={product.price}
+              description={product.description}
+              imageUrl={imageUrl}
+              labels={label}
+            />
+          );
+        })}
       </div>
     </section>
   );
