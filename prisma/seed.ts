@@ -185,6 +185,284 @@ async function main() {
     },
   });
 
+  const product4 = await prisma.product.create({
+    data: {
+      name: "Organic Banana",
+      description: "Sweet and ripe organic bananas",
+      price: 1.99,
+      originalPrice: 2.49,
+      stock: 120,
+      soldCount: 15,
+      unit: "kg",
+      categoryId: catFruit.id,
+      sellerId: seller1.id,
+      marketId: market.id,
+      tags: { connect: [{ id: tagOrganic.id }] },
+      sku: "BAN-001",
+      ecoCertifications: "Fair Trade",
+      origin: "Lampung",
+      image: "https://example.com/banana.jpg",
+      isBestSeller: true,
+      isOnSale: false,
+      isFeatured: true,
+      labels: {
+        connectOrCreate: [
+          {
+            where: { name: "Top Rated" },
+            create: { name: "Top Rated" },
+          },
+        ],
+      },
+    },
+  });
+
+  const product5 = await prisma.product.create({
+    data: {
+      name: "Fresh Mango",
+      description: "Juicy and fragrant mangoes",
+      price: 3.49,
+      originalPrice: 3.99,
+      stock: 80,
+      soldCount: 20,
+      unit: "kg",
+      categoryId: catFruit.id,
+      sellerId: seller1.id,
+      marketId: market.id,
+      tags: { connect: [{ id: tagFresh.id }] },
+      sku: "MNG-001",
+      ecoCertifications: "Local Farm Certified",
+      origin: "Cirebon",
+      image: "https://example.com/mango.jpg",
+      isBestSeller: false,
+      isOnSale: true,
+      isFeatured: true,
+      labels: {
+        connectOrCreate: [
+          {
+            where: { name: "Seasonal" },
+            create: { name: "Seasonal" },
+          },
+        ],
+      },
+    },
+  });
+
+  const product6 = await prisma.product.create({
+    data: {
+      name: "Red Grapes",
+      description: "Seedless red grapes",
+      price: 4.99,
+      originalPrice: 5.49,
+      stock: 60,
+      soldCount: 25,
+      unit: "kg",
+      categoryId: catFruit.id,
+      sellerId: seller1.id,
+      marketId: market.id,
+      tags: { connect: [{ id: tagOrganic.id }, { id: tagFresh.id }] },
+      sku: "GRP-001",
+      ecoCertifications: "Eco Friendly",
+      origin: "Bali",
+      image: "https://example.com/grapes.jpg",
+      isBestSeller: true,
+      isOnSale: true,
+      isFeatured: false,
+      labels: {
+        connectOrCreate: [
+          {
+            where: { name: "Best Sellers" },
+            create: { name: "Best Sellers" },
+          },
+        ],
+      },
+    },
+  });
+  const product7 = await prisma.product.create({
+    data: {
+      name: "Watermelon",
+      description: "Large and juicy watermelon",
+      price: 5.99,
+      originalPrice: 6.99,
+      stock: 40,
+      soldCount: 30,
+      unit: "each",
+      categoryId: catFruit.id,
+      sellerId: seller1.id,
+      marketId: market.id,
+      tags: { connect: [{ id: tagFresh.id }] },
+      sku: "WTM-001",
+      ecoCertifications: "Water Efficient Farming",
+      origin: "Surabaya",
+      image: "https://example.com/watermelon.jpg",
+      isBestSeller: false,
+      isOnSale: true,
+      isFeatured: false,
+      labels: {
+        connectOrCreate: [
+          {
+            where: { name: "Featured" },
+            create: { name: "Featured" },
+          },
+        ],
+      },
+    },
+  });
+
+  const product8 = await prisma.product.create({
+    data: {
+      name: "Pineapple",
+      description: "Sweet tropical pineapples",
+      price: 3.99,
+      originalPrice: 4.59,
+      stock: 70,
+      soldCount: 18,
+      unit: "each",
+      categoryId: catFruit.id,
+      sellerId: seller1.id,
+      marketId: market.id,
+      tags: { connect: [{ id: tagOrganic.id }] },
+      sku: "PNP-001",
+      ecoCertifications: "USDA Organic",
+      origin: "Medan",
+      image: "https://example.com/pineapple.jpg",
+      isBestSeller: true,
+      isOnSale: false,
+      isFeatured: true,
+      labels: {
+        connectOrCreate: [
+          {
+            where: { name: "Top Rated" },
+            create: { name: "Top Rated" },
+          },
+        ],
+      },
+    },
+  });
+
+  const product9 = await prisma.product.create({
+    data: {
+      name: "Strawberries",
+      description: "Fresh and juicy strawberries",
+      price: 6.49,
+      originalPrice: 7.49,
+      stock: 30,
+      soldCount: 12,
+      unit: "box",
+      categoryId: catFruit.id,
+      sellerId: seller1.id,
+      marketId: market.id,
+      tags: { connect: [{ id: tagFresh.id }] },
+      sku: "STB-001",
+      ecoCertifications: "Rainforest Alliance",
+      origin: "Lembang",
+      image: "https://example.com/strawberries.jpg",
+      isBestSeller: true,
+      isOnSale: true,
+      isFeatured: true,
+      labels: {
+        connectOrCreate: [
+          {
+            where: { name: "Limited Edition" },
+            create: { name: "Limited Edition" },
+          },
+        ],
+      },
+    },
+  });
+
+  const product10 = await prisma.product.create({
+    data: {
+      name: "Papaya",
+      description: "Tropical and healthy papaya",
+      price: 2.49,
+      originalPrice: 2.99,
+      stock: 90,
+      soldCount: 22,
+      unit: "each",
+      categoryId: catFruit.id,
+      sellerId: seller1.id,
+      marketId: market.id,
+      tags: { connect: [{ id: tagOrganic.id }] },
+      sku: "PAP-001",
+      ecoCertifications: "Organic Indonesia",
+      origin: "Bekasi",
+      image: "https://example.com/papaya.jpg",
+      isBestSeller: false,
+      isOnSale: true,
+      isFeatured: false,
+      labels: {
+        connectOrCreate: [
+          {
+            where: { name: "Healthy Choice" },
+            create: { name: "Healthy Choice" },
+          },
+        ],
+      },
+    },
+  });
+
+  const product11 = await prisma.product.create({
+    data: {
+      name: "Kiwi",
+      description: "Imported kiwi fruits",
+      price: 5.49,
+      originalPrice: 5.99,
+      stock: 50,
+      soldCount: 19,
+      unit: "box",
+      categoryId: catFruit.id,
+      sellerId: seller1.id,
+      marketId: market.id,
+      tags: { connect: [{ id: tagFresh.id }] },
+      sku: "KIW-001",
+      ecoCertifications: "Non-GMO",
+      origin: "New Zealand",
+      image: "https://example.com/kiwi.jpg",
+      isBestSeller: false,
+      isOnSale: false,
+      isFeatured: true,
+      labels: {
+        connectOrCreate: [
+          {
+            where: { name: "Imported" },
+            create: { name: "Imported" },
+          },
+        ],
+      },
+    },
+  });
+
+  const product12 = await prisma.product.create({
+    data: {
+      name: "Avocado",
+      description: "Creamy organic avocados",
+      price: 4.29,
+      originalPrice: 4.99,
+      stock: 65,
+      soldCount: 28,
+      unit: "kg",
+      categoryId: catFruit.id,
+      sellerId: seller1.id,
+      marketId: market.id,
+      tags: { connect: [{ id: tagOrganic.id }, { id: tagFresh.id }] },
+      sku: "AVC-001",
+      ecoCertifications: "USDA Organic",
+      origin: "Bogor",
+      image: "https://example.com/avocado.jpg",
+      isBestSeller: true,
+      isOnSale: true,
+      isFeatured: true,
+      labels: {
+        connectOrCreate: [
+          {
+            where: { name: "Best Sellers" },
+            create: { name: "Best Sellers" },
+          },
+        ],
+        },
+      },
+  });
+
   console.log("✅ Products created");
 
   // 6. Voucher
