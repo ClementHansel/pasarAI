@@ -1,7 +1,13 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "@/styles/globals.css";
-import Link from "next/link";
+import Logo from "@/components/layout/homepage/header/Logo";
+import SearchBox from "@/components/layout/homepage/header/SearchBox";
+import CartPopover from "@/components/layout/homepage/header/CartPopover";
+import MessagePopover from "@/components/layout/homepage/header/MessagePopover";
+import UserMenuPopover from "@/components/layout/homepage/header/UserMenuPopover";
+import NotificationPopover from "@/components/layout/homepage/header/NotificationPopover";
+import { Link } from "lucide-react";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -30,9 +36,43 @@ export default function RootLayout({
       >
         {/* HEADER */}
         <header className="w-full p-4 bg-gray-100 shadow-md flex justify-between items-center">
-          <Link href="/" className="text-2xl font-bold">
-            PasarAI
-          </Link>
+          <div className="container mx-auto flex items-center justify-between gap-4">
+            <Logo />
+
+            <div className="flex-1 max-w-xl">
+              <SearchBox />
+            </div>
+
+            <div className="flex items-center gap-4">
+              <CartPopover />
+              <MessagePopover />
+              <NotificationPopover />
+              <UserMenuPopover />
+
+              <nav className="flex items-center gap-6">
+                <Link
+                  href="/dashboard"
+                  className="flex items-center gap-2 text-gray-700 hover:text-black"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M3 10h4V3h10v7h4v11H3V10z"
+                    />
+                  </svg>
+                  Dashboard
+                </Link>
+              </nav>
+            </div>
+          </div>
           {/* Add nav or cart icon here if needed */}
         </header>
 

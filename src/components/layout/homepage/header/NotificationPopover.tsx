@@ -1,30 +1,29 @@
-// src/components/layout/homepage/header/Header.tsx
+// src/components/layout/homepage/header/NotificationPopover.tsx
 
 import React from "react";
-import Logo from "./Logo";
-import SearchBox from "./SearchBox";
-import NotificationPopover from "./NotificationPopover";
-import MessagePopover from "./MessagePopover";
-import UserMenuPopover from "./UserMenuPopover";
+import { Bell } from "lucide-react";
+import {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+} from "@/components/ui/popover";
 
-const Header = () => {
+const NotificationPopover = () => {
   return (
-    <header className="w-full px-4 py-3 border-b bg-white shadow-sm sticky top-0 z-50">
-      <div className="container mx-auto flex items-center justify-between gap-4">
-        <Logo />
-
-        <div className="flex-1 max-w-xl">
-          <SearchBox />
-        </div>
-
-        <div className="flex items-center gap-4">
-          <MessagePopover />
-          <NotificationPopover />
-          <UserMenuPopover />
-        </div>
-      </div>
-    </header>
+    <Popover>
+      <PopoverTrigger className="relative">
+        <Bell className="w-6 h-6 text-gray-700" />
+      </PopoverTrigger>
+      <PopoverContent className="w-72 p-4">
+        <h4 className="font-semibold mb-2">Notifications</h4>
+        <ul className="text-sm space-y-1">
+          <li className="hover:text-primary cursor-pointer">Order updates</li>
+          <li className="hover:text-primary cursor-pointer">Promotions</li>
+          <li className="hover:text-primary cursor-pointer">Seller updates</li>
+        </ul>
+      </PopoverContent>
+    </Popover>
   );
 };
 
-export default Header;
+export default NotificationPopover;
