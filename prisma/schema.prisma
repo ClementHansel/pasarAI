@@ -8,20 +8,22 @@ datasource db {
 }
 
 model User {
-  id              String    @id @default(cuid())
+  id              String     @id @default(cuid())
   name            String
-  email           String    @unique
+  email           String     @unique
   password        String
-  role            Role      @default(CONSUMER)
+  role            Role       @default(CONSUMER)
   phone           String?
   address         String?
   profileImage    String?
-  isVerified      Boolean   @default(false)
+  ewallet         String?
+  isVerified      Boolean    @default(false)
   emailVerifiedAt DateTime?
-  createdAt       DateTime  @default(now())
-  tokenVersion    Int       @default(0)
-  orders          Order[]   // Orders placed by the user
-  reviews         Review[]  // Reviews written by the user
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  tokenVersion    Int        @default(0)
+  orders          Order[] // Orders placed by the user
+  reviews         Review[] // Reviews written by the user
   eventLogs       EventLog[] // Event logs related to user actions
 }
 
@@ -38,91 +40,109 @@ model Market {
 }
 
 model Seller {
-  id              String    @id @default(cuid())
+  id              String     @id @default(cuid())
   name            String
-  email           String    @unique
+  email           String     @unique
   password        String
-  role            Role      @default(SELLER)
+  role            Role       @default(SELLER)
   phone           String?
   address         String?
   profileImage    String?
-  isVerified      Boolean   @default(false)
+  isVerified      Boolean    @default(false)
   emailVerifiedAt DateTime?
-  tokenVersion    Int       @default(0)
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  markets         Market[]  @relation("MarketSellers")
+  tokenVersion    Int        @default(0)
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  markets         Market[]   @relation("MarketSellers")
   products        Product[] // Many-to-one relationship with products
   eventLogs       EventLog[] // Event logs related to seller actions
 }
 
 model Product {
-  id                String       @id @default(cuid())
+  id                String      @id @default(cuid())
   name              String
   description       String?
   price             Float
-  originalPrice     Float?       // Original price before any discounts
+  originalPrice     Float? // Original price before any discounts
   image             String?
-  stock             Int          @default(0)
-  soldCount         Int          @default(0)
+  stock             Int         @default(0)
+  soldCount         Int         @default(0)
   unit              String?
-  tags              Tag[]        @relation("ProductTags")
-  category          Category?    @relation(fields: [categoryId], references: [id])
+  tags              Tag[]       @relation("ProductTags")
+  category          Category?   @relation(fields: [categoryId], references: [id])
   categoryId        String?
-  seller            Seller       @relation(fields: [sellerId], references: [id])
+  brand             Brand?      @relation(fields: [brandId], references: [id])
+  brandId           String?
+  seller            Seller      @relation(fields: [sellerId], references: [id])
   sellerId          String
-  market            Market       @relation(fields: [marketId], references: [id])
+  market            Market      @relation(fields: [marketId], references: [id])
   marketId          String
   orderItems        OrderItem[]
   ecoCertifications String?
   origin            String?
-  sku               String?      @unique
-  isActive          Boolean      @default(true)
-  createdAt         DateTime     @default(now())
-  reviews           Review[]     @relation("ProductReviews")
+  sku               String?     @unique
+  isActive          Boolean     @default(true)
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+  reviews           Review[]    @relation("ProductReviews")
   eventLogs         EventLog[]
-  labels            Label[]      @relation("ProductLabels")
-  isNewArrival      Boolean      @default(false) // Flag for new arrivals (product created within 24 hours)
-  isBestSeller      Boolean      @default(false) // Flag for best sellers (manually set or calculated)
-  isOnSale          Boolean      @default(false) // Flag for sale products (discount or voucher)
-  isFeatured        Boolean      @default(false) // Flag for featured products (based on seller promotional package)
+  labels            Label[]     @relation("ProductLabels")
+  isNewArrival      Boolean     @default(false) // Flag for new arrivals (product created within 24 hours)
+  isBestSeller      Boolean     @default(false) // Flag for best sellers (manually set or calculated)
+  isOnSale          Boolean     @default(false) // Flag for sale products (discount or voucher)
+  isFeatured        Boolean     @default(false) // Flag for featured products (based on seller promotional package)
 }
 
 model Category {
-  id       String    @id @default(cuid())
-  name     String    @unique
-  products Product[] // Products in this category
-  label     String?  // Optional: "Best Seller", "New Arrival", etc.
+  id        String    @id @default(cuid())
+  name      String    @unique
+  product   Product[] // Products in this category
+  label     String? // Optional: "Best Seller", "New Arrival", etc.
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Brand {
+  id        String    @id @default(cuid())
+  name      String    
+  product   Product[] // Products in this category
+  label     String? // Optional: "Best Seller", "New Arrival", etc.
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 }
 
 model Tag {
-  id       String    @id @default(cuid())
-  name     String    @unique
-  products Product[] @relation("ProductTags")
+  id        String    @id @default(cuid())
+  name      String    @unique
+  products  Product[] @relation("ProductTags")
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 }
 
 model Label {
-  id    String   @id @default(cuid())
-  name  String   @unique // Label name (e.g., "New Arrival", "Best Seller", etc.)
-  products Product[] @relation("ProductLabels")
+  id        String    @id @default(cuid())
+  name      String    @unique // Label name (e.g., "New Arrival", "Best Seller", etc.)
+  products  Product[] @relation("ProductLabels")
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 }
 
 model Order {
-  id              String      @id @default(cuid())
-  buyer           User        @relation(fields: [buyerId], references: [id])
+  id              String        @id @default(cuid())
+  buyer           User          @relation(fields: [buyerId], references: [id])
   buyerId         String
-  status          OrderStatus @default(PENDING)
+  status          OrderStatus   @default(PENDING)
   paymentStatus   PaymentStatus @default(PENDING)
   shippingAddress String
   notes           String?
   totalPrice      Float
   orderItems      OrderItem[]
-  voucher         Voucher?    @relation("OrderVoucher", fields: [voucherId], references: [id])
-  voucherId       String?
-  discountApplied Float       @default(0)
+  gifcard         Gifcard?      @relation("OrderGifcard", fields: [gifcardId], references: [id])
+  gifcardId       String?
+  discountApplied Float         @default(0)
   shippedAt       DateTime?
-  createdAt       DateTime    @default(now())
-  transaction     Transaction? @relation("OrderTransaction")
+  createdAt       DateTime      @default(now())
+  transaction     Transaction?  @relation("OrderTransaction")
   transactionId   String?
   eventLogs       EventLog[]
 }
@@ -132,18 +152,19 @@ model OrderItem {
   order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
   orderId   String
   product   Product  @relation(fields: [productId], references: [id])
+  createdAt DateTime @default(now())
   productId String
   quantity  Int
 }
 
-model Voucher {
+model Gifcard {
   id        String   @id @default(cuid())
   code      String   @unique
-  discount  Float    // Discount amount or percentage
+  discount  Float // Discount amount or percentage
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  orders    Order[]  @relation("OrderVoucher")
+  orders    Order[]  @relation("OrderGifcard")
 }
 
 model Review {
@@ -155,14 +176,15 @@ model Review {
   rating    Int      @default(0)
   comment   String?
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Transaction {
-  id          String   @id @default(cuid())
-  order       Order    @relation("OrderTransaction", fields: [orderId], references: [id])
-  orderId     String   @unique
+  id          String        @id @default(cuid())
+  order       Order         @relation("OrderTransaction", fields: [orderId], references: [id])
+  orderId     String        @unique
   amount      Float
-  paymentDate DateTime @default(now())
+  paymentDate DateTime      @default(now())
   status      PaymentStatus @default(PENDING)
 }
 
@@ -179,6 +201,7 @@ model EventLog {
   orderId   String?
   action    String
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 enum Role {
