@@ -16,9 +16,11 @@ model User {
   phone           String?
   address         String?
   profileImage    String?
+  ewallet         String?
   isVerified      Boolean    @default(false)
   emailVerifiedAt DateTime?
   createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
   tokenVersion    Int        @default(0)
   orders          Order[] // Orders placed by the user
   reviews         Review[] // Reviews written by the user
@@ -69,6 +71,8 @@ model Product {
   tags              Tag[]       @relation("ProductTags")
   category          Category?   @relation(fields: [categoryId], references: [id])
   categoryId        String?
+  brand             Brand?      @relation(fields: [brandId], references: [id])
+  brandId           String?
   seller            Seller      @relation(fields: [sellerId], references: [id])
   sellerId          String
   market            Market      @relation(fields: [marketId], references: [id])
@@ -79,6 +83,7 @@ model Product {
   sku               String?     @unique
   isActive          Boolean     @default(true)
   createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
   reviews           Review[]    @relation("ProductReviews")
   eventLogs         EventLog[]
   labels            Label[]     @relation("ProductLabels")
@@ -89,22 +94,37 @@ model Product {
 }
 
 model Category {
-  id       String    @id @default(cuid())
-  name     String    @unique
-  products Product[] // Products in this category
-  label    String? // Optional: "Best Seller", "New Arrival", etc.
+  id        String    @id @default(cuid())
+  name      String    @unique
+  product   Product[] // Products in this category
+  label     String? // Optional: "Best Seller", "New Arrival", etc.
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Brand {
+  id        String    @id @default(cuid())
+  name      String    
+  product   Product[] // Products in this category
+  label     String? // Optional: "Best Seller", "New Arrival", etc.
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 }
 
 model Tag {
-  id       String    @id @default(cuid())
-  name     String    @unique
-  products Product[] @relation("ProductTags")
+  id        String    @id @default(cuid())
+  name      String    @unique
+  products  Product[] @relation("ProductTags")
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 }
 
 model Label {
-  id       String    @id @default(cuid())
-  name     String    @unique // Label name (e.g., "New Arrival", "Best Seller", etc.)
-  products Product[] @relation("ProductLabels")
+  id        String    @id @default(cuid())
+  name      String    @unique // Label name (e.g., "New Arrival", "Best Seller", etc.)
+  products  Product[] @relation("ProductLabels")
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 }
 
 model Order {
@@ -117,8 +137,8 @@ model Order {
   notes           String?
   totalPrice      Float
   orderItems      OrderItem[]
-  voucher         Voucher?      @relation("OrderVoucher", fields: [voucherId], references: [id])
-  voucherId       String?
+  gifcard         Gifcard?      @relation("OrderGifcard", fields: [gifcardId], references: [id])
+  gifcardId       String?
   discountApplied Float         @default(0)
   shippedAt       DateTime?
   createdAt       DateTime      @default(now())
@@ -128,22 +148,23 @@ model Order {
 }
 
 model OrderItem {
-  id        String  @id @default(cuid())
-  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  id        String   @id @default(cuid())
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
   orderId   String
-  product   Product @relation(fields: [productId], references: [id])
+  product   Product  @relation(fields: [productId], references: [id])
+  createdAt DateTime @default(now())
   productId String
   quantity  Int
 }
 
-model Voucher {
+model Gifcard {
   id        String   @id @default(cuid())
   code      String   @unique
   discount  Float // Discount amount or percentage
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  orders    Order[]  @relation("OrderVoucher")
+  orders    Order[]  @relation("OrderGifcard")
 }
 
 model Review {
@@ -155,6 +176,7 @@ model Review {
   rating    Int      @default(0)
   comment   String?
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Transaction {
@@ -179,6 +201,7 @@ model EventLog {
   orderId   String?
   action    String
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 enum Role {
