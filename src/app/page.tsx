@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { Toaster } from "react-hot-toast";
 
 import HeroSection from "@/components/layout/homepage/HeroSection";
+import BentoGrid from "@/components/layout/homepage/BentoGrid";
 import FeaturedProducts from "@/components/layout/homepage/FeaturedProducts";
 import TopUpAndBills from "@/components/layout/homepage/TopUpAndBills";
 import SelectedCategorySection from "@/components/layout/homepage/SelectedCategorySection";
@@ -45,9 +46,10 @@ const HomePage = () => {
   return (
     <>
       <Toaster position="top-right" />
+      <HeroSection />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 space-y-12">
-        <HeroSection />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 space-y-12 py-12">
+        <BentoGrid />
         <FeaturedProducts />
         <TopUpAndBills />
         <SelectedCategorySection />

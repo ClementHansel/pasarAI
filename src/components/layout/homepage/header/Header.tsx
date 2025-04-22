@@ -61,31 +61,31 @@ const Header = () => {
           <div className="flex items-center space-x-6">
             <Link
               href="/deals"
-              className="text-sm hover:text-primary transition-colors"
+              className="underline-hover-effect text-sm hover:text-primary transition-colors"
             >
               Deals
             </Link>
             <Link
               href="/new-arrivals"
-              className="text-sm hover:text-primary transition-colors"
+              className="underline-hover-effect text-sm hover:text-primary transition-colors"
             >
               New Arrivals
             </Link>
             <Link
               href="/trending"
-              className="text-sm hover:text-primary transition-colors"
+              className="underline-hover-effect text-sm hover:text-primary transition-colors"
             >
               Trending
             </Link>
             <Link
               href="/brands"
-              className="text-sm hover:text-primary transition-colors"
+              className="underline-hover-effect text-sm hover:text-primary transition-colors"
             >
               Brands
             </Link>
             <Link
               href="/gift-cards"
-              className="text-sm hover:text-primary transition-colors"
+              className="underline-hover-effect text-sm hover:text-primary transition-colors"
             >
               Gift Cards
             </Link>
@@ -98,31 +98,31 @@ const Header = () => {
             <nav className="flex flex-col space-y-4">
               <Link
                 href="/deals"
-                className="text-sm hover:text-primary px-4 py-2"
+                className="underline-hover-effect text-sm hover:text-primary px-4 py-2"
               >
                 Deals
               </Link>
               <Link
                 href="/new-arrivals"
-                className="text-sm hover:text-primary px-4 py-2"
+                className="underline-hover-effect text-sm hover:text-primary px-4 py-2"
               >
                 New Arrivals
               </Link>
               <Link
                 href="/trending"
-                className="text-sm hover:text-primary px-4 py-2"
+                className="underline-hover-effect text-sm hover:text-primary px-4 py-2"
               >
                 Trending
               </Link>
               <Link
                 href="/brands"
-                className="text-sm hover:text-primary px-4 py-2"
+                className="underline-hover-effect text-sm hover:text-primary px-4 py-2"
               >
                 Brands
               </Link>
               <Link
                 href="/gift-cards"
-                className="text-sm hover:text-primary px-4 py-2"
+                className="underline-hover-effect text-sm hover:text-primary px-4 py-2"
               >
                 Gift Cards
               </Link>
