@@ -29,11 +29,31 @@ const Header = () => {
             <SearchBox />
           </div>
 
-          <div className="flex items-center gap-4">
-            <CartPopover />
-            <MessagePopover />
-            <NotificationPopover />
-            <UserMenuPopover />
+          <div className="flex items-center gap-6">
+            <div className="flex flex-col items-center w-20 min-w-[80px]">
+              <CartPopover />
+              <span className="text-xs mt-1 truncate w-full text-center">
+                Cart
+              </span>
+            </div>
+            <div className="flex flex-col items-center w-20 min-w-[80px]">
+              <MessagePopover />
+              <span className="text-xs mt-1 truncate w-full text-center">
+                Chat
+              </span>
+            </div>
+            <div className="flex flex-col items-center w-20 min-w-[80px]">
+              <NotificationPopover />
+              <span className="text-xs mt-1 truncate w-full text-center">
+                Notifications
+              </span>
+            </div>
+            <div className="flex flex-col items-center w-20 min-w-[80px]">
+              <UserMenuPopover />
+              <span className="text-xs mt-1 truncate w-full text-center">
+                Account
+              </span>
+            </div>
           </div>
         </div>
 
@@ -44,20 +64,34 @@ const Header = () => {
 
         {/* Navigation */}
         <nav className="hidden lg:flex items-center gap-6 py-3 text-sm">
-          <Link href="/deals" className="hover:text-primary">
+          <Link
+            href="/deals"
+            className="hover:text-primary relative after:absolute after:left-0 after:-bottom-1 after:h-0.5 after:w-full after:scale-x-0 after:bg-primary after:origin-bottom-right after:transition-transform after:duration-300 hover:after:origin-bottom-left hover:after:scale-x-100"
+          >
             Deals
           </Link>
-          Deals
-          <Link href="/new-arrivals" className="hover:text-primary">
+          <Link
+            href="/new-arrivals"
+            className="hover:text-primary relative after:absolute after:left-0 after:-bottom-1 after:h-0.5 after:w-full after:scale-x-0 after:bg-primary after:origin-bottom-right after:transition-transform after:duration-300 hover:after:origin-bottom-left hover:after:scale-x-100"
+          >
             New Arrivals
           </Link>
-          <Link href="/trending" className="hover:text-primary">
+          <Link
+            href="/trending"
+            className="hover:text-primary relative after:absolute after:left-0 after:-bottom-1 after:h-0.5 after:w-full after:scale-x-0 after:bg-primary after:origin-bottom-right after:transition-transform after:duration-300 hover:after:origin-bottom-left hover:after:scale-x-100"
+          >
             Trending
           </Link>
-          <Link href="/brands" className="hover:text-primary">
+          <Link
+            href="/brands"
+            className="hover:text-primary relative after:absolute after:left-0 after:-bottom-1 after:h-0.5 after:w-full after:scale-x-0 after:bg-primary after:origin-bottom-right after:transition-transform after:duration-300 hover:after:origin-bottom-left hover:after:scale-x-100"
+          >
             Brands
           </Link>
-          <Link href="/gift-cards" className="hover:text-primary">
+          <Link
+            href="/gift-cards"
+            className="hover:text-primary relative after:absolute after:left-0 after:-bottom-1 after:h-0.5 after:w-full after:scale-x-0 after:bg-primary after:origin-bottom-right after:transition-transform after:duration-300 hover:after:origin-bottom-left hover:after:scale-x-100"
+          >
             Gift Cards
           </Link>
         </nav>
