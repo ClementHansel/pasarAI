@@ -108,7 +108,7 @@ model Brand {
   product   Product[] // Products in this category
   label     String? // Optional: "Best Seller", "New Arrival", etc.
   createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  updatedAt DateTime  @default(now())
 }
 
 model Tag {
