@@ -55,6 +55,7 @@ model Seller {
   updatedAt       DateTime   @updatedAt
   markets         Market[]   @relation("MarketSellers")
   products        Product[] // Many-to-one relationship with products
+  brands          Brand[]    @relation("BrandSellers")
   eventLogs       EventLog[] // Event logs related to seller actions
 }
 
@@ -103,12 +104,14 @@ model Category {
 }
 
 model Brand {
-  id        String    @id @default(cuid())
-  name      String    
-  product   Product[] // Products in this category
-  label     String? // Optional: "Best Seller", "New Arrival", etc.
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @default(now())
+  id          String    @id @default(cuid())
+  name        String    
+  description String?
+  products    Product[] // Products in this category
+  label       String? // Optional: "Best Seller", "New Arrival", etc.
+  sellers     Seller[]  @relation("BrandSellers")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 }
 
 model Tag {
@@ -137,8 +140,8 @@ model Order {
   notes           String?
   totalPrice      Float
   orderItems      OrderItem[]
-  gifcard         Gifcard?      @relation("OrderGifcard", fields: [gifcardId], references: [id])
-  gifcardId       String?
+  giftcard         Giftcard?      @relation("OrderGiftcard", fields: [giftcardId], references: [id])
+  giftcardId       String?
   discountApplied Float         @default(0)
   shippedAt       DateTime?
   createdAt       DateTime      @default(now())
@@ -157,14 +160,14 @@ model OrderItem {
   quantity  Int
 }
 
-model Gifcard {
+model Giftcard {
   id        String   @id @default(cuid())
   code      String   @unique
   discount  Float // Discount amount or percentage
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  orders    Order[]  @relation("OrderGifcard")
+  orders    Order[]  @relation("OrderGiftcard")
 }
 
 model Review {
