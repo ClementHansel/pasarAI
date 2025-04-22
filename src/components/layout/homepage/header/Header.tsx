@@ -1,7 +1,7 @@
 // src/components/layout/homepage/header/Header.tsx
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import Logo from "./Logo";
 import SearchBox from "./SearchBox";
 import NotificationPopover from "./NotificationPopover";
@@ -10,8 +10,11 @@ import UserMenuPopover from "./UserMenuPopover";
 import CartPopover from "./CartPopover";
 import CategoriesNav from "./CategoriesNav";
 import Link from "next/link";
+import { Menu } from "lucide-react";
 
 const Header = () => {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
   return (
     <header className="w-full bg-white border-b sticky top-0 z-50">
       {/* Top Bar */}
@@ -20,81 +23,112 @@ const Header = () => {
       </div>
 
       {/* Main Header */}
-      <div className="container mx-auto px-4">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <div className="flex items-center justify-between py-4">
-          <Logo />
+          {/* Logo and Mobile Menu Button */}
+          <div className="flex items-center">
+            <button
+              className="mr-4 lg:hidden"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            >
+              <Menu className="h-6 w-6" />
+            </button>
+            <Logo />
+          </div>
 
-          <div className="hidden lg:flex items-center gap-8 flex-1 max-w-2xl mx-12">
-            <CategoriesNav />
+          {/* Search Bar - Desktop */}
+          <div className="hidden lg:flex flex-1 max-w-2xl mx-8">
             <SearchBox />
           </div>
 
-          <div className="flex items-center gap-6">
-            <div className="flex flex-col items-center w-20 min-w-[80px]">
-              <CartPopover />
-              <span className="text-xs mt-1 truncate w-full text-center">
-                Cart
-              </span>
-            </div>
-            <div className="flex flex-col items-center w-20 min-w-[80px]">
-              <MessagePopover />
-              <span className="text-xs mt-1 truncate w-full text-center">
-                Chat
-              </span>
-            </div>
-            <div className="flex flex-col items-center w-20 min-w-[80px]">
-              <NotificationPopover />
-              <span className="text-xs mt-1 truncate w-full text-center">
-                Notifications
-              </span>
-            </div>
-            <div className="flex flex-col items-center w-20 min-w-[80px]">
-              <UserMenuPopover />
-              <span className="text-xs mt-1 truncate w-full text-center">
-                Account
-              </span>
-            </div>
+          {/* Icons */}
+          <div className="flex items-center space-x-4">
+            <CartPopover />
+            <MessagePopover />
+            <NotificationPopover />
+            <UserMenuPopover />
           </div>
         </div>
 
-        {/* Mobile Search */}
+        {/* Search Bar - Mobile */}
         <div className="lg:hidden py-3">
           <SearchBox />
         </div>
 
-        {/* Navigation */}
-        <nav className="hidden lg:flex items-center gap-6 py-3 text-sm">
-          <Link
-            href="/deals"
-            className="hover:text-primary relative after:absolute after:left-0 after:-bottom-1 after:h-0.5 after:w-full after:scale-x-0 after:bg-primary after:origin-bottom-right after:transition-transform after:duration-300 hover:after:origin-bottom-left hover:after:scale-x-100"
-          >
-            Deals
-          </Link>
-          <Link
-            href="/new-arrivals"
-            className="hover:text-primary relative after:absolute after:left-0 after:-bottom-1 after:h-0.5 after:w-full after:scale-x-0 after:bg-primary after:origin-bottom-right after:transition-transform after:duration-300 hover:after:origin-bottom-left hover:after:scale-x-100"
-          >
-            New Arrivals
-          </Link>
-          <Link
-            href="/trending"
-            className="hover:text-primary relative after:absolute after:left-0 after:-bottom-1 after:h-0.5 after:w-full after:scale-x-0 after:bg-primary after:origin-bottom-right after:transition-transform after:duration-300 hover:after:origin-bottom-left hover:after:scale-x-100"
-          >
-            Trending
-          </Link>
-          <Link
-            href="/brands"
-            className="hover:text-primary relative after:absolute after:left-0 after:-bottom-1 after:h-0.5 after:w-full after:scale-x-0 after:bg-primary after:origin-bottom-right after:transition-transform after:duration-300 hover:after:origin-bottom-left hover:after:scale-x-100"
-          >
-            Brands
-          </Link>
-          <Link
-            href="/gift-cards"
-            className="hover:text-primary relative after:absolute after:left-0 after:-bottom-1 after:h-0.5 after:w-full after:scale-x-0 after:bg-primary after:origin-bottom-right after:transition-transform after:duration-300 hover:after:origin-bottom-left hover:after:scale-x-100"
-          >
-            Gift Cards
-          </Link>
+        {/* Navigation - Desktop */}
+        <nav className="hidden lg:flex items-center justify-between py-3">
+          <CategoriesNav />
+          <div className="flex items-center space-x-6">
+            <Link
+              href="/deals"
+              className="text-sm hover:text-primary transition-colors"
+            >
+              Deals
+            </Link>
+            <Link
+              href="/new-arrivals"
+              className="text-sm hover:text-primary transition-colors"
+            >
+              New Arrivals
+            </Link>
+            <Link
+              href="/trending"
+              className="text-sm hover:text-primary transition-colors"
+            >
+              Trending
+            </Link>
+            <Link
+              href="/brands"
+              className="text-sm hover:text-primary transition-colors"
+            >
+              Brands
+            </Link>
+            <Link
+              href="/gift-cards"
+              className="text-sm hover:text-primary transition-colors"
+            >
+              Gift Cards
+            </Link>
+          </div>
         </nav>
+
+        {/* Mobile Navigation Menu */}
+        {isMobileMenuOpen && (
+          <div className="lg:hidden py-4 border-t">
+            <nav className="flex flex-col space-y-4">
+              <Link
+                href="/deals"
+                className="text-sm hover:text-primary px-4 py-2"
+              >
+                Deals
+              </Link>
+              <Link
+                href="/new-arrivals"
+                className="text-sm hover:text-primary px-4 py-2"
+              >
+                New Arrivals
+              </Link>
+              <Link
+                href="/trending"
+                className="text-sm hover:text-primary px-4 py-2"
+              >
+                Trending
+              </Link>
+              <Link
+                href="/brands"
+                className="text-sm hover:text-primary px-4 py-2"
+              >
+                Brands
+              </Link>
+              <Link
+                href="/gift-cards"
+                className="text-sm hover:text-primary px-4 py-2"
+              >
+                Gift Cards
+              </Link>
+            </nav>
+          </div>
+        )}
       </div>
     </header>
   );

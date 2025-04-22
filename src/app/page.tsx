@@ -24,7 +24,6 @@ const HomePage = () => {
         const res = await fetch("/api/products");
         const data = await res.json();
 
-        // Safe assignment — ensures `products` is always an array
         const productsData = Array.isArray(data)
           ? data
           : Array.isArray(data.products)
@@ -34,7 +33,7 @@ const HomePage = () => {
         setProducts(productsData);
       } catch (error) {
         console.error("Error fetching products:", error);
-        setProducts([]); // prevent undefined usage
+        setProducts([]);
       } finally {
         setLoading(false);
       }
@@ -47,7 +46,7 @@ const HomePage = () => {
     <>
       <Toaster position="top-right" />
 
-      <div className="space-y-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 space-y-12">
         <HeroSection />
         <FeaturedProducts />
         <TopUpAndBills />
