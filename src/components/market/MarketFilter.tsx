@@ -1,7 +1,7 @@
-// src/components/market/MarketFilter.tsx
 "use client";
 
 import { useState } from "react";
+import { Search } from "lucide-react"; // Icon library
 
 interface MarketFilterProps {
   onSearch: (query: string) => void;
@@ -17,13 +17,17 @@ export const MarketFilter = ({ onSearch }: MarketFilterProps) => {
   };
 
   return (
-    <div className="w-full">
+    <div className="relative w-full max-w-md mx-auto">
+      <Search
+        className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+        size={18}
+      />
       <input
         type="text"
-        placeholder="Search sellers..."
+        placeholder="Search sellers, cities, or regions..."
         value={query}
         onChange={handleChange}
-        className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring focus:ring-blue-200"
+        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-full shadow-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
       />
     </div>
   );

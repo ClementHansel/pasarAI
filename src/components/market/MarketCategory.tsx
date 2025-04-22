@@ -61,12 +61,17 @@ export const MarketCategory = ({ type }: MarketCategoryProps) => {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Market Filter: Allows for searching within the market */}
-      <MarketFilter onSearch={handleFilter} />
+      <div className="flex justify-between items-center">
+        <h2 className="text-xl font-semibold">Search Markets</h2>
+        <MarketFilter onSearch={handleFilter} />
+      </div>
 
       {/* Market View: Renders the market data based on the current filter */}
-      <MarketView type={type} regions={filteredData} />
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <MarketView type={type} regions={filteredData} />
+      </div>
     </div>
   );
 };
