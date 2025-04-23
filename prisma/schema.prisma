@@ -7,25 +7,50 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id              String     @id @default(cuid())
+model Account {
+  id              String    @id @default(cuid())
   name            String
-  email           String     @unique
+  email           String    @unique
   password        String
-  role            Role       @default(CONSUMER)
+  avatar          String?
+  role            Role      @default(CONSUMER)
   phone           String?
   address         String?
   profileImage    String?
   ewallet         String?
-  isVerified      Boolean    @default(false)
+  isVerified      Boolean   @default(false)
   emailVerifiedAt DateTime?
-  createdAt       DateTime   @default(now())
-  updatedAt       DateTime   @updatedAt
-  tokenVersion    Int        @default(0)
-  orders          Order[] // Orders placed by the user
-  reviews         Review[] // Reviews written by the user
-  eventLogs       EventLog[] // Event logs related to user actions
+  tokenVersion    Int       @default(0)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // --- RELATIONS ---
+
+  // Reviews written by this user (as buyer)
+  reviewsGiven    Review[]   @relation("AccountReviews")
+
+  // Reviews received by this user (as seller)
+  reviewsReceived Review[]   @relation("SellerReviews")
+
+  // Event logs created
+  eventLogs       EventLog[] @relation("AccountLogs")
+
+  // Orders placed (as buyer)
+  orders          Order[]    @relation("AccountOrders")
+
+  // Products sold (as seller)
+  products        Product[]  @relation("AccountProducts")
+
+  // Brands owned (as seller)
+  brands          Brand[]    @relation("AccountBrands")
+
+  // Markets joined (as seller)
+  markets         Market[]   @relation("AccountMarkets")
+
+  // Relation to Wallet (one-to-many: one account can have multiple wallets)
+  wallets   Wallet[]
 }
+
 
 model Market {
   id          String    @id @default(cuid())
@@ -34,29 +59,9 @@ model Market {
   location    String    @default("Unknown")
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
-  sellers     Seller[]  @relation("MarketSellers")
+  sellers     Account[] @relation("AccountMarkets")
   products    Product[] // Many-to-one relationship with products
   revenue     Float     @default(0.0)
-}
-
-model Seller {
-  id              String     @id @default(cuid())
-  name            String
-  email           String     @unique
-  password        String
-  role            Role       @default(SELLER)
-  phone           String?
-  address         String?
-  profileImage    String?
-  isVerified      Boolean    @default(false)
-  emailVerifiedAt DateTime?
-  tokenVersion    Int        @default(0)
-  createdAt       DateTime   @default(now())
-  updatedAt       DateTime   @updatedAt
-  markets         Market[]   @relation("MarketSellers")
-  products        Product[] // Many-to-one relationship with products
-  brands          Brand[]    @relation("BrandSellers")
-  eventLogs       EventLog[] // Event logs related to seller actions
 }
 
 model Product {
@@ -64,7 +69,7 @@ model Product {
   name              String
   description       String?
   price             Float
-  originalPrice     Float? // Original price before any discounts
+  originalPrice     Float?      // Original price before any discounts
   image             String?
   stock             Int         @default(0)
   soldCount         Int         @default(0)
@@ -74,24 +79,29 @@ model Product {
   categoryId        String?
   brand             Brand?      @relation(fields: [brandId], references: [id])
   brandId           String?
-  seller            Seller      @relation(fields: [sellerId], references: [id])
-  sellerId          String
+  account           Account     @relation("AccountProducts", fields: [accountId], references: [id])
+  accountId         String
   market            Market      @relation(fields: [marketId], references: [id])
   marketId          String
   orderItems        OrderItem[]
+
+  reviews           Review[]    @relation("ProductReviews") // Reviews for this product
+
   ecoCertifications String?
   origin            String?
   sku               String?     @unique
   isActive          Boolean     @default(true)
   createdAt         DateTime    @default(now())
   updatedAt         DateTime    @updatedAt
-  reviews           Review[]    @relation("ProductReviews")
+
   eventLogs         EventLog[]
   labels            Label[]     @relation("ProductLabels")
-  isNewArrival      Boolean     @default(false) // Flag for new arrivals (product created within 24 hours)
-  isBestSeller      Boolean     @default(false) // Flag for best sellers (manually set or calculated)
-  isOnSale          Boolean     @default(false) // Flag for sale products (discount or voucher)
-  isFeatured        Boolean     @default(false) // Flag for featured products (based on seller promotional package)
+
+  // Promotional flags
+  isNewArrival      Boolean     @default(false) // Product created within 24 hours
+  isBestSeller      Boolean     @default(false) // Manually set or calculated
+  isOnSale          Boolean     @default(false) // Discount or voucher
+  isFeatured        Boolean     @default(false) // Based on seller promotional package
 }
 
 model Category {
@@ -105,11 +115,11 @@ model Category {
 
 model Brand {
   id          String    @id @default(cuid())
-  name        String    
+  name        String
   description String?
   products    Product[] // Products in this category
   label       String? // Optional: "Best Seller", "New Arrival", etc.
-  sellers     Seller[]  @relation("BrandSellers")
+  sellers     Account[] @relation("AccountBrands")
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 }
@@ -132,7 +142,7 @@ model Label {
 
 model Order {
   id              String        @id @default(cuid())
-  buyer           User          @relation(fields: [buyerId], references: [id])
+  buyer           Account       @relation("AccountOrders", fields: [buyerId], references: [id])
   buyerId         String
   status          OrderStatus   @default(PENDING)
   paymentStatus   PaymentStatus @default(PENDING)
@@ -141,8 +151,8 @@ model Order {
   notes           String?
   totalPrice      Float
   orderItems      OrderItem[]
-  giftcard         Giftcard?      @relation("OrderGiftcard", fields: [giftcardId], references: [id])
-  giftcardId       String?
+  giftcard        Giftcard?     @relation("OrderGiftcard", fields: [giftcardId], references: [id])
+  giftcardId      String?
   discountApplied Float         @default(0)
   shippedAt       DateTime?
   createdAt       DateTime      @default(now())
@@ -173,14 +183,22 @@ model Giftcard {
 
 model Review {
   id        String   @id @default(cuid())
-  product   Product  @relation("ProductReviews", fields: [productId], references: [id])
-  productId String
-  user      User     @relation(fields: [userId], references: [id])
-  userId    String
   rating    Int      @default(0)
   comment   String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  // Buyer - the one who wrote the review
+  accountId String
+  account   Account  @relation("AccountReviews", fields: [accountId], references: [id])
+
+  // Seller - the one being reviewed
+  sellerId  String
+  seller    Account  @relation("SellerReviews", fields: [sellerId], references: [id])
+
+  // Related Product (optional)
+  productId String?
+  product   Product? @relation("ProductReviews", fields: [productId], references: [id])
 }
 
 model Transaction {
@@ -195,17 +213,27 @@ model Transaction {
 model EventLog {
   id        String   @id @default(cuid())
   event     String
-  user      User?    @relation(fields: [userId], references: [id])
-  userId    String?
+  account   Account? @relation("AccountLogs", fields: [accountId], references: [id])
+  accountId String
   product   Product? @relation(fields: [productId], references: [id])
   productId String?
-  seller    Seller?  @relation(fields: [sellerId], references: [id])
-  sellerId  String?
   order     Order?   @relation(fields: [orderId], references: [id])
   orderId   String?
   action    String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model Wallet {
+  id        Int    @id @default(autoincrement())
+  accountId String
+  balance   Float  @default(0.0)
+  currency  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relation to the user (if applicable)
+  account   Account  @relation(fields: [accountId], references: [id])
 }
 
 enum Role {
