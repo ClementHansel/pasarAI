@@ -24,7 +24,7 @@ export async function POST(req: Request) {
         console.log("Refresh token verified", { sub, version });
 
         // Optionally, handle any logic if refreshToken is valid.
-        // For example, you can check if the user associated with `sub` exists and is active.
+        // For example, you can check if the account associated with `sub` exists and is active.
       } catch {
         return NextResponse.json(
           { error: "Invalid refresh token" },
@@ -41,8 +41,8 @@ export async function POST(req: Request) {
       );
     }
 
-    // Retrieve the user from the database
-    const user = await prisma.user.findUnique({
+    // Retrieve the account from the database
+    const account = await prisma.account.findUnique({
       where: { email },
       select: {
         id: true,
@@ -55,16 +55,16 @@ export async function POST(req: Request) {
       },
     });
 
-    // Check if the user exists and password is correct
-    if (!user || !(await comparePassword(password, user.password))) {
+    // Check if the account exists and password is correct
+    if (!account || !(await comparePassword(password, account.password))) {
       return NextResponse.json(
         { error: "Invalid credentials" },
         { status: 401 }
       );
     }
 
-    // Check if the user is verified
-    if (!user.isVerified) {
+    // Check if the account is verified
+    if (!account.isVerified) {
       return NextResponse.json(
         { error: "Account not verified" },
         { status: 403 }
@@ -72,27 +72,27 @@ export async function POST(req: Request) {
     }
 
     // Use Prisma Role enum type directly
-    const userRole: Role = user.role;
+    const accountRole: Role = account.role;
 
     // Generate tokens
     const accessToken = generateAccessToken({
-      id: user.id,
-      email: user.email,
-      role: userRole,
+      id: account.id,
+      email: account.email,
+      role: accountRole,
     });
 
     const newRefreshToken = generateRefreshToken({
-      id: user.id,
-      tokenVersion: user.tokenVersion,
+      id: account.id,
+      tokenVersion: account.tokenVersion,
     });
 
     return NextResponse.json({
       message: "Login successful",
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: userRole,
+      account: {
+        id: account.id,
+        name: account.name,
+        email: account.email,
+        role: accountRole,
       },
       accessToken,
       refreshToken: newRefreshToken,
