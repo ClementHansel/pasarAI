@@ -42,6 +42,7 @@ model Account {
   brands          Brand[]    @relation("AccountBrands")
   markets         Market[]   @relation("AccountMarkets")
   wallets         Wallet[]
+  messages        Message[]
 }
 
 model Market {
@@ -258,6 +259,15 @@ model Activity {
   activityType  String
   date          DateTime
   accountId     Int
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  content   String
+  createdAt DateTime @default(now())
+  accountId String
+  account   Account  @relation(fields: [accountId], references: [id])
+  isRead    Boolean  @default(false)  // Whether the message has been read or not
 }
 
 enum Role {

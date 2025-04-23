@@ -34,6 +34,7 @@ export async function createReferralVouchers(
   referredId: string
 ) {
   const amount = 20000; // IDR 20,000
+  const messageContent = `You have received a voucher of IDR 20,000 as part of the referral program!`;
 
   const [referrerVoucher, referredVoucher] = await db.$transaction([
     db.voucher.create({
@@ -59,6 +60,22 @@ export async function createReferralVouchers(
       },
     }),
   ]);
+
+  // Send message to referrer
+  await db.message.create({
+    data: {
+      content: messageContent,
+      accountId: referrerId, // Send the message to the referrer
+    },
+  });
+
+  // Send message to referred user
+  await db.message.create({
+    data: {
+      content: messageContent,
+      accountId: referredId, // Send the message to the referred user
+    },
+  });
 
   return { referrerVoucher, referredVoucher };
 }
