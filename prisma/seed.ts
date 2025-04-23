@@ -86,7 +86,7 @@ async function main() {
     },
   });
 
-  const brand = await prisma.brand.create({
+  const brand = await prisma..create({
     data: {
       name: "All Fresh",
       description: "Hydrophonic Vegetables",
