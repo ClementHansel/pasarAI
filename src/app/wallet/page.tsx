@@ -10,18 +10,34 @@ import {
 import Button from "@/components/common/Button";
 import Input from "@/components/common/Input";
 import { WalletCards, FileText, ArrowUpDown, History } from "lucide-react";
-import TransactionHistory from "@/components/wallet/TransactionHistory";
+import { TransactionHistory } from "@/components/wallet/TransactionHistory";
+import { TransactionFilter } from "@/components/wallet/TransactionFilter";
+import { Transaction } from "@/types/wallet";
 
 const WalletPage = () => {
   const [balance, setBalance] = useState(1500000);
   const [activeTab, setActiveTab] = useState("topup");
   const [amount, setAmount] = useState("");
   const [error, setError] = useState("");
-  const [transactions, setTransactions] = useState([
-    { type: "initial", amount: 1500000, date: "2024-03-01T09:00:00" },
-  ]);
+  const [filter, setFilter] = useState<string>("all");
 
-  const handleTransaction = (type: string) => {
+  // Mock user role - replace with actual auth implementation
+  const userRole: "user" | "seller" = "seller";
+
+  const initialTransactions: Transaction[] = [
+    { type: "initial", amount: 1500000, date: "2024-03-01T09:00:00" },
+    { type: "topup", amount: 500000, date: "2024-03-02T14:30:00" },
+    { type: "withdraw", amount: 200000, date: "2024-03-03T10:15:00" },
+    { type: "bills", amount: 150000, date: "2024-03-04T16:45:00" },
+    ...(userRole === "seller"
+      ? [{ type: "revenue", amount: 2500000, date: "2024-03-05T09:30:00" }]
+      : []),
+  ];
+
+  const [transactions, setTransactions] =
+    useState<Transaction[]>(initialTransactions);
+
+  const handleTransaction = (type: Transaction["type"]) => {
     const numericAmount = Number(amount);
     if (isNaN(numericAmount)) {
       setError("Please enter a valid amount");
@@ -159,13 +175,23 @@ const WalletPage = () => {
         </Tabs>
       </div>
 
-      {/* Transaction History */}
+      {/* Transaction History Section */}
       <div className="mt-8">
-        <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
-          <History className="h-5 w-5" />
-          Transaction History
-        </h3>
-        <TransactionHistory transactions={transactions} />
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-xl font-semibold flex items-center gap-2">
+            <History className="h-5 w-5" />
+            Transaction History
+          </h3>
+          <div>
+            <TransactionFilter onFilterChange={setFilter} userRole={userRole} />
+          </div>
+        </div>
+
+        <TransactionHistory
+          transactions={transactions}
+          filter={filter}
+          userRole={userRole}
+        />
       </div>
 
       {/* Error Message */}
