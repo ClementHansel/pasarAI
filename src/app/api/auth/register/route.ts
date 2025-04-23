@@ -3,17 +3,21 @@
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 import { hashPassword } from "@/lib/auth/authUtils";
-import cuid from "cuid";
+import { generateReferralCode } from "@/lib/referral/referralUtils";
+import { createReferralVouchers } from "@/lib/voucher/generateVoucherCode";
 
-// Initialize Prisma client
 const prisma = new PrismaClient();
 
 export async function POST(req: Request) {
   try {
-    // Parse incoming JSON data
-    const { name, email, password, role } = await req.json();
+    const {
+      name,
+      email,
+      password,
+      role,
+      referralCode: usedCode,
+    } = await req.json();
 
-    // Input validation
     if (!name || !email || !password) {
       return NextResponse.json(
         { error: "Missing required fields" },
@@ -21,11 +25,9 @@ export async function POST(req: Request) {
       );
     }
 
-    // Ensure role is either account or SELLER, default to account
     const accountRole =
       role && (role === "SELLER" || role === "account") ? role : "account";
 
-    // Check if the account already exists
     const existingAccount = await prisma.account.findUnique({
       where: { email },
     });
@@ -36,28 +38,46 @@ export async function POST(req: Request) {
       );
     }
 
-    // Hash the password
     const hashedPassword = await hashPassword(password);
+    const newReferralCode = generateReferralCode();
 
-    // Create a new account
     const newAccount = await prisma.account.create({
       data: {
         name,
         email,
         password: hashedPassword,
         role: accountRole,
-        referralCode: cuid(),
+        referralCode: newReferralCode,
       },
     });
 
-    // Respond with success
+    // Handle referral logic
+    if (usedCode) {
+      const referrer = await prisma.account.findUnique({
+        where: { referralCode: usedCode },
+      });
+
+      if (referrer) {
+        await prisma.referral.create({
+          data: {
+            referrerId: referrer.id,
+            referredId: newAccount.id,
+          },
+        });
+
+        // Trigger referral voucher for both
+        await createReferralVouchers(referrer.id, newAccount.id);
+      }
+    }
+
     return NextResponse.json({
       message: "account registered successfully",
       account: {
         id: newAccount.id,
         email: newAccount.email,
         name: newAccount.name,
-        role: newAccount.role, // Include role in response
+        role: newAccount.role,
+        referralCode: newReferralCode,
       },
     });
   } catch (error) {

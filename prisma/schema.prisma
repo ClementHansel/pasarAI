@@ -23,7 +23,7 @@ model Account {
   tokenVersion    Int       @default(0)
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
-  referralCode    String    @unique
+  referralCode    String    @unique @default("")
 
   // Self-referencing relation
   referredById    String?
@@ -166,8 +166,11 @@ model OrderItem {
 model Voucher {
   id        String   @id @default(cuid())
   code      String   @unique
-  discount  Float // Discount amount or percentage
+  discount  Float? // Discount amount or percentage
+  value     Float?
   isActive  Boolean  @default(true)
+  type      String    // "manual" or "referral"
+  createdBy String?   // who created this voucher (user id or "system")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   orders    Order[]  @relation("OrderVoucher")
@@ -235,10 +238,8 @@ model Referral {
   referrer    Account  @relation("Referrer", fields: [referrerId], references: [id])
   referredId  String
   referred    Account  @relation("Referred", fields: [referredId], references: [id])
-
   voucherId  String?
   voucher    Voucher? @relation(fields: [voucherId], references: [id])
-
   createdAt   DateTime @default(now())
 }
 
