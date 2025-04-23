@@ -1,158 +1,179 @@
+// src/components/product/ProductCard.tsx
 "use client";
 
-import { useState } from "react";
+import { cn } from "@/lib/utils";
 import Link from "next/link";
 import Image from "next/image";
-import { ShoppingCart, Star } from "lucide-react";
+import { ShoppingCart, Star, Heart, MapPin } from "lucide-react";
 import { toast } from "react-hot-toast";
+import type { Product } from "@/types/product";
+import { useState } from "react";
 
-interface ProductCardProps {
-  id: string;
-  name: string;
-  price: number;
-  description: string;
-  imageUrl: string;
-  rating?: number;
-  labels?: { name: string; id: string };
-  discount?: number;
-  badgeText?: string; // e.g. "New" or "Best Seller"
+interface ProductCardProps extends Product {
+  viewMode?: "grid" | "list";
 }
 
-const ProductCard: React.FC<ProductCardProps> = ({
+const ProductCard = ({
   id,
   name,
-  price,
+  price = 0,
   description,
-  imageUrl,
+  imageUrls,
   rating = 0,
+  category,
+  stock,
+  discount = 0,
+  viewMode = "grid",
   labels,
-  discount,
-  badgeText,
-}) => {
-  const [isImageLoaded, setIsImageLoaded] = useState(false);
+  brand,
+}: ProductCardProps) => {
   const [isAdding, setIsAdding] = useState(false);
+  const discountedPrice = price * (1 - discount / 100);
 
-  const handleAddToCart = async (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.stopPropagation();
-    setIsAdding(true);
-    try {
-      const res = await fetch("/api/cart", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id, name, price, quantity: 1, labels }),
-      });
-      if (!res.ok) throw new Error("Failed to add to cart");
-      toast.success(`${name} added to cart!`);
-    } catch {
-      toast.error("Failed to add to cart.");
-    } finally {
-      setIsAdding(false);
-    }
-  };
-
-  const discountedPrice = discount
-    ? ((price * (100 - discount)) / 100).toFixed(2)
-    : price.toFixed(2);
-
-  return (
-    <Link
-      href={`/products/${id}`}
-      className="group bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden cursor-pointer h-full flex flex-col"
-    >
-      {/* Image */}
-      <div className="relative w-full aspect-square overflow-hidden">
-        {!isImageLoaded && (
-          <div className="absolute inset-0 bg-gray-100 animate-pulse" />
-        )}
-        <Image
-          src={imageUrl}
-          alt={name}
-          fill
-          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-          className={`object-cover transition-transform duration-500 group-hover:scale-110 ${
-            isImageLoaded ? "opacity-100" : "opacity-0"
-          }`}
-          onLoad={() => setIsImageLoaded(true)}
-          loading="lazy"
-          placeholder="blur"
-          blurDataURL="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhESMIAAAAABJRU5ErkJggg=="
-        />
-      </div>
-
-      {/* Content */}
-      <div className="p-4 flex-1 flex flex-col">
-        <h3 className="text-base font-semibold line-clamp-1 group-hover:text-blue-600 transition-colors">
-          {name}
-        </h3>
-
-        {/* Badge Placeholder */}
-        <div className="h-5 mt-1">
-          {badgeText && (
-            <span className="text-xs font-medium px-2 py-0.5 bg-green-100 text-green-800 rounded-full">
-              {badgeText}
-            </span>
+  if (viewMode === "list") {
+    return (
+      <div className="group flex items-center gap-6 bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-300 border border-gray-100 hover:border-blue-300">
+        <div className="relative w-48 h-48 flex-shrink-0">
+          <Image
+            src={imageUrls[0]}
+            alt={name}
+            fill
+            className="object-cover rounded-lg"
+            loading="lazy"
+          />
+          {discount > 0 && (
+            <div className="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 rounded-md text-sm">
+              -{discount}%
+            </div>
           )}
         </div>
 
-        {/* Description */}
-        <p className="text-gray-600 text-sm line-clamp-2 my-2">{description}</p>
+        <div className="flex-1 space-y-2">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xl font-semibold">{name}</h3>
+            <div className="flex items-center gap-2">
+              {brand?.map((b) => (
+                <span
+                  key={b.id}
+                  className="text-sm bg-gray-100 px-2 py-1 rounded"
+                >
+                  {b.name}
+                </span>
+              ))}
+            </div>
+          </div>
 
-        {/* Rating Stars Only */}
-        {rating > 0 && (
-          <div className="flex items-center gap-1 mb-3">
-            {Array.from({ length: 5 }).map((_, idx) => (
+          <div className="flex items-center gap-2">
+            {Array.from({ length: 5 }).map((_, i) => (
               <Star
-                key={idx}
+                key={i}
                 className={`w-4 h-4 ${
-                  idx < rating
-                    ? "text-yellow-400 fill-current"
-                    : "text-gray-300"
+                  i < rating ? "text-yellow-400 fill-current" : "text-gray-300"
                 }`}
               />
             ))}
           </div>
+
+          <p className="text-gray-600 line-clamp-2">{description}</p>
+
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <div className="text-2xl font-bold text-blue-600">
+                ${discountedPrice.toFixed(2)}
+                {discount > 0 && (
+                  <span className="ml-2 text-sm text-gray-500 line-through">
+                    ${price.toFixed(2)}
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-2 text-sm">
+                <MapPin className="w-4 h-4" />
+                <span>{labels?.[0]?.name || "Global"}</span>
+              </div>
+            </div>
+
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                // Handle add to cart
+              }}
+              className="flex items-center gap-2 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
+            >
+              <ShoppingCart className="w-5 h-5" />
+              <span>Add to Cart</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Grid View
+  return (
+    <Link
+      href={`/products/${id}`}
+      className="group bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden cursor-pointer h-full flex flex-col"
+    >
+      <div className="relative aspect-square">
+        <Image
+          src={imageUrls[0]}
+          alt={name}
+          fill
+          className="object-cover group-hover:scale-105 transition-transform"
+          loading="lazy"
+        />
+        {discount > 0 && (
+          <div className="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 rounded-md text-sm">
+            -{discount}%
+          </div>
         )}
       </div>
 
-      {/* Footer: Fixed layout for price & cart */}
-      <div className="relative px-4 pb-4 pt-1 border-t min-h-[4.5rem]">
-        <div className="flex items-end justify-between h-full">
-          {/* Price Block */}
-          <div className="flex flex-col justify-center">
-            {discount ? (
-              <>
-                <span className="text-sm text-gray-500 line-through mb-1">
-                  ${price.toFixed(2)}
-                </span>
-                <div className="flex items-center gap-1">
-                  <span className="text-lg font-bold text-blue-600">
-                    ${discountedPrice}
-                  </span>
-                  <span className="text-xs text-red-500">-{discount}%</span>
-                </div>
-              </>
-            ) : (
-              <>
-                <span className="text-sm text-transparent mb-1">&nbsp;</span>
-                <span className="text-lg font-bold text-blue-600">
-                  ${price.toFixed(2)}
-                </span>
-              </>
-            )}
-          </div>
+      <div className="p-4 flex-1 flex flex-col">
+        <div className="flex justify-between items-start">
+          <h3 className="text-lg font-semibold">{name}</h3>
+          <span className="text-sm bg-gray-100 px-2 py-1 rounded">
+            {category?.name}
+          </span>
+        </div>
 
-          {/* Add to Cart Button */}
-          <button
-            onClick={handleAddToCart}
-            disabled={isAdding}
-            className="flex items-center gap-2 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:bg-blue-400"
-            aria-label="Add to cart"
-          >
-            <ShoppingCart className="w-5 h-5" />
-            <span className="hidden sm:inline text-sm">
-              {isAdding ? "Adding..." : "Add"}
+        <div className="mt-2 flex items-center gap-1">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <Star
+              key={i}
+              className={`w-4 h-4 ${
+                i < rating ? "text-yellow-400 fill-current" : "text-gray-300"
+              }`}
+            />
+          ))}
+        </div>
+
+        <p className="text-gray-600 text-sm line-clamp-2 mt-2">{description}</p>
+
+        <div className="mt-auto pt-4">
+          <div className="flex justify-between items-center">
+            <div>
+              <span className="text-xl font-bold text-blue-600">
+                ${discountedPrice.toFixed(2)}
+              </span>
+              {discount > 0 && (
+                <span className="ml-2 text-sm text-gray-500 line-through">
+                  ${price.toFixed(2)}
+                </span>
+              )}
+            </div>
+            <span
+              className={`text-sm px-2 py-1 rounded ${
+                stock > 10
+                  ? "bg-green-100 text-green-700"
+                  : stock > 0
+                  ? "bg-yellow-100 text-yellow-700"
+                  : "bg-red-100 text-red-700"
+              }`}
+            >
+              {stock > 0 ? `${stock} in stock` : "Out of stock"}
             </span>
-          </button>
+          </div>
         </div>
       </div>
     </Link>

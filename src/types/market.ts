@@ -14,6 +14,11 @@ export interface Seller {
   id: string; // Unique identifier for the seller
   name: string; // Name of the seller
   currency: Currency; // The currency that the seller uses (IDR, USD, etc.)
+  rating?: number; // Optional rating of the seller (out of 5)
+  location?: string; // Optional location of the seller
+  productCount?: number; // Optional count of products the seller has
+  joinDate?: string; // Optional date when the seller joined
+  verified?: boolean; // Optional verification status
 }
 
 // City interface representing a city's details

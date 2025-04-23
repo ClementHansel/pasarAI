@@ -11,9 +11,25 @@ import CartPopover from "./CartPopover";
 import CategoriesNav from "./CategoriesNav";
 import Link from "next/link";
 import { Menu } from "lucide-react";
+import { usePathname } from "next/navigation";
 
 const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const pathname = usePathname();
+
+  const mainNavItems = [
+    { href: "/market", label: "Market" },
+    { href: "/product", label: "Products" },
+  ];
+
+  const homepageOnlyNav = [
+    { href: "/featured-product", label: "Featured Product" },
+    { href: "/top-up-and-bills", label: "Top up & Bills" },
+    { href: "/all-products", label: "All Products" },
+    { href: "/gift-cards", label: "Gift Cards" },
+  ];
+
+  const showHomepageNav = pathname === "/";
 
   return (
     <header className="w-full bg-white border-b sticky top-0 z-50">
@@ -59,36 +75,26 @@ const Header = () => {
         <nav className="hidden lg:flex items-center justify-between py-3">
           <CategoriesNav />
           <div className="flex items-center space-x-6">
-            <Link
-              href="/deals"
-              className="underline-hover-effect text-sm hover:text-primary transition-colors"
-            >
-              Deals
-            </Link>
-            <Link
-              href="/new-arrivals"
-              className="underline-hover-effect text-sm hover:text-primary transition-colors"
-            >
-              Recent Searches
-            </Link>
-            <Link
-              href="/trending"
-              className="underline-hover-effect text-sm hover:text-primary transition-colors"
-            >
-              Trending
-            </Link>
-            <Link
-              href="/brands"
-              className="underline-hover-effect text-sm hover:text-primary transition-colors"
-            >
-              Brands
-            </Link>
-            <Link
-              href="/gift-cards"
-              className="underline-hover-effect text-sm hover:text-primary transition-colors"
-            >
-              Gift Cards
-            </Link>
+            {mainNavItems.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="underline-hover-effect text-sm hover:text-primary transition-colors"
+              >
+                {item.label}
+              </Link>
+            ))}
+
+            {showHomepageNav &&
+              homepageOnlyNav.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="underline-hover-effect text-sm hover:text-primary transition-colors"
+                >
+                  {item.label}
+                </Link>
+              ))}
           </div>
         </nav>
 
@@ -96,36 +102,26 @@ const Header = () => {
         {isMobileMenuOpen && (
           <div className="lg:hidden py-4 border-t">
             <nav className="flex flex-col space-y-4">
-              <Link
-                href="/deals"
-                className="underline-hover-effect text-sm hover:text-primary px-4 py-2"
-              >
-                Deals
-              </Link>
-              <Link
-                href="/new-arrivals"
-                className="underline-hover-effect text-sm hover:text-primary px-4 py-2"
-              >
-                Recent Searches
-              </Link>
-              <Link
-                href="/trending"
-                className="underline-hover-effect text-sm hover:text-primary px-4 py-2"
-              >
-                Trending
-              </Link>
-              <Link
-                href="/brands"
-                className="underline-hover-effect text-sm hover:text-primary px-4 py-2"
-              >
-                Brands
-              </Link>
-              <Link
-                href="/gift-cards"
-                className="underline-hover-effect text-sm hover:text-primary px-4 py-2"
-              >
-                Gift Cards
-              </Link>
+              {mainNavItems.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="underline-hover-effect text-sm hover:text-primary px-4 py-2"
+                >
+                  {item.label}
+                </Link>
+              ))}
+
+              {showHomepageNav &&
+                homepageOnlyNav.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className="underline-hover-effect text-sm hover:text-primary px-4 py-2"
+                  >
+                    {item.label}
+                  </Link>
+                ))}
             </nav>
           </div>
         )}

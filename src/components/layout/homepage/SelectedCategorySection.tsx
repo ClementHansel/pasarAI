@@ -4,7 +4,7 @@
 
 import React from "react";
 import CategoryButtons from "./CategoryButtons";
-import ProductCard from "@/components/product/ProductCard";
+import ProductCard from "./ProductCard";
 
 const mockSelectedCategoryProducts = [
   {

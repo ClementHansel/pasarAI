@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from "react";
-import ProductCard from "@/components/product/ProductCard";
+import ProductCard from "./ProductCard";
+import { Product } from "@/types/product";
 
 const pictureNotFound = "/images/picture-not-found.png";
 // Enhanced mock data with better images and more details
-const mockFeaturedProducts = [
+const mockFeaturedProducts: Product[] = [
   {
-    id: "1",
+    id: 1,
     name: "Wireless Noise-Cancelling Headphones",
     price: 129.99,
     description:
@@ -25,7 +26,7 @@ const mockFeaturedProducts = [
     labels: { name: "New", id: "new" },
   },
   {
-    id: "3",
+    id: 3,
     name: "Portable Bluetooth Speaker",
     price: 89.99,
     description:
@@ -35,7 +36,7 @@ const mockFeaturedProducts = [
     discount: 10,
   },
   {
-    id: "4",
+    id: 4,
     name: "Ultra-thin Laptop",
     price: 899.99,
     description:

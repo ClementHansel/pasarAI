@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import ProductCard from "@/components/product/ProductCard";
+import ProductCard from "./ProductCard";
 import SkeletonCard from "@/components/ui/SkeletonCard";
 
 const PICTURE_NOT_FOUND = "/images/picture-not-found.png";
