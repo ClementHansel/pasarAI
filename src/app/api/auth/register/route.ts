@@ -20,15 +20,17 @@ export async function POST(req: Request) {
       );
     }
 
-    // Ensure role is either USER or SELLER, default to USER
-    const userRole =
-      role && (role === "SELLER" || role === "USER") ? role : "USER";
+    // Ensure role is either account or SELLER, default to account
+    const accountRole =
+      role && (role === "SELLER" || role === "account") ? role : "account";
 
-    // Check if the user already exists
-    const existingUser = await prisma.user.findUnique({ where: { email } });
-    if (existingUser) {
+    // Check if the account already exists
+    const existingAccount = await prisma.account.findUnique({
+      where: { email },
+    });
+    if (existingAccount) {
       return NextResponse.json(
-        { error: "User already exists" },
+        { error: "account already exists" },
         { status: 409 }
       );
     }
@@ -36,24 +38,24 @@ export async function POST(req: Request) {
     // Hash the password
     const hashedPassword = await hashPassword(password);
 
-    // Create a new user
-    const newUser = await prisma.user.create({
+    // Create a new account
+    const newAccount = await prisma.account.create({
       data: {
         name,
         email,
         password: hashedPassword,
-        role: userRole, // Set role to USER or SELLER
+        role: accountRole, // Set role to account or SELLER
       },
     });
 
     // Respond with success
     return NextResponse.json({
-      message: "User registered successfully",
-      user: {
-        id: newUser.id,
-        email: newUser.email,
-        name: newUser.name,
-        role: newUser.role, // Include role in response
+      message: "account registered successfully",
+      account: {
+        id: newAccount.id,
+        email: newAccount.email,
+        name: newAccount.name,
+        role: newAccount.role, // Include role in response
       },
     });
   } catch (error) {
