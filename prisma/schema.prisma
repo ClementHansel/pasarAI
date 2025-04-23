@@ -23,34 +23,26 @@ model Account {
   tokenVersion    Int       @default(0)
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
+  referralCode    String    @unique
 
-  // --- RELATIONS ---
+  // Self-referencing relation
+  referredById    String?
+  referredBy      Account?  @relation("AccountReferrals", fields: [referredById], references: [id])
+  referrals       Account[] @relation("AccountReferrals")
 
-  // Reviews written by this user (as buyer)
+  // Other relations
+  referralsMade   Referral[] @relation("Referrer")
+  referralsReceived Referral[] @relation("Referred")
+
   reviewsGiven    Review[]   @relation("AccountReviews")
-
-  // Reviews received by this user (as seller)
   reviewsReceived Review[]   @relation("SellerReviews")
-
-  // Event logs created
   eventLogs       EventLog[] @relation("AccountLogs")
-
-  // Orders placed (as buyer)
   orders          Order[]    @relation("AccountOrders")
-
-  // Products sold (as seller)
   products        Product[]  @relation("AccountProducts")
-
-  // Brands owned (as seller)
   brands          Brand[]    @relation("AccountBrands")
-
-  // Markets joined (as seller)
   markets         Market[]   @relation("AccountMarkets")
-
-  // Relation to Wallet (one-to-many: one account can have multiple wallets)
-  wallets   Wallet[]
+  wallets         Wallet[]
 }
-
 
 model Market {
   id          String    @id @default(cuid())
@@ -179,6 +171,7 @@ model Giftcard {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   orders    Order[]  @relation("OrderGiftcard")
+  referrals  Referral[]
 }
 
 model Review {
@@ -234,6 +227,36 @@ model Wallet {
 
   // Relation to the user (if applicable)
   account   Account  @relation(fields: [accountId], references: [id])
+}
+
+model Referral {
+  id          String   @id @default(cuid())
+  referrerId  String
+  referrer    Account  @relation("Referrer", fields: [referrerId], references: [id])
+  referredId  String
+  referred    Account  @relation("Referred", fields: [referredId], references: [id])
+
+  giftcardId  String?
+  giftcard    Giftcard? @relation(fields: [giftcardId], references: [id])
+
+  createdAt   DateTime @default(now())
+}
+
+model Sales {
+  id        Int      @id @default(autoincrement())
+  amount    Float
+  date      DateTime
+  productId Int
+  accountId Int
+  role      String
+}
+
+model Activity {
+  id            Int      @id @default(autoincrement())
+  productId     Int
+  activityType  String
+  date          DateTime
+  accountId     Int
 }
 
 enum Role {

@@ -1,4 +1,4 @@
-import { db } from "@/lib/db";
+import { db } from "@/lib/db/db";
 import { NextRequest, NextResponse } from "next/server";
 
 // GET: /api/reviews/product?productId=xxx

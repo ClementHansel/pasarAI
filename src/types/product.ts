@@ -23,6 +23,7 @@ export type Product = {
   discount?: number;
   isFeatured?: boolean;
   isActive?: boolean;
+  accountId: string;
 };
 
 // Product creation input type (for creating new products)
@@ -50,15 +51,15 @@ export type UpdateProductInput = {
 
 // Product with additional user-related information (e.g., for showing the seller's info in a marketplace)
 export type ProductWithUser = Product & {
-  sellerId: number; // ID of the seller who owns the product
-  sellerName: string; // Name of the seller
-  sellerRating: number; // Rating of the seller (for marketplace scenarios)
+  accountId: number; // ID of the seller who owns the product
+  accountName: string; // Name of the seller
+  accountRating: number; // Rating of the seller (for marketplace scenarios)
 };
 
 // Review Type (related to product reviews)
 export type Review = {
   id: number; // Unique identifier for the review
-  userId: number; // ID of the user who posted the review
+  accountId: number; // ID of the user who posted the review
   rating: number; // Rating given in the review (e.g., out of 5)
   comment: string; // Text comment in the review
   createdAt: Date; // When the review was posted

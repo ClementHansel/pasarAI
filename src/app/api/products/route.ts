@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
-import { categorizeProduct } from "@/lib/productCategorization";
+
 import { z } from "zod";
-import { db } from "@/lib/db";
+import { db } from "@/lib/db/db";
+import { categorizeProduct } from "@/lib/db/productCategorization";
 
 const prisma = new PrismaClient();
 
@@ -26,7 +27,7 @@ const productSchema = z.object({
   origin: z.string().optional(),
   sku: z.string().optional(),
   isActive: z.boolean().optional(),
-  sellerId: z.string(),
+  accountId: z.string(),
   marketId: z.string(),
   label: z.string(),
   createdAt: z.string().optional(),
@@ -55,7 +56,7 @@ export async function GET() {
     const products = await db.product.findMany({
       include: {
         category: true,
-        seller: true,
+        account: true,
         reviews: true,
         tags: true,
         labels: true,
@@ -101,7 +102,7 @@ export async function POST(req: Request) {
       origin,
       sku,
       isActive,
-      sellerId,
+      accountId,
       marketId,
       label,
       createdAt,
@@ -173,7 +174,7 @@ export async function POST(req: Request) {
         origin,
         sku,
         isActive,
-        sellerId,
+        accountId,
         marketId,
         tags: formatTagsForCreateOrUpdate(tags),
         labels: {
@@ -218,11 +219,11 @@ export async function PUT(req: Request) {
       origin,
       sku,
       isActive,
-      sellerId,
+      accountId,
       categoryLabel,
     } = body;
 
-    if (!id || !name || !price || !sku || !sellerId) {
+    if (!id || !name || !price || !sku || !accountId) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 }
@@ -262,7 +263,7 @@ export async function PUT(req: Request) {
         origin,
         sku,
         isActive,
-        sellerId,
+        accountId,
         tags: {
           set: [],
           ...formatTagsForCreateOrUpdate(tags),

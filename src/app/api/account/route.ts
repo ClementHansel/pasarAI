@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
+import cuid from "cuid";
 
 const prisma = new PrismaClient();
 
@@ -30,7 +31,13 @@ export async function POST(request: Request) {
     }
 
     const newaccount = await prisma.account.create({
-      data: { name, email, avatar, password },
+      data: {
+        name,
+        email,
+        avatar,
+        password,
+        referralCode: cuid(), // Use a function like cuid() to generate a unique referral code
+      },
     });
 
     return NextResponse.json(newaccount, { status: 201 });

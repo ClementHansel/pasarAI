@@ -3,6 +3,7 @@
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 import { hashPassword } from "@/lib/auth/authUtils";
+import cuid from "cuid";
 
 // Initialize Prisma client
 const prisma = new PrismaClient();
@@ -44,7 +45,8 @@ export async function POST(req: Request) {
         name,
         email,
         password: hashedPassword,
-        role: accountRole, // Set role to account or SELLER
+        role: accountRole,
+        referralCode: cuid(),
       },
     });
 
