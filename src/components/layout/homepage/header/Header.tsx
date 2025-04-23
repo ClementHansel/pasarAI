@@ -69,7 +69,7 @@ const Header = () => {
               href="/new-arrivals"
               className="underline-hover-effect text-sm hover:text-primary transition-colors"
             >
-              New Arrivals
+              Recent Searches
             </Link>
             <Link
               href="/trending"
@@ -106,7 +106,7 @@ const Header = () => {
                 href="/new-arrivals"
                 className="underline-hover-effect text-sm hover:text-primary px-4 py-2"
               >
-                New Arrivals
+                Recent Searches
               </Link>
               <Link
                 href="/trending"

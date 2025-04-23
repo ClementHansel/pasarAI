@@ -1,4 +1,5 @@
 // src/components/layout/homepage/HeroSection.tsx
+
 "use client";
 
 import React, { useCallback, useEffect } from "react";
@@ -6,25 +7,35 @@ import useEmblaCarousel from "embla-carousel-react";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import Image from "next/image";
+import SkeletonCard from "../../ui/SkeletonCard";
 
-const slides = [
+// Do NOT import picture-not-found.png; use its absolute public path.
+const pictureNotFound = "/images/picture-not-found.png";
+
+const slides: {
+  id: number;
+  image: string | null;
+  title: string;
+  description: string;
+  link: string;
+}[] = [
   {
     id: 1,
-    image: "/images/carousel/slide1.jpg",
+    image: null,
     title: "New Arrivals",
     description: "Check out our latest collection",
     link: "/products/new-arrivals",
   },
   {
     id: 2,
-    image: "/images/carousel/slide2.jpg",
+    image: null,
     title: "Summer Sale",
     description: "Up to 50% off on selected items",
     link: "/products/sale",
   },
   {
     id: 3,
-    image: "/images/carousel/slide3.jpg",
+    image: null,
     title: "Featured Products",
     description: "Discover our most popular items",
     link: "/products/featured",
@@ -33,6 +44,7 @@ const slides = [
 
 const HeroSection = () => {
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true, duration: 30 });
+  const [loading, setLoading] = React.useState(true);
 
   const scrollPrev = useCallback(() => {
     if (emblaApi) emblaApi.scrollPrev();
@@ -47,10 +59,25 @@ const HeroSection = () => {
 
     const interval = setInterval(() => {
       emblaApi.scrollNext();
-    }, 3000); // Change slide every 3 seconds
+    }, 10000);
 
     return () => clearInterval(interval);
   }, [emblaApi]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setLoading(false), 2000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <SkeletonCard />
+        <SkeletonCard />
+        <SkeletonCard />
+      </div>
+    );
+  }
 
   return (
     <section className="relative overflow-hidden">
@@ -64,11 +91,12 @@ const HeroSection = () => {
             >
               <div className="relative h-[500px] w-full">
                 <Image
-                  src={slide.image}
+                  src={slide.image || pictureNotFound}
                   alt={slide.title}
-                  layout="fill"
-                  objectFit="cover"
+                  fill
                   className="absolute inset-0 w-full h-full object-cover"
+                  sizes="100vw"
+                  // No onError needed – Next.js handles fallback if the png is missing
                 />
                 <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center">
                   <div className="text-center text-white">

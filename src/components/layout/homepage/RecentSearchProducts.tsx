@@ -1,9 +1,7 @@
-// src/components/layout/homepage/RecentSearchProducts.tsx
-
 "use client";
 
 import React from "react";
-import ProductCard from "@/components/market/ProductCard";
+import ProductCard from "@/components/product/ProductCard";
 
 const mockRecentSearchProducts = [
   {
@@ -31,12 +29,29 @@ const mockRecentSearchProducts = [
 
 const RecentSearchProducts = () => {
   return (
-    <section className="py-8">
-      <h2 className="text-2xl font-bold mb-4">Recent Searches</h2>
-      <div className="flex space-x-4 overflow-x-auto">
-        {mockRecentSearchProducts.map((product) => (
-          <ProductCard key={product.id} {...product} />
-        ))}
+    <section className="py-12 px-4">
+      <div className="max-w-7xl mx-auto">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
+          <div>
+            <h2 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-blue-800">
+              Recent Searches
+            </h2>
+            <p className="text-gray-600 mt-2">
+              Your recently viewed or searched products
+            </p>
+          </div>
+          {/* Optionally, you could add a "Clear" or "View All" button here */}
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {mockRecentSearchProducts.map((product) => (
+            <ProductCard
+              key={product.id}
+              {...product}
+              imageUrl={product.imageUrl || "/images/picture-not-found.png"}
+            />
+          ))}
+        </div>
       </div>
     </section>
   );
