@@ -843,6 +843,7 @@ async function main() {
       buyerId: user1.id,
       status: OrderStatus.COMPLETED,
       paymentStatus: PaymentStatus.COMPLETED,
+      paymentMethod: "Wallet",
       shippingAddress: "123 Ocean Ave",
       notes: "Please pack with care",
       totalPrice: 6.49,
