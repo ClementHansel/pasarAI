@@ -136,6 +136,7 @@ model Order {
   buyerId         String
   status          OrderStatus   @default(PENDING)
   paymentStatus   PaymentStatus @default(PENDING)
+  paymentMethod   String
   shippingAddress String
   notes           String?
   totalPrice      Float
@@ -225,4 +226,8 @@ enum PaymentStatus {
   COMPLETED
   FAILED
   REFUNDED
+}
+
+enum PaymentMethod {
+  Wallet
 }

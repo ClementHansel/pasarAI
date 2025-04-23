@@ -90,7 +90,7 @@ async function main() {
     data: {
       name: "All Fresh",
       description: "Hydrophonic Vegetables",
-      seller: {
+      sellers: {
         connect: [{ id: seller1.id }, { id: seller2.id }],
       },
     },
