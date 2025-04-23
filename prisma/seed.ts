@@ -96,6 +96,7 @@ async function main() {
     },
   });
   console.log("✅ Brand created");
+  console.log("✅ Brand created");
 
   // 4. Categories & Tags
   const [catFruit, catVeg] = await Promise.all([
