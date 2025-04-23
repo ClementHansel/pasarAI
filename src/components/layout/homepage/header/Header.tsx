@@ -17,19 +17,38 @@ const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const pathname = usePathname();
 
+  // Check if we're on auth pages (login/register)
+  const isAuthPage = pathname === "/login" || pathname === "/register";
+
+  // Check if we're on the homepage
+  const isHomePage = pathname === "/";
+
+  // Define navigation items based on page type
   const mainNavItems = [
     { href: "/market", label: "Market" },
     { href: "/product", label: "Products" },
+    { href: "/wallet", label: "Wallet" },
   ];
 
   const homepageOnlyNav = [
-    { href: "/featured-product", label: "Featured Product" },
-    { href: "/top-up-and-bills", label: "Top up & Bills" },
-    { href: "/all-products", label: "All Products" },
-    { href: "/gift-cards", label: "Gift Cards" },
+    { href: "/#featured-product", label: "Featured Product" },
+    { href: "/#topupandbills", label: "Top up & Bills" },
+    { href: "/#all-products", label: "All Products" },
+    { href: "/#gift-cards", label: "Gift Cards" },
   ];
 
-  const showHomepageNav = pathname === "/";
+  // If we're on an auth page, only show the logo
+  if (isAuthPage) {
+    return (
+      <header className="w-full bg-white border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
+          <div className="flex items-center justify-center py-4">
+            <Logo />
+          </div>
+        </div>
+      </header>
+    );
+  }
 
   return (
     <header className="w-full bg-white border-b sticky top-0 z-50">
@@ -85,7 +104,7 @@ const Header = () => {
               </Link>
             ))}
 
-            {showHomepageNav &&
+            {isHomePage &&
               homepageOnlyNav.map((item) => (
                 <Link
                   key={item.href}
@@ -112,7 +131,7 @@ const Header = () => {
                 </Link>
               ))}
 
-              {showHomepageNav &&
+              {isHomePage &&
                 homepageOnlyNav.map((item) => (
                   <Link
                     key={item.href}
