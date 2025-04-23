@@ -2,24 +2,16 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-
-import Button from "@/components/common/Button";
-import Input from "@/components/common/Input";
 import Link from "next/link";
+import LoginForm from "@/components/auth/LoginForm";
+import { toast } from "react-hot-toast";
 
 export default function LoginPage() {
   const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setError(null);
-    setLoading(true);
-
+  const handleLogin = async (email: string, password: string) => {
+    setIsLoading(true);
     try {
       const res = await fetch("/api/auth/login", {
         method: "POST",
@@ -33,64 +25,47 @@ export default function LoginPage() {
         throw new Error(data.error || "Login failed");
       }
 
-      // Store tokens (example: localStorage or cookie)
       localStorage.setItem("accessToken", data.accessToken);
       localStorage.setItem("refreshToken", data.refreshToken);
-
-      // Optional: Store user info in context/localStorage
       localStorage.setItem("user", JSON.stringify(data.user));
 
+      toast.success("Successfully logged in!");
       router.push("/dashboard");
     } catch (err) {
       if (err instanceof Error) {
-        setError(err.message);
+        toast.error(err.message);
       } else {
-        setError("Something went wrong");
+        toast.error("An error occurred during login");
       }
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 p-6">
-      <form
-        onSubmit={handleLogin}
-        className="w-full max-w-sm p-6 bg-white rounded-xl shadow-md space-y-4"
-      >
-        <h2 className="text-2xl font-bold text-center">Login</h2>
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-2xl shadow-lg">
+        <div className="text-center">
+          <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
+            Welcome back
+          </h2>
+          <p className="mt-2 text-sm text-gray-600">
+            Please sign in to your account
+          </p>
+        </div>
 
-        {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+        <LoginForm onLogin={handleLogin} />
 
-        <Input
-          label="Email"
-          type="email"
-          value={email}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-            setEmail(e.target.value)
-          }
-          required
-        />
-
-        <Input
-          label="Password"
-          type="password"
-          value={password}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-            setPassword(e.target.value)
-          }
-          required
-        />
-
-        <Button type="submit" loading={loading} className="w-full">
-          Login
-        </Button>
-
-        <p className="text-sm text-center text-gray-500">
-          Don’t have an account?{" "}
-          <Link href="/register" className="text-blue-600 hover:underline">
-            Register
+        <p className="mt-4 text-center text-sm text-gray-600">
+          Don&apos;t have an account?{" "}
+          <Link
+            href="/register"
+            className="font-medium text-blue-600 hover:text-blue-500"
+          >
+            Sign up
           </Link>
         </p>
-      </form>
+      </div>
     </div>
   );
 }
