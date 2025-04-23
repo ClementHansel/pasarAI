@@ -143,8 +143,8 @@ model Order {
   notes           String?
   totalPrice      Float
   orderItems      OrderItem[]
-  giftcard        Giftcard?     @relation("OrderGiftcard", fields: [giftcardId], references: [id])
-  giftcardId      String?
+  voucher        Voucher?     @relation("OrderVoucher", fields: [voucherId], references: [id])
+  voucherId      String?
   discountApplied Float         @default(0)
   shippedAt       DateTime?
   createdAt       DateTime      @default(now())
@@ -163,14 +163,14 @@ model OrderItem {
   quantity  Int
 }
 
-model Giftcard {
+model Voucher {
   id        String   @id @default(cuid())
   code      String   @unique
   discount  Float // Discount amount or percentage
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  orders    Order[]  @relation("OrderGiftcard")
+  orders    Order[]  @relation("OrderVoucher")
   referrals  Referral[]
 }
 
@@ -236,8 +236,8 @@ model Referral {
   referredId  String
   referred    Account  @relation("Referred", fields: [referredId], references: [id])
 
-  giftcardId  String?
-  giftcard    Giftcard? @relation(fields: [giftcardId], references: [id])
+  voucherId  String?
+  voucher    Voucher? @relation(fields: [voucherId], references: [id])
 
   createdAt   DateTime @default(now())
 }
