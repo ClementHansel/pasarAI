@@ -9,7 +9,7 @@ import TopUpAndBills from "@/components/layout/homepage/TopUpAndBills";
 import SelectedCategorySection from "@/components/layout/homepage/SelectedCategorySection";
 import RecentSearchProducts from "@/components/layout/homepage/RecentSearchProducts";
 import ProductsSection from "@/components/layout/homepage/ProductsSection";
-import CategoryButtons from "@/components/layout/homepage/CategoryButtons";
+// import CategoryButtons from "@/components/layout/homepage/CategoryButtons";
 
 const HomePage = () => (
   <>
@@ -21,7 +21,7 @@ const HomePage = () => (
       <SelectedCategorySection />
       <RecentSearchProducts />
       <ProductsSection />
-      <CategoryButtons />
+      {/* <CategoryButtons /> For now removing this to include it in the ProductsSection later on */}
     </div>
   </>
 );
