@@ -1,4 +1,10 @@
-import { OrderStatus, PaymentStatus, PrismaClient, Role } from "@prisma/client";
+import {
+  OrderStatus,
+  PaymentStatus,
+  Prisma,
+  PrismaClient,
+  Role,
+} from "@prisma/client";
 import bcrypt from "bcrypt";
 
 const prisma = new PrismaClient();
@@ -82,9 +88,9 @@ async function main() {
 
   const brand = await prisma.brand.create({
     data: {
-      name: "Green Market",
-      description: "Eco-friendly goods only",
-      sellers: {
+      name: "All Fresh",
+      description: "Hydrophonic Vegetables",
+      seller: {
         connect: [{ id: seller1.id }, { id: seller2.id }],
       },
     },
@@ -116,8 +122,9 @@ async function main() {
       categoryId: catFruit.id,
       sellerId: seller1.id,
       marketId: market.id,
-      brandId: brand ? brand.id : undefined,
-      tags: { connect: [{ id: tagOrganic.id }, { id: tagFresh.id }] },
+      tags: {
+        connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
+      },
       sku: "APL-001",
       ecoCertifications: "USDA Organic",
       origin: "Bandung",
@@ -148,7 +155,9 @@ async function main() {
       categoryId: catVeg.id,
       sellerId: seller2.id,
       marketId: market.id,
-      tags: { connect: [{ id: tagOrganic.id }, { id: catVeg.id }] },
+      tags: {
+        connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
+      },
       sku: "CRT-002",
       origin: "Bogor",
       image: "https://example.com/carrot.jpg",
@@ -166,35 +175,42 @@ async function main() {
     },
   });
 
-  const product3 = await prisma.product.create({
-    data: {
-      name: "Tomato",
-      description: "Fresh juicy tomatoes",
-      price: 1.49,
-      originalPrice: 1.99,
-      stock: 80,
-      soldCount: 20,
-      unit: "kg",
-      categoryId: catVeg.id,
-      sellerId: seller1.id,
-      marketId: market.id,
-      tags: { connect: [{ id: tagOrganic.id }, { id: catVeg.id }] },
-      sku: "TOM-003",
-      origin: "Bandung",
-      image: "https://example.com/tomato.jpg",
-      isBestSeller: false,
-      isOnSale: true,
-      isFeatured: true,
-      labels: {
-        connectOrCreate: [
-          {
-            where: { name: "On Sale" },
-            create: { name: "On Sale" },
-          },
-        ],
-      },
+  const productData: Prisma.ProductCreateInput = {
+    name: "Tomato",
+    description: "Fresh juicy tomatoes",
+    price: 1.49,
+    originalPrice: 1.99,
+    stock: 80,
+    soldCount: 20,
+    unit: "kg",
+    category: { connect: { id: catVeg.id } },
+    seller: { connect: { id: seller1.id } },
+    market: { connect: { id: market.id } },
+    tags: {
+      connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
     },
-  });
+    sku: "TOM-003",
+    origin: "Bandung",
+    image: "https://example.com/tomato.jpg",
+    isBestSeller: false,
+    isOnSale: true,
+    isFeatured: true,
+    labels: {
+      connectOrCreate: [
+        {
+          where: { name: "On Sale" },
+          create: { name: "On Sale" },
+        },
+      ],
+    },
+  };
+
+  // Safely add brand relation if it exists
+  if (brand) {
+    productData.brand = { connect: { id: brand.id } };
+  }
+
+  const product3 = await prisma.product.create({ data: productData });
 
   const product4 = await prisma.product.create({
     data: {
@@ -208,7 +224,9 @@ async function main() {
       categoryId: catFruit.id,
       sellerId: seller1.id,
       marketId: market.id,
-      tags: { connect: [{ id: tagFresh.id }, { id: catFruit.id }] },
+      tags: {
+        connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
+      },
       sku: "BAN-001",
       ecoCertifications: "Fair Trade",
       origin: "Lampung",
@@ -239,7 +257,9 @@ async function main() {
       categoryId: catFruit.id,
       sellerId: seller1.id,
       marketId: market.id,
-      tags: { connect: [{ id: tagFresh.id }, { id: catFruit.id }] },
+      tags: {
+        connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
+      },
       sku: "MNG-001",
       ecoCertifications: "Local Farm Certified",
       origin: "Cirebon",
@@ -270,7 +290,9 @@ async function main() {
       categoryId: catFruit.id,
       sellerId: seller1.id,
       marketId: market.id,
-      tags: { connect: [{ id: tagFresh.id }, { id: catFruit.id }] },
+      tags: {
+        connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
+      },
       sku: "GRP-001",
       ecoCertifications: "Eco Friendly",
       origin: "Bali",
@@ -300,7 +322,9 @@ async function main() {
       categoryId: catFruit.id,
       sellerId: seller1.id,
       marketId: market.id,
-      tags: { connect: [{ id: tagFresh.id }, { id: catFruit.id }] },
+      tags: {
+        connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
+      },
       sku: "WTM-001",
       ecoCertifications: "Water Efficient Farming",
       origin: "Surabaya",
@@ -331,7 +355,9 @@ async function main() {
       categoryId: catFruit.id,
       sellerId: seller1.id,
       marketId: market.id,
-      tags: { connect: [{ id: tagFresh.id }, { id: catFruit.id }] },
+      tags: {
+        connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
+      },
       sku: "PNP-001",
       ecoCertifications: "USDA Organic",
       origin: "Medan",
@@ -362,7 +388,9 @@ async function main() {
       categoryId: catFruit.id,
       sellerId: seller1.id,
       marketId: market.id,
-      tags: { connect: [{ id: tagFresh.id }, { id: catFruit.id }] },
+      tags: {
+        connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
+      },
       sku: "STB-001",
       ecoCertifications: "Rainforest Alliance",
       origin: "Lembang",
@@ -393,7 +421,9 @@ async function main() {
       categoryId: catFruit.id,
       sellerId: seller1.id,
       marketId: market.id,
-      tags: { connect: [{ id: tagFresh.id }, { id: catFruit.id }] },
+      tags: {
+        connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
+      },
       sku: "PAP-001",
       ecoCertifications: "Organic Indonesia",
       origin: "Bekasi",
@@ -424,7 +454,9 @@ async function main() {
       categoryId: catFruit.id,
       sellerId: seller1.id,
       marketId: market.id,
-      tags: { connect: [{ id: tagFresh.id }, { id: catFruit.id }] },
+      tags: {
+        connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
+      },
       sku: "KIW-001",
       ecoCertifications: "Non-GMO",
       origin: "New Zealand",
@@ -455,7 +487,9 @@ async function main() {
       categoryId: catFruit.id,
       sellerId: seller1.id,
       marketId: market.id,
-      tags: { connect: [{ id: tagFresh.id }, { id: catFruit.id }] },
+      tags: {
+        connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
+      },
       sku: "AVC-001",
       ecoCertifications: "USDA Organic",
       origin: "Bogor",
@@ -486,7 +520,9 @@ async function main() {
       categoryId: catVeg.id,
       sellerId: seller1.id,
       marketId: market.id,
-      tags: { connect: [{ id: tagFresh.id }, { id: catFruit.id }] },
+      tags: {
+        connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
+      },
       sku: "ZUC-010",
       origin: "Tasikmalaya",
       image: "https://example.com/zucchini.jpg",
@@ -516,7 +552,9 @@ async function main() {
       categoryId: catVeg.id,
       sellerId: seller1.id,
       marketId: market.id,
-      tags: { connect: [{ id: tagOrganic.id }, { id: tagFresh.id }] },
+      tags: {
+        connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
+      },
       sku: "CAR-001",
       origin: "Garut",
       image: "https://example.com/carrot.jpg",
@@ -546,7 +584,9 @@ async function main() {
       categoryId: catVeg.id,
       sellerId: seller1.id,
       marketId: market.id,
-      tags: { connect: [{ id: tagFresh.id }, { id: tagOrganic.id }] },
+      tags: {
+        connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
+      },
       sku: "SPI-002",
       origin: "Lembang",
       image: "https://example.com/spinach.jpg",
@@ -575,8 +615,10 @@ async function main() {
       categoryId: catVeg.id,
       sellerId: seller1.id,
       marketId: market.id,
-      tags: { connect: [{ id: tagFresh.id }, { id: tagOrganic.id }] },
-      sku: "TOM-003",
+      tags: {
+        connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
+      },
+      sku: "TOM-004",
       origin: "Bandung",
       image: "https://example.com/tomato.jpg",
       isBestSeller: false,
@@ -605,7 +647,9 @@ async function main() {
       categoryId: catVeg.id,
       sellerId: seller1.id,
       marketId: market.id,
-      tags: { connect: [{ id: tagFresh.id }, { id: tagOrganic.id }] },
+      tags: {
+        connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
+      },
       sku: "POT-002",
       origin: "Cimahi",
       image: "https://example.com/potato.jpg",
@@ -634,7 +678,9 @@ async function main() {
       categoryId: catVeg.id,
       sellerId: seller1.id,
       marketId: market.id,
-      tags: { connect: [{ id: tagFresh.id }, { id: tagOrganic.id }] },
+      tags: {
+        connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
+      },
       sku: "CUC-004",
       origin: "Cianjur",
       image: "https://example.com/cucumber.jpg",
@@ -663,7 +709,9 @@ async function main() {
       categoryId: catVeg.id,
       sellerId: seller1.id,
       marketId: market.id,
-      tags: { connect: [{ id: tagFresh.id }, { id: tagOrganic.id }] },
+      tags: {
+        connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
+      },
       sku: "BRO-005",
       origin: "Ciwidey",
       image: "https://example.com/broccoli.jpg",
@@ -692,7 +740,9 @@ async function main() {
       categoryId: catVeg.id,
       sellerId: seller1.id,
       marketId: market.id,
-      tags: { connect: [{ id: tagFresh.id }, { id: tagOrganic.id }] },
+      tags: {
+        connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
+      },
       sku: "CAU-006",
       origin: "Pangalengan",
       image: "https://example.com/cauliflower.jpg",
@@ -721,7 +771,9 @@ async function main() {
       categoryId: catVeg.id,
       sellerId: seller1.id,
       marketId: market.id,
-      tags: { connect: [{ id: tagFresh.id }, { id: tagOrganic.id }] },
+      tags: {
+        connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
+      },
       sku: "BEL-007",
       origin: "Cimahi",
       image: "https://example.com/bellpepper.jpg",
@@ -750,7 +802,9 @@ async function main() {
       categoryId: catVeg.id,
       sellerId: seller1.id,
       marketId: market.id,
-      tags: { connect: [{ id: tagFresh.id }, { id: tagOrganic.id }] },
+      tags: {
+        connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
+      },
       sku: "EGG-007",
       origin: "Subang",
       image: "https://example.com/eggplant.jpg",
@@ -779,7 +833,9 @@ async function main() {
       categoryId: catVeg.id,
       sellerId: seller1.id,
       marketId: market.id,
-      tags: { connect: [{ id: tagFresh.id }, { id: tagOrganic.id }] },
+      tags: {
+        connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
+      },
       sku: "CHL-008",
       origin: "Majalengka",
       image: "https://example.com/chili.jpg",
@@ -808,7 +864,9 @@ async function main() {
       categoryId: catVeg.id,
       sellerId: seller1.id,
       marketId: market.id,
-      tags: { connect: [{ id: tagFresh.id }, { id: tagOrganic.id }] },
+      tags: {
+        connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
+      },
       sku: "GRB-009",
       origin: "Sumedang",
       image: "https://example.com/greenbeans.jpg",
@@ -828,14 +886,14 @@ async function main() {
 
   console.log("✅ Products created");
 
-  // 6. Giftcard
+  // 6. GiftCard
   const giftcard = await prisma.giftcard.create({
     data: {
       code: "WELCOME10",
       discount: 10,
     },
   });
-  console.log("✅ Giftcard created");
+  console.log("✅ Gift Card created");
 
   // 7. Orders & Order Items
   const order = await prisma.order.create({
