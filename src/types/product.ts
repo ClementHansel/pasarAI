@@ -5,6 +5,7 @@ export type Product = {
   id: number;
   name: string;
   description: string;
+  brand: Brand[];
   price: number;
   originalPrice: number | null;
   stock: number;
@@ -54,6 +55,15 @@ export type ProductWithUser = Product & {
   sellerId: number;
   sellerName: string;
   sellerRating: number;
+};
+
+// Brand type
+export type Brand = {
+  id: number;
+  name: string;
+  description: string;
+  createdAt: Date;
+  updatedAt: Date;
 };
 
 // Review type

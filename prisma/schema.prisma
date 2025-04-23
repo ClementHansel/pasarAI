@@ -56,6 +56,8 @@ model Seller {
   markets         Market[]   @relation("MarketSellers")
   products        Product[] // Many-to-one relationship with products
   eventLogs       EventLog[] // Event logs related to seller actions
+  brand           Brand[]    @relation("BrandSellers")
+  brandId         String?
 }
 
 model Product {
@@ -103,12 +105,14 @@ model Category {
 }
 
 model Brand {
-  id        String    @id @default(cuid())
-  name      String    
-  product   Product[] // Products in this category
-  label     String? // Optional: "Best Seller", "New Arrival", etc.
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  id          String    @id @default(cuid())
+  name        String   
+  description String? 
+  product     Product[] // Products in this category
+  seller      Seller[]  @relation("BrandSellers")
+  label       String? // Optional: "Best Seller", "New Arrival", etc.
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 }
 
 model Tag {
@@ -133,12 +137,13 @@ model Order {
   buyerId         String
   status          OrderStatus   @default(PENDING)
   paymentStatus   PaymentStatus @default(PENDING)
+  paymentMethod   String
   shippingAddress String
   notes           String?
   totalPrice      Float
   orderItems      OrderItem[]
-  gifcard         Gifcard?      @relation("OrderGifcard", fields: [gifcardId], references: [id])
-  gifcardId       String?
+  giftcard        Giftcard?      @relation("OrderGiftCard", fields: [giftcardId], references: [id])
+  giftcardId      String?
   discountApplied Float         @default(0)
   shippedAt       DateTime?
   createdAt       DateTime      @default(now())
@@ -157,14 +162,14 @@ model OrderItem {
   quantity  Int
 }
 
-model Gifcard {
+model Giftcard {
   id        String   @id @default(cuid())
   code      String   @unique
   discount  Float // Discount amount or percentage
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  orders    Order[]  @relation("OrderGifcard")
+  orders    Order[]  @relation("OrderGiftCard")
 }
 
 model Review {
@@ -222,4 +227,8 @@ enum PaymentStatus {
   COMPLETED
   FAILED
   REFUNDED
+}
+
+enum PaymentMethod {
+  Wallet
 }

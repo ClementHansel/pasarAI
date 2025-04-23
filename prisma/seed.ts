@@ -1,4 +1,10 @@
-import { OrderStatus, PaymentStatus, PrismaClient, Role } from "@prisma/client";
+import {
+  OrderStatus,
+  PaymentStatus,
+  Prisma,
+  PrismaClient,
+  Role,
+} from "@prisma/client";
 import bcrypt from "bcrypt";
 
 const prisma = new PrismaClient();
@@ -82,15 +88,14 @@ async function main() {
 
   const brand = await prisma.brand.create({
     data: {
-      name: "Green Market",
-      description: "Eco-friendly goods only",
-      location: "Downtown",
-      sellers: {
+      name: "All Fresh",
+      description: "Hydrophonic Vegetables",
+      seller: {
         connect: [{ id: seller1.id }, { id: seller2.id }],
       },
     },
   });
-  console.log("✅ Market created");
+  console.log("✅ Brand created");
 
   // 4. Categories & Tags
   const [catFruit, catVeg] = await Promise.all([
@@ -117,8 +122,9 @@ async function main() {
       categoryId: catFruit.id,
       sellerId: seller1.id,
       marketId: market.id,
-      brand: { connect: { id: brand.id } },
-      tags: { connect: [{ id: tagOrganic.id }, { id: tagFresh.id }] },
+      tags: {
+        connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
+      },
       sku: "APL-001",
       ecoCertifications: "USDA Organic",
       origin: "Bandung",
@@ -149,7 +155,9 @@ async function main() {
       categoryId: catVeg.id,
       sellerId: seller2.id,
       marketId: market.id,
-      tags: { connect: [{ id: tagOrganic.id }, { id: catVeg.id }] },
+      tags: {
+        connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
+      },
       sku: "CRT-002",
       origin: "Bogor",
       image: "https://example.com/carrot.jpg",
@@ -167,35 +175,42 @@ async function main() {
     },
   });
 
-  const product3 = await prisma.product.create({
-    data: {
-      name: "Tomato",
-      description: "Fresh juicy tomatoes",
-      price: 1.49,
-      originalPrice: 1.99,
-      stock: 80,
-      soldCount: 20,
-      unit: "kg",
-      categoryId: catVeg.id,
-      sellerId: seller1.id,
-      marketId: market.id,
-      tags: { connect: [{ id: tagOrganic.id }, { id: catVeg.id }] },
-      sku: "TOM-003",
-      origin: "Bandung",
-      image: "https://example.com/tomato.jpg",
-      isBestSeller: false,
-      isOnSale: true,
-      isFeatured: true,
-      labels: {
-        connectOrCreate: [
-          {
-            where: { name: "On Sale" },
-            create: { name: "On Sale" },
-          },
-        ],
-      },
+  const productData: Prisma.ProductCreateInput = {
+    name: "Tomato",
+    description: "Fresh juicy tomatoes",
+    price: 1.49,
+    originalPrice: 1.99,
+    stock: 80,
+    soldCount: 20,
+    unit: "kg",
+    category: { connect: { id: catVeg.id } },
+    seller: { connect: { id: seller1.id } },
+    market: { connect: { id: market.id } },
+    tags: {
+      connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
     },
-  });
+    sku: "TOM-003",
+    origin: "Bandung",
+    image: "https://example.com/tomato.jpg",
+    isBestSeller: false,
+    isOnSale: true,
+    isFeatured: true,
+    labels: {
+      connectOrCreate: [
+        {
+          where: { name: "On Sale" },
+          create: { name: "On Sale" },
+        },
+      ],
+    },
+  };
+
+  // Safely add brand relation if it exists
+  if (brand) {
+    productData.brand = { connect: { id: brand.id } };
+  }
+
+  const product3 = await prisma.product.create({ data: productData });
 
   const product4 = await prisma.product.create({
     data: {
@@ -209,7 +224,9 @@ async function main() {
       categoryId: catFruit.id,
       sellerId: seller1.id,
       marketId: market.id,
-      tags: { connect: [{ id: tagFresh.id }, { id: catFruit.id }] },
+      tags: {
+        connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
+      },
       sku: "BAN-001",
       ecoCertifications: "Fair Trade",
       origin: "Lampung",
@@ -240,7 +257,9 @@ async function main() {
       categoryId: catFruit.id,
       sellerId: seller1.id,
       marketId: market.id,
-      tags: { connect: [{ id: tagFresh.id }, { id: catFruit.id }] },
+      tags: {
+        connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
+      },
       sku: "MNG-001",
       ecoCertifications: "Local Farm Certified",
       origin: "Cirebon",
@@ -271,7 +290,9 @@ async function main() {
       categoryId: catFruit.id,
       sellerId: seller1.id,
       marketId: market.id,
-      tags: { connect: [{ id: tagFresh.id }, { id: catFruit.id }] },
+      tags: {
+        connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
+      },
       sku: "GRP-001",
       ecoCertifications: "Eco Friendly",
       origin: "Bali",
@@ -301,7 +322,9 @@ async function main() {
       categoryId: catFruit.id,
       sellerId: seller1.id,
       marketId: market.id,
-      tags: { connect: [{ id: tagFresh.id }, { id: catFruit.id }] },
+      tags: {
+        connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
+      },
       sku: "WTM-001",
       ecoCertifications: "Water Efficient Farming",
       origin: "Surabaya",
@@ -332,7 +355,9 @@ async function main() {
       categoryId: catFruit.id,
       sellerId: seller1.id,
       marketId: market.id,
-      tags: { connect: [{ id: tagFresh.id }, { id: catFruit.id }] },
+      tags: {
+        connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
+      },
       sku: "PNP-001",
       ecoCertifications: "USDA Organic",
       origin: "Medan",
@@ -363,7 +388,9 @@ async function main() {
       categoryId: catFruit.id,
       sellerId: seller1.id,
       marketId: market.id,
-      tags: { connect: [{ id: tagFresh.id }, { id: catFruit.id }] },
+      tags: {
+        connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
+      },
       sku: "STB-001",
       ecoCertifications: "Rainforest Alliance",
       origin: "Lembang",
@@ -394,7 +421,9 @@ async function main() {
       categoryId: catFruit.id,
       sellerId: seller1.id,
       marketId: market.id,
-      tags: { connect: [{ id: tagFresh.id }, { id: catFruit.id }] },
+      tags: {
+        connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
+      },
       sku: "PAP-001",
       ecoCertifications: "Organic Indonesia",
       origin: "Bekasi",
@@ -425,7 +454,9 @@ async function main() {
       categoryId: catFruit.id,
       sellerId: seller1.id,
       marketId: market.id,
-      tags: { connect: [{ id: tagFresh.id }, { id: catFruit.id }] },
+      tags: {
+        connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
+      },
       sku: "KIW-001",
       ecoCertifications: "Non-GMO",
       origin: "New Zealand",
@@ -456,7 +487,9 @@ async function main() {
       categoryId: catFruit.id,
       sellerId: seller1.id,
       marketId: market.id,
-      tags: { connect: [{ id: tagFresh.id }, { id: catFruit.id }] },
+      tags: {
+        connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
+      },
       sku: "AVC-001",
       ecoCertifications: "USDA Organic",
       origin: "Bogor",
@@ -471,374 +504,396 @@ async function main() {
             create: { name: "Best Sellers" },
           },
         ],
-        },
       },
-    });
-    
-    const product13 = await prisma.product.create({
-      data: {
-        name: "Zucchini",
-        description: "Tender green zucchinis",
-        price: 2.19,
-        originalPrice: 2.69,
-        stock: 50,
-        soldCount: 8,
-        unit: "kg",
-        categoryId: catVeg.id,
-        sellerId: seller1.id,
-        marketId: market.id,
-        tags: { connect: [{ id: tagFresh.id }, { id: catFruit.id }] },
-        sku: "ZUC-010",
-        origin: "Tasikmalaya",
-        image: "https://example.com/zucchini.jpg",
-        isBestSeller: false,
-        isOnSale: false,
-        isFeatured: true,
-        labels: {
-          connectOrCreate: [
-            {
-              where: { name: "New Arrivals" },
-              create: { name: "New Arrivals" },
-            },
-          ],
-        },
+    },
+  });
+
+  const product13 = await prisma.product.create({
+    data: {
+      name: "Zucchini",
+      description: "Tender green zucchinis",
+      price: 2.19,
+      originalPrice: 2.69,
+      stock: 50,
+      soldCount: 8,
+      unit: "kg",
+      categoryId: catVeg.id,
+      sellerId: seller1.id,
+      marketId: market.id,
+      tags: {
+        connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
       },
-    });
-
-    const product14 = await prisma.product.create({
-      data: {
-          name: "Carrot",
-          description: "Crunchy and sweet carrots",
-          price: 1.29,
-          originalPrice: 1.59,
-          stock: 100,
-          soldCount: 30,
-          unit: "kg",
-          categoryId: catVeg.id,
-          sellerId: seller1.id,
-          marketId: market.id,
-          tags: { connect: [{ id: tagOrganic.id }, { id: tagFresh.id }] },
-          sku: "CAR-001",
-          origin: "Garut",
-          image: "https://example.com/carrot.jpg",
-          isBestSeller: true,
-          isOnSale: true,
-          isFeatured: false,
-          labels: {
-            connectOrCreate: [
-              {
-                where: { name: "Best Sellers" },
-                create: { name: "Best Sellers" },
-              },
-            ],
+      sku: "ZUC-010",
+      origin: "Tasikmalaya",
+      image: "https://example.com/zucchini.jpg",
+      isBestSeller: false,
+      isOnSale: false,
+      isFeatured: true,
+      labels: {
+        connectOrCreate: [
+          {
+            where: { name: "New Arrivals" },
+            create: { name: "New Arrivals" },
           },
-        },
-      });
-
-      const product15 = await prisma.product.create({
-        data: {
-          name: "Spinach",
-          description: "Fresh green spinach leaves",
-          price: 0.99,
-          originalPrice: 1.29,
-          stock: 70,
-          soldCount: 15,
-          unit: "bunch",
-          categoryId: catVeg.id,
-          sellerId: seller1.id,
-          marketId: market.id,
-          tags: { connect: [{ id: tagFresh.id }, { id: tagOrganic.id }] },
-          sku: "SPI-002",
-          origin: "Lembang",
-          image: "https://example.com/spinach.jpg",
-          isBestSeller: false,
-          isOnSale: true,
-          isFeatured: false,
-          labels: {
-            connectOrCreate: [
-            {
-              where: { name: "New Arrivals" },
-              create: { name: "New Arrivals" },
-            },
-          ],
-        },
+        ],
       },
-    });
-        const product16 = await prisma.product.create({
-          data: {
-          name: "Tomato",
-          description: "Fresh juicy tomatoes",
-          price: 1.49,
-          originalPrice: 1.99,
-          stock: 80,
-          soldCount: 20,
-          unit: "kg",
-          categoryId: catVeg.id,
-          sellerId: seller1.id,
-          marketId: market.id,
-          tags: { connect: [{ id: tagFresh.id }, { id: tagOrganic.id }] },
-          sku: "TOM-003",
-          origin: "Bandung",
-          image: "https://example.com/tomato.jpg",
-          isBestSeller: false,
-          isOnSale: true,
-          isFeatured: true,
-          labels: {
-            connectOrCreate: [
-              {
-                where: { name: "Best Sellers" },
-                create: { name: "Best Sellers" },
-              },
-            ],
-          },
-        },
-      });
+    },
+  });
 
-        const product17 = await prisma.product.create({
-          data: {
-          name: "Potato",
-          description: "Fresh and starchy potatoes",
-          price: 0.89,
-          originalPrice: 1.19,
-          stock: 120,
-          soldCount: 40,
-          unit: "kg",
-          categoryId: catVeg.id,
-          sellerId: seller1.id,
-          marketId: market.id,
-          tags: { connect: [{ id: tagFresh.id }, { id: tagOrganic.id }] },
-          sku: "POT-002",
-          origin: "Cimahi",
-          image: "https://example.com/potato.jpg",
-          isBestSeller: true,
-          isOnSale: false,
-          isFeatured: false,
-          labels: {
-            connectOrCreate: [
-              {
-                where: { name: "Best Sellers" },
-                create: { name: "Best Sellers" },
-              },
-            ],
+  const product14 = await prisma.product.create({
+    data: {
+      name: "Carrot",
+      description: "Crunchy and sweet carrots",
+      price: 1.29,
+      originalPrice: 1.59,
+      stock: 100,
+      soldCount: 30,
+      unit: "kg",
+      categoryId: catVeg.id,
+      sellerId: seller1.id,
+      marketId: market.id,
+      tags: {
+        connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
+      },
+      sku: "CAR-001",
+      origin: "Garut",
+      image: "https://example.com/carrot.jpg",
+      isBestSeller: true,
+      isOnSale: true,
+      isFeatured: false,
+      labels: {
+        connectOrCreate: [
+          {
+            where: { name: "Best Sellers" },
+            create: { name: "Best Sellers" },
           },
-        },
-      });
-        const product18 = await prisma.product.create({
-          data: {
-          name: "Cucumber",
-          description: "Crisp and refreshing cucumbers",
-          price: 1.09,
-          originalPrice: 1.49,
-          stock: 90,
-          soldCount: 18,
-          unit: "kg",
-          categoryId: catVeg.id,
-          sellerId: seller1.id,
-          marketId: market.id,
-          tags: { connect: [{ id: tagFresh.id }, { id: tagOrganic.id }] },
-          sku: "CUC-004",
-          origin: "Cianjur",
-          image: "https://example.com/cucumber.jpg",
-          isBestSeller: true,
-          isOnSale: true,
-          isFeatured: false,
-          labels: {
-            connectOrCreate: [
-              {
-                where: { name: "Best Sellers" },
-                create: { name: "Best Sellers" },
-              },
-            ],
-          },
-        },
-      });
-        const product19 = await prisma.product.create({
-          data: {
-          name: "Broccoli",
-          description: "Nutritious green broccoli",
-          price: 2.49,
-          originalPrice: 2.99,
-          stock: 60,
-          soldCount: 25,
-          unit: "kg",
-          categoryId: catVeg.id,
-          sellerId: seller1.id,
-          marketId: market.id,
-          tags: { connect: [{ id: tagFresh.id }, { id: tagOrganic.id }] },
-          sku: "BRO-005",
-          origin: "Ciwidey",
-          image: "https://example.com/broccoli.jpg",
-          isBestSeller: false,
-          isOnSale: false,
-          isFeatured: true,
-          labels: {
-            connectOrCreate: [
-              {
-                where: { name: "New Arrivals" },
-                create: { name: "New Arrivals" },
-              },
-            ],
-          },
-        },
-      });
-        const product20 = await prisma.product.create({
-          data: {
-          name: "Cauliflower",
-          description: "Fresh white cauliflower",
-          price: 2.29,
-          originalPrice: 2.89,
-          stock: 55,
-          soldCount: 17,
-          unit: "kg",
-          categoryId: catVeg.id,
-          sellerId: seller1.id,
-          marketId: market.id,
-          tags: { connect: [{ id: tagFresh.id }, { id: tagOrganic.id }] },
-          sku: "CAU-006",
-          origin: "Pangalengan",
-          image: "https://example.com/cauliflower.jpg",
-          isBestSeller: false,
-          isOnSale: false,
-          isFeatured: false,
-          labels: {
-            connectOrCreate: [
-              {
-                where: { name: "Best Sellers" },
-                create: { name: "Best Sellers" },
-              },
-            ],
-          },
-        },
-      });
-        const product21 = await prisma.product.create({
-          data: {
-          name: "Bell Pepper",
-          description: "Colorful bell peppers",
-          price: 1.99,
-          originalPrice: 2.49,
-          stock: 85,
-          soldCount: 22,
-          unit: "kg",
-          categoryId: catVeg.id,
-          sellerId: seller1.id,
-          marketId: market.id,
-          tags: { connect: [{ id: tagFresh.id }, { id: tagOrganic.id }] },
-          sku: "BEL-007",
-          origin: "Cimahi",
-          image: "https://example.com/bellpepper.jpg",
-          isBestSeller: true,
-          isOnSale: true,
-          isFeatured: false,
-          labels: {
-            connectOrCreate: [
-              {
-                where: { name: "New Arrivals" },
-                create: { name: "New Arrivals" },
-              },
-            ],
-          },
-        },
-      });
-        const product22 = await prisma.product.create({
-          data: {
-          name: "Eggplant",
-          description: "Glossy purple eggplants",
-          price: 1.79,
-          originalPrice: 2.19,
-          stock: 65,
-          soldCount: 12,
-          unit: "kg",
-          categoryId: catVeg.id,
-          sellerId: seller1.id,
-          marketId: market.id,
-          tags: { connect: [{ id: tagFresh.id }, { id: tagOrganic.id }] },
-          sku: "EGG-007",
-          origin: "Subang",
-          image: "https://example.com/eggplant.jpg",
-          isBestSeller: false,
-          isOnSale: true,
-          isFeatured: false,
-          labels: {
-            connectOrCreate: [
-              {
-                where: { name: "Best Sellers" },
-                create: { name: "Best Sellers" },
-              },
-            ],
-          },
-        },
-      });
-        const product23 = await prisma.product.create({
-        data :{
-          name: "Chili Pepper",
-          description: "Spicy red chili peppers",
-          price: 3.99,
-          originalPrice: 4.49,
-          stock: 40,
-          soldCount: 30,
-          unit: "kg",
-          categoryId: catVeg.id,
-          sellerId: seller1.id,
-          marketId: market.id,
-          tags: { connect: [{ id: tagFresh.id }, { id: tagOrganic.id }] },
-          sku: "CHL-008",
-          origin: "Majalengka",
-          image: "https://example.com/chili.jpg",
-          isBestSeller: true,
-          isOnSale: false,
-          isFeatured: true,
-          labels: {
-            connectOrCreate: [
-              {
-                where: { name: "Best Sellers" },
-                create: { name: "Best Sellers" },
-              },
-            ],
-          },
-        },
-      });
-        const product24 = await prisma.product.create({
-        data: {
-          name: "Green Beans",
-          description: "Fresh green beans",
-          price: 1.89,
-          originalPrice: 2.39,
-          stock: 75,
-          soldCount: 10,
-          unit: "kg",
-          categoryId: catVeg.id,
-          sellerId: seller1.id,
-          marketId: market.id,
-          tags: { connect: [{ id: tagFresh.id }, { id: tagOrganic.id }] },
-          sku: "GRB-009",
-          origin: "Sumedang",
-          image: "https://example.com/greenbeans.jpg",
-          isBestSeller: false,
-          isOnSale: true,
-          isFeatured: false,
-          labels: {
-            connectOrCreate: [
-              {
-                where: { name: "New Arrivals" },
-                create: { name: "New Arrivals" },
-              },
-            ],
-          },
-        },
-      });
+        ],
+      },
+    },
+  });
 
+  const product15 = await prisma.product.create({
+    data: {
+      name: "Spinach",
+      description: "Fresh green spinach leaves",
+      price: 0.99,
+      originalPrice: 1.29,
+      stock: 70,
+      soldCount: 15,
+      unit: "bunch",
+      categoryId: catVeg.id,
+      sellerId: seller1.id,
+      marketId: market.id,
+      tags: {
+        connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
+      },
+      sku: "SPI-002",
+      origin: "Lembang",
+      image: "https://example.com/spinach.jpg",
+      isBestSeller: false,
+      isOnSale: true,
+      isFeatured: false,
+      labels: {
+        connectOrCreate: [
+          {
+            where: { name: "New Arrivals" },
+            create: { name: "New Arrivals" },
+          },
+        ],
+      },
+    },
+  });
+  const product16 = await prisma.product.create({
+    data: {
+      name: "Tomato",
+      description: "Fresh juicy tomatoes",
+      price: 1.49,
+      originalPrice: 1.99,
+      stock: 80,
+      soldCount: 20,
+      unit: "kg",
+      categoryId: catVeg.id,
+      sellerId: seller1.id,
+      marketId: market.id,
+      tags: {
+        connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
+      },
+      sku: "TOM-004",
+      origin: "Bandung",
+      image: "https://example.com/tomato.jpg",
+      isBestSeller: false,
+      isOnSale: true,
+      isFeatured: true,
+      labels: {
+        connectOrCreate: [
+          {
+            where: { name: "Best Sellers" },
+            create: { name: "Best Sellers" },
+          },
+        ],
+      },
+    },
+  });
 
+  const product17 = await prisma.product.create({
+    data: {
+      name: "Potato",
+      description: "Fresh and starchy potatoes",
+      price: 0.89,
+      originalPrice: 1.19,
+      stock: 120,
+      soldCount: 40,
+      unit: "kg",
+      categoryId: catVeg.id,
+      sellerId: seller1.id,
+      marketId: market.id,
+      tags: {
+        connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
+      },
+      sku: "POT-002",
+      origin: "Cimahi",
+      image: "https://example.com/potato.jpg",
+      isBestSeller: true,
+      isOnSale: false,
+      isFeatured: false,
+      labels: {
+        connectOrCreate: [
+          {
+            where: { name: "Best Sellers" },
+            create: { name: "Best Sellers" },
+          },
+        ],
+      },
+    },
+  });
+  const product18 = await prisma.product.create({
+    data: {
+      name: "Cucumber",
+      description: "Crisp and refreshing cucumbers",
+      price: 1.09,
+      originalPrice: 1.49,
+      stock: 90,
+      soldCount: 18,
+      unit: "kg",
+      categoryId: catVeg.id,
+      sellerId: seller1.id,
+      marketId: market.id,
+      tags: {
+        connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
+      },
+      sku: "CUC-004",
+      origin: "Cianjur",
+      image: "https://example.com/cucumber.jpg",
+      isBestSeller: true,
+      isOnSale: true,
+      isFeatured: false,
+      labels: {
+        connectOrCreate: [
+          {
+            where: { name: "Best Sellers" },
+            create: { name: "Best Sellers" },
+          },
+        ],
+      },
+    },
+  });
+  const product19 = await prisma.product.create({
+    data: {
+      name: "Broccoli",
+      description: "Nutritious green broccoli",
+      price: 2.49,
+      originalPrice: 2.99,
+      stock: 60,
+      soldCount: 25,
+      unit: "kg",
+      categoryId: catVeg.id,
+      sellerId: seller1.id,
+      marketId: market.id,
+      tags: {
+        connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
+      },
+      sku: "BRO-005",
+      origin: "Ciwidey",
+      image: "https://example.com/broccoli.jpg",
+      isBestSeller: false,
+      isOnSale: false,
+      isFeatured: true,
+      labels: {
+        connectOrCreate: [
+          {
+            where: { name: "New Arrivals" },
+            create: { name: "New Arrivals" },
+          },
+        ],
+      },
+    },
+  });
+  const product20 = await prisma.product.create({
+    data: {
+      name: "Cauliflower",
+      description: "Fresh white cauliflower",
+      price: 2.29,
+      originalPrice: 2.89,
+      stock: 55,
+      soldCount: 17,
+      unit: "kg",
+      categoryId: catVeg.id,
+      sellerId: seller1.id,
+      marketId: market.id,
+      tags: {
+        connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
+      },
+      sku: "CAU-006",
+      origin: "Pangalengan",
+      image: "https://example.com/cauliflower.jpg",
+      isBestSeller: false,
+      isOnSale: false,
+      isFeatured: false,
+      labels: {
+        connectOrCreate: [
+          {
+            where: { name: "Best Sellers" },
+            create: { name: "Best Sellers" },
+          },
+        ],
+      },
+    },
+  });
+  const product21 = await prisma.product.create({
+    data: {
+      name: "Bell Pepper",
+      description: "Colorful bell peppers",
+      price: 1.99,
+      originalPrice: 2.49,
+      stock: 85,
+      soldCount: 22,
+      unit: "kg",
+      categoryId: catVeg.id,
+      sellerId: seller1.id,
+      marketId: market.id,
+      tags: {
+        connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
+      },
+      sku: "BEL-007",
+      origin: "Cimahi",
+      image: "https://example.com/bellpepper.jpg",
+      isBestSeller: true,
+      isOnSale: true,
+      isFeatured: false,
+      labels: {
+        connectOrCreate: [
+          {
+            where: { name: "New Arrivals" },
+            create: { name: "New Arrivals" },
+          },
+        ],
+      },
+    },
+  });
+  const product22 = await prisma.product.create({
+    data: {
+      name: "Eggplant",
+      description: "Glossy purple eggplants",
+      price: 1.79,
+      originalPrice: 2.19,
+      stock: 65,
+      soldCount: 12,
+      unit: "kg",
+      categoryId: catVeg.id,
+      sellerId: seller1.id,
+      marketId: market.id,
+      tags: {
+        connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
+      },
+      sku: "EGG-007",
+      origin: "Subang",
+      image: "https://example.com/eggplant.jpg",
+      isBestSeller: false,
+      isOnSale: true,
+      isFeatured: false,
+      labels: {
+        connectOrCreate: [
+          {
+            where: { name: "Best Sellers" },
+            create: { name: "Best Sellers" },
+          },
+        ],
+      },
+    },
+  });
+  const product23 = await prisma.product.create({
+    data: {
+      name: "Chili Pepper",
+      description: "Spicy red chili peppers",
+      price: 3.99,
+      originalPrice: 4.49,
+      stock: 40,
+      soldCount: 30,
+      unit: "kg",
+      categoryId: catVeg.id,
+      sellerId: seller1.id,
+      marketId: market.id,
+      tags: {
+        connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
+      },
+      sku: "CHL-008",
+      origin: "Majalengka",
+      image: "https://example.com/chili.jpg",
+      isBestSeller: true,
+      isOnSale: false,
+      isFeatured: true,
+      labels: {
+        connectOrCreate: [
+          {
+            where: { name: "Best Sellers" },
+            create: { name: "Best Sellers" },
+          },
+        ],
+      },
+    },
+  });
+  const product24 = await prisma.product.create({
+    data: {
+      name: "Green Beans",
+      description: "Fresh green beans",
+      price: 1.89,
+      originalPrice: 2.39,
+      stock: 75,
+      soldCount: 10,
+      unit: "kg",
+      categoryId: catVeg.id,
+      sellerId: seller1.id,
+      marketId: market.id,
+      tags: {
+        connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
+      },
+      sku: "GRB-009",
+      origin: "Sumedang",
+      image: "https://example.com/greenbeans.jpg",
+      isBestSeller: false,
+      isOnSale: true,
+      isFeatured: false,
+      labels: {
+        connectOrCreate: [
+          {
+            where: { name: "New Arrivals" },
+            create: { name: "New Arrivals" },
+          },
+        ],
+      },
+    },
+  });
 
   console.log("✅ Products created");
 
-  // 6. Voucher
-  const voucher = await prisma.voucher.create({
+  // 6. GiftCard
+  const giftcard = await prisma.giftcard.create({
     data: {
       code: "WELCOME10",
       discount: 10,
     },
   });
-  console.log("✅ Voucher created");
+  console.log("✅ Gift Card created");
 
   // 7. Orders & Order Items
   const order = await prisma.order.create({
@@ -846,11 +901,12 @@ async function main() {
       buyerId: user1.id,
       status: OrderStatus.COMPLETED,
       paymentStatus: PaymentStatus.COMPLETED,
+      paymentMethod: "Wallet",
       shippingAddress: "123 Ocean Ave",
       notes: "Please pack with care",
       totalPrice: 6.49,
       discountApplied: 1.0,
-      voucherId: voucher.id,
+      giftcardId: giftcard.id,
       shippedAt: new Date(),
       orderItems: {
         create: [
