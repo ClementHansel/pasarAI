@@ -45,6 +45,7 @@ model Account {
   messagesSent    Message[]      @relation("SenderAccount")
   messagesOwned   Message[]      @relation("AccountMessageOwner")
   conversations   Conversation[] @relation("ConversationParticipants")
+  wishlists       Wishlist[]
 }
 
 model Market {
@@ -57,6 +58,7 @@ model Market {
   sellers     Account[] @relation("AccountMarkets")
   products    Product[] // Many-to-one relationship with products
   revenue     Float     @default(0.0)
+  wishlists   Wishlist[]
 }
 
 model Product {
@@ -79,24 +81,21 @@ model Product {
   market            Market      @relation(fields: [marketId], references: [id])
   marketId          String
   orderItems        OrderItem[]
-
   reviews           Review[]    @relation("ProductReviews") // Reviews for this product
-
   ecoCertifications String?
   origin            String?
   sku               String?     @unique
   isActive          Boolean     @default(true)
   createdAt         DateTime    @default(now())
   updatedAt         DateTime    @updatedAt
-
   eventLogs         EventLog[]
   labels            Label[]     @relation("ProductLabels")
-
   // Promotional flags
   isNewArrival      Boolean     @default(false) // Product created within 24 hours
   isBestSeller      Boolean     @default(false) // Manually set or calculated
   isOnSale          Boolean     @default(false) // Discount or voucher
   isFeatured        Boolean     @default(false) // Based on seller promotional package
+  wishlists         Wishlist[]
 }
 
 model Category {
@@ -282,6 +281,18 @@ model Conversation {
   messages    Message[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model Wishlist {
+  id        String      @id @default(cuid())
+  accountId String
+  account   Account     @relation(fields: [accountId], references: [id])
+  productId String
+  product   Product     @relation(fields: [productId], references: [id])
+  marketId  String
+  market    Market      @relation(fields: [marketId], references: [id])
+  createdAt DateTime    @default(now())
+  @@unique([accountId, productId, marketId]) // Prevent duplicates
 }
 
 enum Role {
