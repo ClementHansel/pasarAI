@@ -1,143 +1,85 @@
+// src/app/payment/page.tsx
 "use client";
+
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useWallet } from "@/context/WalletContext";
+import Button from "@/components/common/Button";
+import PaymentMethodSelector from "@/components/payment/PaymentMethodSelector";
+import CardDetailsForm from "@/components/payment/CardDetailsForm";
+import PayPalForm from "@/components/payment/PayPalForm";
+import OrderSummary from "@/components/common/OrderSummary";
 
 export default function PaymentPage() {
-  // Simulated wallet balance and transaction history (replace this with state management)
-  const [walletBalance, setWalletBalance] = useState(100); // Example initial balance of $100, convert to real API later
-  const [transactionHistory, setTransactionHistory] = useState([
-    { type: "Top Up", amount: 100, date: "2025-04-23 12:00" }, // Example initial transaction, convert to real API later
-  ]);
-  const [cardholderName, setCardholderName] = useState("");
-  const [cardNumber, setCardNumber] = useState("");
-  const [expiryDate, setExpiryDate] = useState("");
-  const [cvc, setCvc] = useState("");
-  const [error, setError] = useState("");
+  const { balance, deductAmount } = useWallet();
+  const router = useRouter();
 
-  // Simulate a payment process
-  const handlePayment = () => {
-    const purchaseAmount = 50; // Example purchase amount
+  const [method, setMethod] = useState<"card" | "paypal">("card");
+  const [cardData, setCardData] = useState({
+    name: "",
+    number: "",
+    expiry: "",
+    cvv: "",
+  });
+  const [paypalEmail, setPaypalEmail] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-    // Check if user has enough funds
-    if (walletBalance >= purchaseAmount) {
-      // Deduct from wallet balance
-      setWalletBalance(walletBalance - purchaseAmount);
+  // TODO: Replace with real cart data
+  const cartItems = [
+    { id: "1", name: "Product 1", price: 10.0 },
+    { id: "2", name: "Product 2", price: 15.0 },
+  ];
 
-      // Record the "Purchase" transaction
-      const newTransaction = {
-        type: "Purchase",
-        amount: purchaseAmount,
-        date: new Date().toLocaleString(),
-      };
+  const totalAmount = cartItems.reduce((sum, item) => sum + item.price, 0);
 
-      setTransactionHistory([...transactionHistory, newTransaction]);
+  const handlePayment = async () => {
+    if (method === "card") {
+      const { name, number, expiry, cvv } = cardData;
+      if (!name || !number || !expiry || !cvv) {
+        setError("Please complete all credit card details.");
+        return;
+      }
+    } else if (!paypalEmail) {
+      setError("Please enter your PayPal email.");
+      return;
+    }
 
-      // Clear form and show success (for simulation purposes)
-      setCardholderName("");
-      setCardNumber("");
-      setExpiryDate("");
-      setCvc("");
-      setError(""); // Reset error
-      alert("Payment successful!"); // Simulate success
+    if (balance < totalAmount) {
+      setError("Insufficient wallet balance. Please top up.");
+      return;
+    }
+
+    setError(null);
+    setLoading(true);
+    const success = await deductAmount(totalAmount);
+    setLoading(false);
+
+    if (success) {
+      router.push("/payment-success");
     } else {
-      // Insufficient funds
-      setError("Insufficient funds, please top up your wallet.");
+      setError("Payment processing failed. Please try again.");
     }
   };
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-6">Payment</h1>
-
-      {/* Billing Information */}
-      <section className="mb-6">
-        <h2 className="text-xl font-semibold mb-2">Billing Information</h2>
-        <div className="bg-white p-4 rounded shadow space-y-4">
-          <label className="block">
-            <span className="block mb-1 font-medium">Cardholder Name</span>
-            <input
-              type="text"
-              className="w-full border rounded p-2"
-              placeholder="John Doe"
-              value={cardholderName}
-              onChange={(e) => setCardholderName(e.target.value)}
-            />
-          </label>
-
-          <label className="block">
-            <span className="block mb-1 font-medium">Card Number</span>
-            <input
-              type="text"
-              className="w-full border rounded p-2"
-              placeholder="•••• •••• •••• ••••"
-              value={cardNumber}
-              onChange={(e) => setCardNumber(e.target.value)}
-            />
-          </label>
-
-          <div className="flex space-x-4">
-            <label className="flex-1">
-              <span className="block mb-1 font-medium">Expiry Date</span>
-              <input
-                type="text"
-                className="w-full border rounded p-2"
-                placeholder="MM/YY"
-                value={expiryDate}
-                onChange={(e) => setExpiryDate(e.target.value)}
-              />
-            </label>
-
-            <label className="flex-1">
-              <span className="block mb-1 font-medium">CVC</span>
-              <input
-                type="text"
-                className="w-full border rounded p-2"
-                placeholder="123"
-                value={cvc}
-                onChange={(e) => setCvc(e.target.value)}
-              />
-            </label>
-          </div>
-        </div>
-      </section>
-
-      {/* Error Message */}
-      {error && (
-        <div className="text-red-600 mb-4">
-          <strong>{error}</strong>
-        </div>
-      )}
-
-      {/* Payment Button */}
-      <button
-        className="bg-green-600 text-white px-6 py-3 rounded hover:bg-green-700 w-full"
-        onClick={handlePayment}
-      >
-        Pay Now
-      </button>
-
-      {/* Wallet Balance */}
-      <section className="mt-6">
-        <h2 className="text-xl font-semibold mb-2">Wallet Balance</h2>
-        <div className="bg-white p-4 rounded shadow">
-          <p>Your current balance: ${walletBalance}</p>
-        </div>
-      </section>
-
-      {/* Transaction History */}
-      <section className="mt-6">
-        <h2 className="text-xl font-semibold mb-2">Transaction History</h2>
-        <div className="bg-white p-4 rounded shadow">
-          <ul className="space-y-2">
-            {transactionHistory.map((transaction, index) => (
-              <li key={index} className="flex justify-between">
-                <span>{transaction.type}</span>
-                <span>{transaction.amount}</span>
-                <span>{transaction.date}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </section>
+    <div className="flex flex-col lg:flex-row max-w-5xl mx-auto px-6 py-10 gap-8">
+      <div className="flex-1 space-y-8">
+        <h1 className="text-4xl font-extrabold">Payment</h1>
+        <PaymentMethodSelector value={method} onChange={setMethod} />
+        {method === "card" ? (
+          <CardDetailsForm data={cardData} onChange={setCardData} />
+        ) : (
+          <PayPalForm email={paypalEmail} onChange={setPaypalEmail} />
+        )}
+        {error && <p className="text-red-600">{error}</p>}
+        <Button onClick={handlePayment} disabled={loading} className="w-full">
+          {loading ? "Processing..." : `Pay $${totalAmount.toFixed(2)}`}
+        </Button>
+      </div>
+      <aside className="w-full lg:w-1/3 sticky top-20">
+        <OrderSummary items={cartItems} />
+      </aside>
     </div>
   );
 }
