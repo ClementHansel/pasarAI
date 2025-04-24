@@ -1,96 +1,79 @@
+// app/login/page.tsx
 "use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-
-import Button from "@/components/common/Button";
-import Input from "@/components/common/Input";
 import Link from "next/link";
+import LoginForm from "@/components/auth/LoginForm";
+import { toast } from "react-hot-toast";
 
 export default function LoginPage() {
   const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setError(null);
-    setLoading(true);
+  const handleLogin = async (email: string, password: string) => {
+    setIsLoading(true);
 
     try {
-      const res = await fetch("/api/auth/login", {
+      const response = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
 
-      const data = await res.json();
+      const data = await response.json();
 
-      if (!res.ok) {
-        throw new Error(data.error || "Login failed");
+      if (!response.ok) {
+        throw new Error(data.message || "Authentication failed");
       }
 
-      // Store tokens (example: localStorage or cookie)
+      // Save authentication data
       localStorage.setItem("accessToken", data.accessToken);
       localStorage.setItem("refreshToken", data.refreshToken);
-
-      // Optional: Store user info in context/localStorage
       localStorage.setItem("user", JSON.stringify(data.user));
 
+      toast.success("Login successful!");
       router.push("/dashboard");
-    } catch (err) {
-      if (err instanceof Error) {
-        setError(err.message);
+    } catch (error) {
+      // Corrected error handling
+      if (error instanceof Error) {
+        toast.error(error.message);
       } else {
-        setError("Something went wrong");
+        toast.error("An unexpected error occurred");
       }
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 p-6">
-      <form
-        onSubmit={handleLogin}
-        className="w-full max-w-sm p-6 bg-white rounded-xl shadow-md space-y-4"
-      >
-        <h2 className="text-2xl font-bold text-center">Login</h2>
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="w-full max-w-md p-8 space-y-8 bg-white rounded-2xl shadow-lg">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold text-gray-900">Sign In</h1>
+          <p className="mt-2 text-sm text-gray-600">
+            Welcome back! Please sign in to your account
+          </p>
+        </div>
 
-        {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+        {/* Login Form Component */}
+        <LoginForm onSubmit={handleLogin} isLoading={isLoading} />
 
-        <Input
-          label="Email"
-          type="email"
-          value={email}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-            setEmail(e.target.value)
-          }
-          required
-        />
-
-        <Input
-          label="Password"
-          type="password"
-          value={password}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-            setPassword(e.target.value)
-          }
-          required
-        />
-
-        <Button type="submit" loading={loading} className="w-full">
-          Login
-        </Button>
-
-        <p className="text-sm text-center text-gray-500">
-          Don’t have an account?{" "}
-          <Link href="/register" className="text-blue-600 hover:underline">
-            Register
+        <div className="flex items-center justify-between">
+          <Link
+            href="/forgot-password"
+            className="text-sm text-blue-600 hover:text-blue-500"
+          >
+            Forgot password?
           </Link>
-        </p>
-      </form>
+          <Link
+            href="/register"
+            className="font-medium text-blue-600 hover:text-blue-500"
+          >
+            Create account
+          </Link>
+        </div>
+      </div>
     </div>
   );
 }

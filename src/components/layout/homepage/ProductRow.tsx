@@ -3,7 +3,7 @@
 "use client";
 
 import React from "react";
-import ProductCard from "@/components/market/ProductCard";
+import ProductCard from "./ProductCard";
 
 interface ProductRowProps {
   title: string;
