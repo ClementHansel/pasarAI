@@ -1,3 +1,4 @@
+// app/login/page.tsx
 "use client";
 
 import { useState } from "react";
@@ -12,30 +13,33 @@ export default function LoginPage() {
 
   const handleLogin = async (email: string, password: string) => {
     setIsLoading(true);
+
     try {
-      const res = await fetch("/api/auth/login", {
+      const response = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
 
-      const data = await res.json();
+      const data = await response.json();
 
-      if (!res.ok) {
-        throw new Error(data.error || "Login failed");
+      if (!response.ok) {
+        throw new Error(data.message || "Authentication failed");
       }
 
+      // Save authentication data
       localStorage.setItem("accessToken", data.accessToken);
       localStorage.setItem("refreshToken", data.refreshToken);
       localStorage.setItem("user", JSON.stringify(data.user));
 
-      toast.success("Successfully logged in!");
+      toast.success("Login successful!");
       router.push("/dashboard");
-    } catch (err) {
-      if (err instanceof Error) {
-        toast.error(err.message);
+    } catch (error) {
+      // Corrected error handling
+      if (error instanceof Error) {
+        toast.error(error.message);
       } else {
-        toast.error("An error occurred during login");
+        toast.error("An unexpected error occurred");
       }
     } finally {
       setIsLoading(false);
@@ -43,28 +47,32 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-2xl shadow-lg">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="w-full max-w-md p-8 space-y-8 bg-white rounded-2xl shadow-lg">
         <div className="text-center">
-          <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
-            Welcome back
-          </h2>
+          <h1 className="text-3xl font-bold text-gray-900">Sign In</h1>
           <p className="mt-2 text-sm text-gray-600">
-            Please sign in to your account
+            Welcome back! Please sign in to your account
           </p>
         </div>
 
-        <LoginForm onLogin={handleLogin} />
+        {/* Login Form Component */}
+        <LoginForm onSubmit={handleLogin} isLoading={isLoading} />
 
-        <p className="mt-4 text-center text-sm text-gray-600">
-          Don&apos;t have an account?{" "}
+        <div className="flex items-center justify-between">
+          <Link
+            href="/forgot-password"
+            className="text-sm text-blue-600 hover:text-blue-500"
+          >
+            Forgot password?
+          </Link>
           <Link
             href="/register"
             className="font-medium text-blue-600 hover:text-blue-500"
           >
-            Sign up
+            Create account
           </Link>
-        </p>
+        </div>
       </div>
     </div>
   );
