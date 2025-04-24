@@ -1,22 +1,27 @@
 "use client";
 
 import { useState } from "react";
-
 import type { ChatMessage } from "./AIChatMessages";
 import AIChatMessages from "./AIChatMessages";
 import MessageInput from "./MessageInput";
 import AIChatHeader from "./AIChatHeader";
+import { cn } from "@/lib/utils";
 
-// Change when integrate Backend and AI
+type AIChatPanelProps = {
+  fullPage?: boolean;
+  onClose?: () => void;
+};
+
 const mockMessages: ChatMessage[] = [
   { id: 1, sender: "ai", text: "Hello! How can I help you today?" },
   { id: 2, sender: "user", text: "Tell me about your platform." },
 ];
 
-export default function AIChatPanel() {
-  const [isOpen, setIsOpen] = useState(true);
+export default function AIChatPanel({
+  fullPage = false,
+  onClose,
+}: AIChatPanelProps) {
   const [messages, setMessages] = useState<ChatMessage[]>(mockMessages);
-
   const [typing, setTyping] = useState(false);
 
   const handleSend = (text: string) => {
@@ -43,13 +48,18 @@ export default function AIChatPanel() {
     }, 1000);
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed bottom-20 right-6 w-[340px] max-h-[500px] bg-white rounded-xl shadow-lg border flex flex-col overflow-hidden z-50">
+    <div
+      className={cn(
+        fullPage
+          ? "w-full max-w-3xl h-[calc(100vh-4rem)] mx-auto mt-4"
+          : "fixed bottom-20 right-6 w-[340px] max-h-[500px] z-50",
+        "bg-white rounded-xl shadow-lg border flex flex-col overflow-hidden"
+      )}
+    >
       <AIChatHeader
-        onClose={() => setIsOpen(false)}
-        status={typing ? "typing" : "online"} // based on state
+        onClose={onClose ?? (() => {})}
+        status={typing ? "typing" : "online"}
       />
 
       <AIChatMessages messages={messages} />
