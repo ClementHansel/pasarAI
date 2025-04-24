@@ -5,7 +5,7 @@
 import { useState } from "react";
 import MessagesList from "../../components/messages/MessagesList";
 import MessageThread from "../../components/messages/MessageThread";
-import { Conversation, Message } from "../../types/message"; // Import the types
+import { Conversation, Message } from "../../types/message";
 
 // Sample data for conversations and messages
 const conversations: Conversation[] = [
