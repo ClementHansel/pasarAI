@@ -1,11 +1,22 @@
 // types/cart.ts
+// export interface CartItem {
+//   id: string;
+//   name: string;
+//   price: number;
+//   quantity: number;
+// }
+
+export interface SessionData {
+  cart: CartItem[];
+}
 export interface CartItem {
   id: string;
   name: string;
   price: number;
+  discountedPrice?: number;
   quantity: number;
-}
-
-export interface SessionData {
-  cart: CartItem[];
+  image: string;
+  marketId: string;
+  marketName: string;
+  discountPercentage?: number;
 }
