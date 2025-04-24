@@ -1,127 +1,83 @@
+// src/app/profile/page.tsx
 "use client";
 
-import React, { useState } from "react";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
-export default function UserProfilePage() {
-  const [editing, setEditing] = useState(false);
-  const [form, setForm] = useState({
-    name: "John Doe",
-    email: "john@example.com",
-    phone: "081234567890",
-    address: "Jl. Mawar No. 123, Jakarta",
-  });
+export default function ProfileIndexPage() {
+  const router = useRouter();
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setEditing(false);
-    console.log("Profile updated:", form);
-    // Connect to API for saving changes
-  };
+  useEffect(() => {
+    // In a real app, you would check if the user is logged in
+    // and redirect to the appropriate profile page based on user type
+    // For demo purposes, we'll provide options to view either profile
+    // In a production app, you'd redirect directly to the correct profile
+  }, [router]);
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-6">My Profile</h1>
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="bg-white p-8 rounded-xl shadow-md max-w-md w-full">
+        <h1 className="text-2xl font-bold text-center mb-6">
+          Profile Selection
+        </h1>
+        <p className="text-gray-600 mb-6 text-center">
+          Please select which profile type you&apos;d like to view:
+        </p>
 
-      <form
-        onSubmit={handleSubmit}
-        className="bg-white p-6 rounded shadow space-y-4"
-      >
-        {/* Name */}
-        <div>
-          <label htmlFor="name" className="block font-medium mb-1">
-            Name
-          </label>
-          <input
-            id="name"
-            name="name"
-            type="text"
-            value={form.name}
-            onChange={handleChange}
-            disabled={!editing}
-            className="w-full border rounded p-2"
-          />
-        </div>
-
-        {/* Email */}
-        <div>
-          <label htmlFor="email" className="block font-medium mb-1">
-            Email
-          </label>
-          <input
-            id="email"
-            name="email"
-            type="email"
-            value={form.email}
-            onChange={handleChange}
-            disabled={!editing}
-            className="w-full border rounded p-2"
-          />
-        </div>
-
-        {/* Phone */}
-        <div>
-          <label htmlFor="phone" className="block font-medium mb-1">
-            Phone
-          </label>
-          <input
-            id="phone"
-            name="phone"
-            type="text"
-            value={form.phone}
-            onChange={handleChange}
-            disabled={!editing}
-            className="w-full border rounded p-2"
-          />
-        </div>
-
-        {/* Address */}
-        <div>
-          <label htmlFor="address" className="block font-medium mb-1">
-            Address
-          </label>
-          <input
-            id="address"
-            name="address"
-            type="text"
-            value={form.address}
-            onChange={handleChange}
-            disabled={!editing}
-            className="w-full border rounded p-2"
-          />
-        </div>
-
-        <div className="flex justify-between mt-6">
-          {editing ? (
-            <>
-              <button
-                type="submit"
-                className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+        <div className="grid grid-cols-2 gap-4">
+          <div
+            onClick={() => router.push("/profile/user")}
+            className="border rounded-lg p-6 cursor-pointer hover:border-blue-500 hover:shadow-md transition-all text-center"
+          >
+            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-8 w-8 text-blue-600"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
               >
-                Save Changes
-              </button>
-              <button
-                type="button"
-                onClick={() => setEditing(false)}
-                className="text-red-600 hover:underline"
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                />
+              </svg>
+            </div>
+            <h2 className="font-medium text-lg mb-1">User Profile</h2>
+            <p className="text-sm text-gray-500">
+              View customer profile with orders and wishlist
+            </p>
+          </div>
+
+          <div
+            onClick={() => router.push("/profile/seller")}
+            className="border rounded-lg p-6 cursor-pointer hover:border-green-500 hover:shadow-md transition-all text-center"
+          >
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-8 w-8 text-green-600"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
               >
-                Cancel
-              </button>
-            </>
-          ) : (
-            <button
-              type="button"
-              onClick={() => setEditing(true)}
-              className="bg-blue-600 text-white px-6 py-3 rounded hover:bg-blue-700"
-            >
-              Edit Profile
-            </button>
-          )}
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
+                />
+              </svg>
+            </div>
+            <h2 className="font-medium text-lg mb-1">Seller Profile</h2>
+            <p className="text-sm text-gray-500">
+              View seller dashboard with analytics and products
+            </p>
+          </div>
         </div>
-      </form>
+      </div>
     </div>
   );
 }
