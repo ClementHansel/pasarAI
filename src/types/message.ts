@@ -1,21 +1,21 @@
 // src/types/message.ts
 
-// Define the possible roles for sender
-export type Sender = "buyer" | "seller" | "admin";
-
-// Define the Message type
 export type Message = {
   id: number;
   conversationId: number;
-  sender: Sender;
+  sender: "admin" | "seller" | "buyer";
   text: string;
   timestamp: string;
+  status?: "sent" | "delivered" | "read";
 };
 
-// Define the Conversation type
 export type Conversation = {
   id: number;
   title: string;
   lastMessage: string;
-  sender: Sender;
+  sender: "admin" | "seller" | "buyer";
+  avatar?: string;
+  unreadCount: number;
+  lastActive: string;
+  status?: "online" | "offline" | "away";
 };

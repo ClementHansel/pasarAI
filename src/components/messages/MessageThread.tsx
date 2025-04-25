@@ -1,92 +1,71 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useRef } from "react";
 import MessageBubble from "./MessageBubble";
+import MessageInput from "./MessageInput";
+import MessagesHeader from "./MessagesHeader";
 import { Message } from "@/types/message";
-
-// Placeholder for the user role, you can fetch this from your global state or API
-const getUserRole = () => {
-  // This could be replaced by actual logic to get the user's role (from context, session, etc.)
-  // Example: fetching from context or API
-  return "buyer"; // or "seller", "user" depending on the logged-in account
-};
+import { format } from "date-fns";
 
 type MessageThreadProps = {
   conversationId: number;
   messages: Message[];
   currentUserId: string;
+  userRole: "admin" | "seller" | "buyer";
+  conversationTitle: string;
+  onSendMessage: (message: string) => void;
+  onBack?: () => void;
 };
 
 export default function MessageThread({
-  conversationId,
   messages,
   currentUserId,
+  conversationTitle,
+  onSendMessage,
+  onBack,
 }: MessageThreadProps) {
-  const [newMessage, setNewMessage] = useState("");
-  const [sender, setSender] = useState<"admin" | "seller" | "buyer">("buyer"); // Default sender is "buyer"
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Set the sender role based on the logged-in user's role
+  // Scroll to bottom when messages change
   useEffect(() => {
-    const userRole = getUserRole(); // Fetch or get the user role from context, API, or session
-    setSender(userRole as "admin" | "seller" | "buyer"); // Set sender based on user role
-  }, []);
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
-  const handleSendMessage = () => {
-    if (newMessage.trim()) {
-      const newMsg: Message = {
-        id: Date.now(),
-        conversationId,
-        sender,
-        text: newMessage,
-        timestamp: new Date().toISOString(),
-      };
-      // Here you can handle sending the message to the backend or updating the state
-      console.log("New message:", newMsg);
-      setNewMessage(""); // Clear input field after sending
+  // Format timestamp to display
+  const formatTime = (timestamp: string) => {
+    try {
+      return format(new Date(timestamp), "h:mm a");
+    } catch (error) {
+      return "";
     }
   };
 
   return (
-    <div className="flex flex-col h-full bg-white shadow-lg rounded-lg border">
+    <div className="flex flex-col h-full bg-white rounded-lg border overflow-hidden">
       {/* Message thread header */}
-      <div className="px-4 py-2 border-b flex justify-between items-center bg-gray-100">
-        <h3 className="font-semibold text-lg">
-          Conversation #{conversationId}
-        </h3>
-      </div>
+      <MessagesHeader
+        title={conversationTitle}
+        onBack={onBack}
+        onOptionsClick={() => console.log("Options clicked")}
+      />
 
       {/* Messages List */}
-      <div className="overflow-y-auto flex-grow p-4 space-y-3">
+      <div className="overflow-y-auto flex-grow p-4 space-y-3 bg-gray-50">
         {messages.map((message) => (
           <MessageBubble
             key={message.id}
             sender={message.sender}
-            senderId={message.sender} // Assuming senderId corresponds to the sender's role
-            currentUserId={currentUserId} // Pass the current user's ID
+            senderId={message.sender}
+            currentUserId={currentUserId}
             text={message.text}
-            timestamp={message.timestamp} // Pass the timestamp as well
+            timestamp={formatTime(message.timestamp)}
           />
         ))}
+        <div ref={messagesEndRef} />
       </div>
 
       {/* New Message Input */}
-      <div className="border-t p-4 bg-gray-50">
-        <div className="flex items-center">
-          <textarea
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            rows={2}
-            className="w-full p-2 border rounded-lg resize-none"
-            placeholder="Type a message..."
-          />
-          <button
-            onClick={handleSendMessage}
-            className="ml-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-          >
-            Send
-          </button>
-        </div>
-      </div>
+      <MessageInput onSend={onSendMessage} disabled={false} />
     </div>
   );
 }

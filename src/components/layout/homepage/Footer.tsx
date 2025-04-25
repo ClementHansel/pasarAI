@@ -6,7 +6,8 @@ import React from "react";
 const Footer = () => {
   const pathname = usePathname();
   const isAuthPage = pathname === "/login" || pathname === "/register";
-  const isChatPage = pathname?.startsWith("/chat");
+  const isChatPage =
+    pathname?.startsWith("/chat") || pathname?.startsWith("/message");
 
   if (isAuthPage) {
     return (

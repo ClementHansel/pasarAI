@@ -16,9 +16,12 @@ import { usePathname } from "next/navigation";
 const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const pathname = usePathname();
+  const isChatOrMessagePage =
+    pathname?.startsWith("/chat") || pathname?.startsWith("/message");
 
   // Check if we're on auth pages (login/register)
-  const isAuthPage = pathname === "/login" || pathname === "/register";
+  const isAuthPage =
+    pathname === "/login" || pathname === "/register" || isChatOrMessagePage;
 
   // Check if we're on the homepage
   const isHomePage = pathname === "/";
