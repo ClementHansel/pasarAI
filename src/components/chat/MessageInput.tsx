@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import React, { useState } from "react";
 import { Send } from "lucide-react";
+import { Button } from "./Button";
 
 type MessageInputProps = {
   onSend: (text: string) => void;
@@ -9,45 +10,33 @@ type MessageInputProps = {
 
 export default function MessageInput({ onSend }: MessageInputProps) {
   const [input, setInput] = useState("");
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  useEffect(() => {
-    textareaRef.current?.focus(); // Autofocus on open
-  }, []);
-
-  const handleSend = () => {
-    const trimmed = input.trim();
-    if (!trimmed) return;
-    onSend(trimmed);
-    setInput("");
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (input.trim()) {
+      onSend(input);
+      setInput("");
     }
   };
 
   return (
-    <div className="flex items-end gap-2">
-      <textarea
-        ref={textareaRef}
-        rows={1}
-        value={input}
-        onChange={(e) => setInput(e.target.value)}
-        onKeyDown={handleKeyDown}
-        placeholder="Type your message..."
-        className="flex-1 resize-none rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-      />
-      <button
-        onClick={handleSend}
-        className="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-lg transition"
-        aria-label="Send message"
-        title="Send"
-      >
-        <Send className="w-4 h-4" />
-      </button>
+    <div className="border-t border-gray-200 bg-white p-4">
+      <form onSubmit={handleSubmit} className="max-w-3xl mx-auto flex gap-4">
+        <input
+          type="text"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder="Type a message..."
+          className="flex-1 min-w-0 rounded-lg border border-gray-300 bg-white px-3.5 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-purple-600 focus:outline-none sm:text-sm sm:leading-6"
+        />
+        <Button
+          type="submit"
+          className="bg-purple-600 hover:bg-purple-700"
+          disabled={!input.trim()}
+        >
+          <Send className="h-4 w-4" />
+        </Button>
+      </form>
     </div>
   );
 }

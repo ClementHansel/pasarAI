@@ -6,6 +6,7 @@ import React from "react";
 const Footer = () => {
   const pathname = usePathname();
   const isAuthPage = pathname === "/login" || pathname === "/register";
+  const isChatPage = pathname?.startsWith("/chat");
 
   if (isAuthPage) {
     return (
@@ -26,6 +27,10 @@ const Footer = () => {
         </div>
       </footer>
     );
+  }
+
+  if (isChatPage) {
+    return null; // Render nothing on chat pages
   }
 
   return (

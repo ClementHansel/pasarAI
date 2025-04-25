@@ -1,70 +1,51 @@
 "use client";
 
-import { useState } from "react";
-import type { ChatMessage } from "./AIChatMessages";
-import AIChatMessages from "./AIChatMessages";
-import MessageInput from "./MessageInput";
+import { useState, useEffect, useRef } from "react";
 import AIChatHeader from "./AIChatHeader";
-import { cn } from "@/lib/utils";
+import AIChatMessages, { Message as ChatMessage } from "./AIChatMessages";
+import MessageInput from "./MessageInput";
 
-type AIChatPanelProps = {
-  fullPage?: boolean;
-  onClose?: () => void;
-};
-
-const mockMessages: ChatMessage[] = [
-  { id: 1, sender: "ai", text: "Hello! How can I help you today?" },
-  { id: 2, sender: "user", text: "Tell me about your platform." },
-];
-
-export default function AIChatPanel({
-  fullPage = false,
-  onClose,
-}: AIChatPanelProps) {
-  const [messages, setMessages] = useState<ChatMessage[]>(mockMessages);
-  const [typing, setTyping] = useState(false);
+export default function AIChatPanel() {
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const handleSend = (text: string) => {
-    if (!text.trim()) return;
-    const newMessage: ChatMessage = {
-      id: Date.now(),
-      sender: "user",
-      text,
+    const timestamp = Date.now();
+    const userMsg: ChatMessage = {
+      id: timestamp.toString(),
+      content: text,
+      role: "user",
+      timestamp: new Date(timestamp).toISOString(),
     };
-    setMessages((prev) => [...prev, newMessage]);
-
-    setTyping(true);
-
-    setTimeout(() => {
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: Date.now() + 1,
-          sender: "ai",
-          text: "Thanks for your message!",
-        },
-      ]);
-      setTyping(false);
-    }, 1000);
+    const aiMsg: ChatMessage = {
+      id: (timestamp + 1).toString(),
+      content: `Echo: ${text}`,
+      role: "assistant",
+      timestamp: new Date(timestamp + 1).toISOString(),
+    };
+    setMessages((prev) => [...prev, userMsg, aiMsg]);
   };
 
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
   return (
-    <div
-      className={cn(
-        fullPage
-          ? "w-full max-w-3xl h-[calc(100vh-4rem)] mx-auto mt-4"
-          : "fixed bottom-20 right-6 w-[340px] max-h-[500px] z-50",
-        "bg-white rounded-xl shadow-lg border flex flex-col overflow-hidden"
-      )}
-    >
-      <AIChatHeader
-        onClose={onClose ?? (() => {})}
-        status={typing ? "typing" : "online"}
-      />
+    <div className="flex flex-col h-full">
+      <AIChatHeader onClose={() => {}} />
 
-      <AIChatMessages messages={messages} />
+      <div className="flex flex-col flex-1 overflow-y-auto p-4">
+        {messages.length === 0 ? (
+          <div className="flex-1 flex items-center justify-center text-gray-500 text-sm">
+            Start a conversation with AI
+          </div>
+        ) : (
+          <AIChatMessages messages={messages} />
+        )}
+        <div ref={messagesEndRef} />
+      </div>
 
-      <div className="p-2 border-t">
+      <div className="sticky bottom-0 bg-white border-t border-gray-200 p-4">
         <MessageInput onSend={handleSend} />
       </div>
     </div>
