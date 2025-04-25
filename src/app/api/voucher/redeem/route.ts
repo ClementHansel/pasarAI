@@ -1,3 +1,4 @@
+// src/app/api/voucher/redeem/route.ts
 import { db } from "@/lib/db/db";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -13,33 +14,48 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const voucher = await db.voucher.findUnique({
-      where: { code },
+    // Use Prisma transaction for atomic and safe update
+    const result = await db.$transaction(async (tx) => {
+      const voucher = await tx.voucher.findUnique({
+        where: { code },
+      });
+
+      if (
+        !voucher ||
+        !voucher.isActive ||
+        voucher.isRedeemed ||
+        (voucher.expiryDate && new Date() > voucher.expiryDate)
+      ) {
+        throw new Error("Voucher is invalid, expired, or already redeemed.");
+      }
+
+      const redeemedVoucher = await tx.voucher.update({
+        where: { id: voucher.id },
+        data: {
+          isRedeemed: true,
+          isActive: false,
+          redeemedAt: new Date(),
+        },
+      });
+
+      return redeemedVoucher;
     });
 
-    if (!voucher || !voucher.isActive) {
-      return NextResponse.json(
-        { error: "Invalid or expired voucher." },
-        { status: 404 }
-      );
-    }
-
-    // Optionally: validate if voucher is expired or already used
-
     return NextResponse.json({
-      message: "Voucher valid.",
+      message: "Voucher redeemed successfully.",
       voucher: {
-        id: voucher.id,
-        code: voucher.code,
-        discount: voucher.discount,
-        value: voucher.value,
-        type: voucher.type,
+        id: result.id,
+        code: result.code,
+        discount: result.discount,
+        value: result.value,
+        type: result.type,
+        redeemedAt: result.redeemedAt,
       },
     });
   } catch (error: unknown) {
     if (error instanceof Error) {
       console.error("Error redeeming voucher:", error.message);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
     return NextResponse.json(

@@ -20,11 +20,18 @@ export async function GET(req: NextRequest) {
           select: { id: true, name: true, profileImage: true }, // reviewer info
         },
         product: {
-          select: { id: true, name: true, image: true }, // optional: show product reviewed
+          select: { id: true, name: true, image: true },
         },
       },
       orderBy: { createdAt: "desc" },
     });
+
+    if (reviews.length === 0) {
+      return NextResponse.json(
+        { message: "No reviews found for this seller." },
+        { status: 404 }
+      );
+    }
 
     return NextResponse.json(reviews);
   } catch (error) {
@@ -48,8 +55,19 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  try {
-    const newReview = await db.review.create({
+  // Start a transaction to ensure ACID properties
+  const transaction = await db.$transaction(async (prisma) => {
+    // Check if the product exists and the seller exists
+    const product = await prisma.product.findUnique({
+      where: { id: productId },
+    });
+
+    if (!product) {
+      throw new Error("Product not found.");
+    }
+
+    // Create the new review
+    const newReview = await prisma.review.create({
       data: {
         accountId: userId, // buyer who wrote the review
         sellerId, // seller being reviewed
@@ -59,7 +77,11 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    return NextResponse.json(newReview, { status: 201 });
+    return newReview;
+  });
+
+  try {
+    return NextResponse.json(transaction, { status: 201 });
   } catch (error) {
     console.error("POST /api/reviews/seller", error);
     return NextResponse.json(

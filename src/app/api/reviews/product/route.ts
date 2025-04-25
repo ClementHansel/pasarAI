@@ -23,6 +23,13 @@ export async function GET(req: NextRequest) {
       orderBy: { createdAt: "desc" },
     });
 
+    if (!reviews.length) {
+      return NextResponse.json(
+        { message: "No reviews found." },
+        { status: 404 }
+      );
+    }
+
     return NextResponse.json(reviews, { status: 200 });
   } catch (error) {
     console.error("[GET /api/reviews/product] Error:", error);
@@ -35,32 +42,32 @@ export async function GET(req: NextRequest) {
 
 // POST: /api/reviews/product
 export async function POST(req: NextRequest) {
-  try {
-    const { productId, accountId, rating, comment } = await req.json();
+  const { productId, accountId, rating, comment } = await req.json();
 
-    if (!productId || !accountId || typeof rating !== "number") {
-      return NextResponse.json(
-        { error: "Product ID, Account ID, and rating are required." },
-        { status: 400 }
-      );
-    }
+  if (!productId || !accountId || typeof rating !== "number") {
+    return NextResponse.json(
+      { error: "Product ID, Account ID, and rating are required." },
+      { status: 400 }
+    );
+  }
 
-    // Get the sellerId based on the productId
-    const product = await db.product.findUnique({
+  // Start a transaction to ensure ACID properties
+  const transaction = await db.$transaction(async (prisma) => {
+    // Step 1: Check if the product exists
+    const product = await prisma.product.findUnique({
       where: { id: productId },
       select: { accountId: true },
     });
 
     if (!product) {
-      return NextResponse.json(
-        { error: "Product not found." },
-        { status: 404 }
-      );
+      throw new Error("Product not found.");
     }
 
+    // Fetch the sellerId
     const sellerId = product.accountId;
 
-    const newReview = await db.review.create({
+    // Create the new review
+    const newReview = await prisma.review.create({
       data: {
         productId,
         accountId,
@@ -70,7 +77,11 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    return NextResponse.json(newReview, { status: 201 });
+    return newReview;
+  });
+
+  try {
+    return NextResponse.json(transaction, { status: 201 });
   } catch (error) {
     console.error("[POST /api/reviews/product] Error:", error);
     return NextResponse.json(

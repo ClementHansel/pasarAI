@@ -1,13 +1,11 @@
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
-
 import { z } from "zod";
 import { db } from "@/lib/db/db";
 import { categorizeProduct } from "@/lib/db/productCategorization";
 
 const prisma = new PrismaClient();
 
-// Move this helper function to the top before it's used
 function isNewArrival(createdAt: Date): boolean {
   const oneDay = 24 * 60 * 60 * 1000;
   return Date.now() - createdAt.getTime() <= oneDay;
@@ -110,93 +108,105 @@ export async function POST(req: Request) {
       featured,
     } = parsed.data;
 
-    if (sku) {
-      const existing = await prisma.product.findFirst({ where: { sku } });
-      if (existing) {
-        return NextResponse.json(
-          { error: "Product with this SKU already exists" },
-          { status: 409 }
-        );
+    // Transaction to ensure atomic operations
+    const transaction = await prisma.$transaction(async (prisma) => {
+      // Check for existing SKU
+      if (sku) {
+        const existing = await prisma.product.findFirst({ where: { sku } });
+        if (existing) {
+          throw new Error("Product with this SKU already exists");
+        }
       }
-    }
 
-    // Ensure category
-    let finalCategoryId = categoryId;
-    if (!finalCategoryId) {
-      const uncategorized = await prisma.category.findFirst({
-        where: { name: "Uncategorized" },
+      // Ensure category exists or create it
+      let finalCategoryId = categoryId;
+      if (!finalCategoryId) {
+        const uncategorized = await prisma.category.findFirst({
+          where: { name: "Uncategorized" },
+        });
+        if (uncategorized) {
+          finalCategoryId = uncategorized.id;
+        } else {
+          const created = await prisma.category.create({
+            data: { name: "Uncategorized" },
+          });
+          finalCategoryId = created.id;
+        }
+      }
+
+      // Ensure label exists or create it
+      const labelObj = await prisma.label.upsert({
+        where: { name: label },
+        update: {},
+        create: { name: label },
       });
-      if (uncategorized) {
-        finalCategoryId = uncategorized.id;
-      } else {
-        const created = await prisma.category.create({
-          data: { name: "Uncategorized" },
-        });
-        finalCategoryId = created.id;
-      }
-    }
 
-    // Ensure label exists or create it
-    const labelObj = await prisma.label.upsert({
-      where: { name: label },
-      update: {},
-      create: { name: label },
-    });
+      // Auto-labels
+      const autoLabels: string[] = [];
+      if (createdAt && isNewArrival(new Date(createdAt)))
+        autoLabels.push("New Arrival");
+      if (discount && discount > 0) autoLabels.push("On Sale");
+      if (featured) autoLabels.push("Featured");
 
-    // Auto-labels
-    const autoLabels: string[] = [];
-    if (createdAt && isNewArrival(new Date(createdAt)))
-      autoLabels.push("New Arrival");
-    if (discount && discount > 0) autoLabels.push("On Sale");
-    if (featured) autoLabels.push("Featured");
+      const autoLabelConnections = await Promise.all(
+        autoLabels.map(async (labelName) => {
+          return prisma.label.upsert({
+            where: { name: labelName },
+            update: {},
+            create: { name: labelName },
+          });
+        })
+      );
 
-    const autoLabelConnections = await Promise.all(
-      autoLabels.map(async (labelName) => {
-        return prisma.label.upsert({
-          where: { name: labelName },
-          update: {},
-          create: { name: labelName },
-        });
-      })
-    );
-
-    const newProduct = await prisma.product.create({
-      data: {
-        name,
-        description,
-        price,
-        image,
-        stock,
-        soldCount,
-        unit,
-        categoryId: finalCategoryId,
-        ecoCertifications,
-        origin,
-        sku,
-        isActive,
-        accountId,
-        marketId,
-        tags: formatTagsForCreateOrUpdate(tags),
-        labels: {
-          connect: [
-            { id: labelObj.id },
-            ...autoLabelConnections.map((l) => ({ id: l.id })),
-          ],
+      // Create product
+      const newProduct = await prisma.product.create({
+        data: {
+          name,
+          description,
+          price,
+          image,
+          stock,
+          soldCount,
+          unit,
+          categoryId: finalCategoryId,
+          ecoCertifications,
+          origin,
+          sku,
+          isActive,
+          accountId,
+          marketId,
+          tags: formatTagsForCreateOrUpdate(tags),
+          labels: {
+            connect: [
+              { id: labelObj.id },
+              ...autoLabelConnections.map((l) => ({ id: l.id })),
+            ],
+          },
         },
-      },
-      include: { tags: true, category: true, labels: true },
+        include: { tags: true, category: true, labels: true },
+      });
+
+      return newProduct;
     });
 
     return NextResponse.json(
-      { message: "Product created", product: newProduct },
+      { message: "Product created", product: transaction },
       { status: 201 }
     );
-  } catch (error) {
-    console.error("POST error:", error);
-    return NextResponse.json(
-      { error: "Failed to create product" },
-      { status: 500 }
-    );
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      console.error("POST error:", error.message);
+      return NextResponse.json(
+        { error: error.message || "Failed to create product" },
+        { status: 500 }
+      );
+    } else {
+      console.error("POST error:", error);
+      return NextResponse.json(
+        { error: "Failed to create product" },
+        { status: 500 }
+      );
+    }
   }
 }
 
@@ -235,50 +245,67 @@ export async function PUT(req: Request) {
       return NextResponse.json({ error: "Product not found" }, { status: 404 });
     }
 
-    if (categoryId && categoryLabel) {
-      await prisma.category.update({
-        where: { id: categoryId },
-        data: { label: categoryLabel },
-      });
-    }
+    const transaction = await prisma.$transaction(async (prisma) => {
+      if (categoryId && categoryLabel) {
+        await prisma.category.update({
+          where: { id: categoryId },
+          data: { label: categoryLabel },
+        });
+      }
 
-    let finalCategoryId = categoryId;
-    if (!finalCategoryId) {
-      const newCat = await categorizeProduct(name + " " + (description || ""));
-      finalCategoryId = newCat || existing.categoryId;
-    }
+      let finalCategoryId = categoryId;
+      if (!finalCategoryId) {
+        const newCat = await categorizeProduct(
+          name + " " + (description || "")
+        );
+        finalCategoryId = newCat || existing.categoryId;
+      }
 
-    const updated = await prisma.product.update({
-      where: { id },
-      data: {
-        name,
-        description,
-        price,
-        image,
-        stock,
-        soldCount,
-        unit,
-        categoryId: finalCategoryId,
-        ecoCertifications,
-        origin,
-        sku,
-        isActive,
-        accountId,
-        tags: {
-          set: [],
-          ...formatTagsForCreateOrUpdate(tags),
+      const updated = await prisma.product.update({
+        where: { id },
+        data: {
+          name,
+          description,
+          price,
+          image,
+          stock,
+          soldCount,
+          unit,
+          categoryId: finalCategoryId,
+          ecoCertifications,
+          origin,
+          sku,
+          isActive,
+          accountId,
+          tags: {
+            set: [],
+            ...formatTagsForCreateOrUpdate(tags),
+          },
         },
-      },
-      include: { tags: true, category: true },
+        include: { tags: true, category: true },
+      });
+
+      return updated;
     });
 
-    return NextResponse.json({ message: "Product updated", product: updated });
-  } catch (error) {
-    console.error("PUT error:", error);
-    return NextResponse.json(
-      { error: "Failed to update product" },
-      { status: 500 }
-    );
+    return NextResponse.json({
+      message: "Product updated",
+      product: transaction,
+    });
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      console.error("PUT error:", error.message);
+      return NextResponse.json(
+        { error: error.message || "Failed to update product" },
+        { status: 500 }
+      );
+    } else {
+      console.error("PUT error:", error);
+      return NextResponse.json(
+        { error: "Failed to update product" },
+        { status: 500 }
+      );
+    }
   }
 }
 
@@ -299,12 +326,21 @@ export async function DELETE(req: Request) {
     }
 
     await prisma.product.delete({ where: { id } });
+
     return NextResponse.json({ message: "Product deleted" });
-  } catch (error) {
-    console.error("DELETE error:", error);
-    return NextResponse.json(
-      { error: "Failed to delete product" },
-      { status: 500 }
-    );
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      console.error("DELETE error:", error.message);
+      return NextResponse.json(
+        { error: error.message || "Failed to delete product" },
+        { status: 500 }
+      );
+    } else {
+      console.error("DELETE error:", error);
+      return NextResponse.json(
+        { error: "Failed to delete product" },
+        { status: 500 }
+      );
+    }
   }
 }
