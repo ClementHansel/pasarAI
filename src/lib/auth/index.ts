@@ -1,6 +1,8 @@
 // src/lib/auth/index.ts
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
+import { verifyPassword } from "@/lib/auth/authUtils";
+import { findAccountByEmail } from "./accountService";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -11,13 +13,30 @@ export const authOptions: NextAuthOptions = {
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        if (
-          credentials?.email === "test@example.com" &&
-          credentials.password === "password"
-        ) {
-          return { id: "1", email: "test@example.com", role: "BUYER" };
+        if (!credentials?.email || !credentials.password) {
+          throw new Error("Email and password required");
         }
-        return null;
+
+        const account = await findAccountByEmail(credentials.email);
+
+        if (!account || !account.hashedPassword) {
+          throw new Error("No account found");
+        }
+
+        const isValid = await verifyPassword(
+          credentials.password,
+          account.hashedPassword
+        );
+
+        if (!isValid) {
+          throw new Error("Invalid credentials");
+        }
+
+        return {
+          id: account.id,
+          email: account.email,
+          role: account.role,
+        };
       },
     }),
   ],
@@ -25,19 +44,24 @@ export const authOptions: NextAuthOptions = {
     strategy: "jwt",
   },
   callbacks: {
-    async jwt({ token, user }) {
-      if (user) {
-        token.id = user.id;
-        token.role = (user as any).role; // optional improvement explained below
+    async jwt({ token, account }) {
+      if (account) {
+        token.id = account.id;
+        token.role = account.role;
       }
       return token;
     },
     async session({ session, token }) {
-      if (session.user) {
-        session.user.id = token.id as string;
-        (session.user as any).role = token.role as string;
+      if (session.account) {
+        session.account.id = token.id;
+        session.account.role = token.role;
       }
       return session;
     },
   },
+  pages: {
+    signIn: "/auth/login", // optional: custom login page
+    error: "/auth/error", // optional: error redirect
+  },
+  secret: process.env.NEXTAUTH_SECRET,
 };
