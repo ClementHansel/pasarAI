@@ -1,30 +1,42 @@
 // src/components/layout/homepage/header/Header.tsx
-
 import React from "react";
-import Logo from "./Logo";
-import SearchBox from "./SearchBox";
-import NotificationPopover from "./NotificationPopover";
-import MessagePopover from "./MessagePopover";
-import UserMenuPopover from "./UserMenuPopover";
+import { Bell } from "lucide-react";
+import {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+} from "@/components/ui/popover";
 
-const Header = () => {
+const NotificationPopover = () => {
   return (
-    <header className="w-full px-4 py-3 border-b bg-white shadow-sm sticky top-0 z-50">
-      <div className="container mx-auto flex items-center justify-between gap-4">
-        <Logo />
-
-        <div className="flex-1 max-w-xl">
-          <SearchBox />
+    <Popover>
+      <PopoverTrigger className="relative">
+        <Bell className="w-6 h-6 text-gray-700" />
+        <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
+          3
+        </span>
+      </PopoverTrigger>
+      <PopoverContent className="w-80 p-4">
+        <h4 className="font-semibold mb-2">Notifications</h4>
+        <div className="space-y-2">
+          <div className="text-sm">
+            <p className="font-medium">New Order Placed</p>
+            <p className="text-gray-500">Your order #123 has been confirmed</p>
+          </div>
+          <div className="text-sm">
+            <p className="font-medium">Price Drop Alert</p>
+            <p className="text-gray-500">
+              Item in your wishlist is now on sale
+            </p>
+          </div>
+          <div className="text-sm">
+            <p className="font-medium">Delivery Update</p>
+            <p className="text-gray-500">Your package is out for delivery</p>
+          </div>
         </div>
-
-        <div className="flex items-center gap-4">
-          <MessagePopover />
-          <NotificationPopover />
-          <UserMenuPopover />
-        </div>
-      </div>
-    </header>
+      </PopoverContent>
+    </Popover>
   );
 };
 
-export default Header;
+export default NotificationPopover;

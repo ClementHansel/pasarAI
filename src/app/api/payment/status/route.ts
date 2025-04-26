@@ -1,4 +1,9 @@
+<<<<<<< HEAD
 import { db } from "@/lib/db/db";
+=======
+// src/app/api/payment/status/route.ts
+
+>>>>>>> ff1ef1814698ce0c5428aeb9f757c077851f05cb
 import { NextResponse } from "next/server";
 
 export async function GET(req: Request) {
@@ -9,6 +14,7 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Payment ID required" }, { status: 400 });
   }
 
+<<<<<<< HEAD
   try {
     // Convert paymentId to a number for database query
     const paymentIdNumber = parseInt(paymentId, 10);
@@ -161,4 +167,13 @@ export async function POST(req: Request) {
       { status: 500 }
     );
   }
+=======
+  // Mock status
+  const status = "completed";
+
+  return NextResponse.json({
+    paymentId,
+    status,
+  });
+>>>>>>> ff1ef1814698ce0c5428aeb9f757c077851f05cb
 }

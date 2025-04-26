@@ -24,7 +24,6 @@ const UserMenuPopover = () => {
             Seller Dashboard
           </li>
           <li className="hover:text-primary cursor-pointer">Profile</li>
-          <li className="hover:text-primary cursor-pointer">Settings</li>
         </ul>
       </PopoverContent>
     </Popover>
