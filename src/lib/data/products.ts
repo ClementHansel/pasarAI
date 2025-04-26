@@ -26,14 +26,14 @@ const categoryFruits: Category = {
 const reviews: Review[] = [
   {
     id: 1,
-    userId: 101,
+    accountId: 101,
     rating: 4,
     comment: "Very fresh and good quality!",
     createdAt: new Date(),
   },
   {
     id: 2,
-    userId: 102,
+    accountId: 102,
     rating: 5,
     comment: "Highly recommended.",
     createdAt: new Date(),

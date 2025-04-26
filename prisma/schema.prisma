@@ -200,8 +200,6 @@ model Order {
   buyerId         String
   status          OrderStatus   @default(PENDING)
   paymentStatus   PaymentStatus @default(PENDING)
-  paymentMethod   String
-  paymentMethod   String
   shippingAddress String
   notes           String?
   totalPrice      Float

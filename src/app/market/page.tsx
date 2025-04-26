@@ -6,7 +6,6 @@ import {
   Home,
   Globe,
   Filter,
-  ChevronDown,
   BarChart2,
   RefreshCw,
   X,
@@ -231,6 +230,7 @@ const MarketPage = () => {
             <button
               onClick={() => setShowMobileFilters(false)}
               className="text-gray-500 hover:text-gray-700"
+              aria-label="Show mobile filters"
             >
               <X size={24} />
             </button>
@@ -246,6 +246,7 @@ const MarketPage = () => {
             <button
               onClick={resetFilters}
               className="w-full py-2 px-4 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-100"
+              aria-label="Reset filters"
             >
               Reset Filters
             </button>
@@ -261,6 +262,7 @@ const MarketPage = () => {
             <button
               onClick={() => setShowComparison(false)}
               className="text-gray-500 hover:text-gray-700"
+              aria-label="Show Comparison"
             >
               <X size={24} />
             </button>

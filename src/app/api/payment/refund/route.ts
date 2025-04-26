@@ -1,15 +1,9 @@
-<<<<<<< HEAD
 import { db } from "@/lib/db/db";
-=======
-// src/app/api/payment/refund/route.ts
-
->>>>>>> ff1ef1814698ce0c5428aeb9f757c077851f05cb
 import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
   const { paymentId, reason } = await req.json();
 
-<<<<<<< HEAD
   if (!paymentId || !reason) {
     return NextResponse.json(
       { error: "Payment ID and reason are required" },
@@ -106,17 +100,4 @@ export async function POST(req: Request) {
       { status: 500 }
     );
   }
-=======
-  if (!paymentId) {
-    return NextResponse.json({ error: "Payment ID required" }, { status: 400 });
-  }
-
-  // Mock refund logic
-  return NextResponse.json({
-    message: "Refund initiated",
-    paymentId,
-    refunded: true,
-    reason,
-  });
->>>>>>> ff1ef1814698ce0c5428aeb9f757c077851f05cb
 }

@@ -153,6 +153,7 @@ const ProductPage = () => {
             <button
               onClick={() => setShowMobileFilters(false)}
               className="text-gray-500 hover:text-gray-700"
+              aria-label="Filters"
             >
               <X size={24} />
             </button>

@@ -57,7 +57,7 @@ export async function PATCH(req: Request) {
               ? "CANCEL_ORDER"
               : "UPDATE_ORDER_STATUS",
           orderId: orderIdToUpdate,
-          user,
+          account,
           reason: cancelReason,
         },
       });

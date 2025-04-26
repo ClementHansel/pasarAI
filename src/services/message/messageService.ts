@@ -1,4 +1,4 @@
-import { db } from "../db/db";
+import { db } from "@/lib/db/db";
 
 export const getConversations = async (
   accountId: string,
