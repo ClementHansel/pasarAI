@@ -48,6 +48,15 @@ const createProduct = (
 ): Product => ({
   id,
   name,
+  brand: [
+    {
+      id: id,
+      name: `Brand-${id}`,
+      description: `Official brand for ${name}`,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+  ],
   description: `${name} - a high-quality product.`,
   price: 10000 + id * 100,
   originalPrice: 12000 + id * 100,

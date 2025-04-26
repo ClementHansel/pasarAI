@@ -1,43 +1,95 @@
+// src/app/products/[id]/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
-import Image from "next/image";
-import { Product } from "@/types/product";
+import { useParams, useRouter } from "next/navigation";
 import { domesticProducts, globalProducts } from "@/lib/data/products";
+import ProductDetails from "@/components/product/ProductDetails";
+import { Currency } from "@/types/market";
+import ProductImages from "@/components/product/ProductImage";
+import { ProductDetailSkeleton } from "@/components/product/ProductDetailSkleton";
+import { Star } from "lucide-react";
 
-const ProductDetailPage = () => {
+export default function ProductDetailPage() {
+  const router = useRouter();
   const params = useParams();
-  const [product, setProduct] = useState<Product | null>(null);
+  const [product, setProduct] = useState<any>(null);
+  const [marketId, setMarketId] = useState("");
+  const [currency, setCurrency] = useState<Currency>(Currency.IDR);
+  const [loading, setLoading] = useState(true);
+  const [isDomestic, setIsDomestic] = useState(false);
 
   useEffect(() => {
-    const id = params?.id;
-    if (!id || Array.isArray(id)) return;
+    const findProduct = () => {
+      const id = params?.id;
+      if (!id || Array.isArray(id)) return;
 
-    const productId = parseInt(id, 10);
-    if (isNaN(productId)) return;
+      const productId = parseInt(id, 10);
+      if (isNaN(productId)) return;
 
-    const allProducts = [
-      ...domesticProducts.flatMap((region) =>
-        region.subregions.flatMap((sub) =>
-          sub.cities.flatMap((city) => city.products)
-        )
-      ),
-      ...globalProducts.flatMap((region) =>
-        region.subregions.flatMap((sub) =>
-          sub.cities.flatMap((city) => city.products)
-        )
-      ),
-    ];
+      // Search domestic products
+      for (const region of domesticProducts) {
+        for (const subregion of region.subregions) {
+          for (const city of subregion.cities) {
+            const found = city.products.find((p) => p.id === productId);
+            if (found) {
+              setCurrency(Currency.IDR);
+              setMarketId(city.id);
+              setIsDomestic(true);
+              return found;
+            }
+          }
+        }
+      }
 
-    const selectedProduct = allProducts.find((p) => p.id === productId);
-    setProduct(selectedProduct || null);
-  }, [params]);
+      // Search global products
+      for (const region of globalProducts) {
+        for (const subregion of region.subregions) {
+          for (const city of subregion.cities) {
+            const found = city.products.find((p) => p.id === productId);
+            if (found) {
+              setCurrency(Currency.USD);
+              setMarketId(city.id);
+              setIsDomestic(false);
+              return found;
+            }
+          }
+        }
+      }
+
+      return null;
+    };
+
+    const selectedProduct = findProduct();
+    if (!selectedProduct) {
+      router.push("/product");
+      return;
+    }
+
+    setProduct(selectedProduct);
+    setLoading(false);
+  }, [params, router]);
+
+  if (loading) {
+    return (
+      <div className="container mx-auto py-10 px-4 lg:px-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-start">
+          <ProductDetailSkeleton />
+          <div className="space-y-6">
+            <ProductDetailSkeleton />
+            <ProductDetailSkeleton />
+            <ProductDetailSkeleton />
+            <ProductDetailSkeleton />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!product) {
     return (
-      <div className="container mx-auto py-10 text-center text-red-500">
-        <p className="text-xl">Product not found.</p>
+      <div className="container mx-auto py-10 text-center">
+        <p className="text-xl text-red-500">Product not found</p>
       </div>
     );
   }
@@ -45,51 +97,39 @@ const ProductDetailPage = () => {
   return (
     <div className="container mx-auto py-10 px-4 lg:px-8">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-start">
-        {/* Image Section */}
-        <div className="w-full">
-          <Image
-            src={product.imageUrls[0]}
-            alt={product.name}
-            width={700}
-            height={700}
-            className="rounded-2xl w-full object-cover shadow-md"
-            priority
-          />
-        </div>
+        <ProductImages images={product.imageUrls} />
+        <ProductDetails
+          product={product}
+          marketId={marketId}
+          currency={currency}
+          isDomestic={isDomestic}
+        />
+      </div>
 
-        {/* Info Section */}
+      {/* Reviews Section */}
+      <div className="mt-16 border-t pt-12">
+        <h2 className="text-2xl font-bold mb-6">Customer Reviews</h2>
         <div className="space-y-6">
-          <h1 className="text-4xl font-bold text-gray-900">{product.name}</h1>
-
-          <p className="text-xl text-gray-700">{product.description}</p>
-
-          <div className="text-3xl font-semibold text-green-600">
-            ${product.price.toFixed(2)}
-          </div>
-
-          {/* Optional tags */}
-          <div className="flex gap-2">
-            <span className="text-sm bg-gray-100 text-gray-600 px-3 py-1 rounded-full">
-              Category: {product.category?.name ?? "Uncategorized"}
-            </span>
-            <span className="text-sm bg-gray-100 text-gray-600 px-3 py-1 rounded-full">
-              In Stock
-            </span>
-          </div>
-
-          {/* CTA Buttons */}
-          <div className="flex gap-4 mt-6">
-            <button className="bg-black text-white text-lg px-6 py-3 rounded-lg hover:bg-gray-800 transition">
-              Add to Cart
-            </button>
-            <button className="border border-gray-300 text-gray-800 text-lg px-6 py-3 rounded-lg hover:bg-gray-100 transition">
-              Add to Wishlist
-            </button>
-          </div>
+          {product.reviews?.map((review: any) => (
+            <div key={review.id} className="border-b pb-6">
+              <div className="flex items-center gap-2 mb-2">
+                {[...Array(5)].map((_, i) => (
+                  <Star
+                    key={i}
+                    className={`h-5 w-5 ${
+                      i < review.rating ? "text-yellow-400" : "text-gray-300"
+                    }`}
+                  />
+                ))}
+              </div>
+              <p className="text-gray-600">{review.comment}</p>
+              <p className="text-sm text-gray-500 mt-2">
+                {new Date(review.createdAt).toLocaleDateString()}
+              </p>
+            </div>
+          ))}
         </div>
       </div>
     </div>
   );
-};
-
-export default ProductDetailPage;
+}

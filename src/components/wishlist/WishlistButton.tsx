@@ -13,12 +13,14 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 
 type WishlistButtonProps = {
   accountId: string; // Required directly now
   productId: string;
   marketId: string;
   size?: number;
+  className?: string;
 };
 
 export default function WishlistButton({
@@ -63,7 +65,7 @@ export default function WishlistButton({
             onClick={handleToggle}
             disabled={loading}
             aria-label="Toggle Wishlist"
-            className="hover:scale-110 transition-transform"
+            className={cn("hover:scale-110 transition-transform")}
           >
             {isWishlisted ? (
               <Heart className="text-red-500 fill-red-500" size={size} />
