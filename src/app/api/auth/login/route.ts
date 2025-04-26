@@ -1,84 +1,74 @@
-// src/app/api/auth/login/route.ts
-
 import { NextResponse } from "next/server";
-import { PrismaClient, Role } from "@prisma/client"; // Use Prisma Role enum directly
+
 import {
   comparePassword,
   generateAccessToken,
   generateRefreshToken,
-  verifyRefreshToken, // Import the centralized verifyRefreshToken function
 } from "@/lib/auth/authUtils";
-
-// Initialize Prisma client
-const prisma = new PrismaClient();
+import { loginSchema } from "@/lib/validation/authValidation";
+import { rateLimiter } from "@/lib/rateLimiter";
+import {
+  createSession,
+  findAccountByEmail,
+  updateLastLogin,
+} from "@/lib/auth/accountService";
+import { logLoginAttempt } from "@/services/account/accountService";
 
 export async function POST(req: Request) {
+  const ip = req.headers.get("x-forwarded-for") || "unknown";
+  const userAgent = req.headers.get("user-agent") || "unknown";
+
   try {
-    // Parse incoming JSON data
-    const { email, password, refreshToken } = await req.json(); // Assuming refreshToken is passed in the request body
+    // Check rate limit
+    const { remaining } = await rateLimiter(ip);
 
-    // If refreshToken is provided, verify it first
-    if (refreshToken) {
-      try {
-        const { sub, version } = verifyRefreshToken(refreshToken); // Verify refresh token
-        console.log("Refresh token verified", { sub, version });
-
-        // Optionally, handle any logic if refreshToken is valid.
-        // For example, you can check if the account associated with `sub` exists and is active.
-      } catch {
-        return NextResponse.json(
-          { error: "Invalid refresh token" },
-          { status: 401 }
-        );
-      }
-    }
-
-    // Input validation
-    if (!email || !password) {
+    if (remaining <= 0) {
       return NextResponse.json(
-        { error: "Missing email or password" },
-        { status: 400 }
+        { error: "Too many login attempts. Please try again later." },
+        { status: 429 }
       );
     }
 
-    // Retrieve the account from the database
-    const account = await prisma.account.findUnique({
-      where: { email },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        password: true,
-        role: true,
-        tokenVersion: true,
-        isVerified: true,
-      },
-    });
+    // Parse and validate input
+    const body = await req.json();
+    const { email, password } = loginSchema.parse(body);
 
-    // Check if the account exists and password is correct
+    // Find user
+    const account = await findAccountByEmail(email);
+
     if (!account || !(await comparePassword(password, account.password))) {
+      await logLoginAttempt({
+        email,
+        success: false,
+        ipAddress: ip,
+        userAgent,
+      });
+
       return NextResponse.json(
-        { error: "Invalid credentials" },
+        { error: "Invalid email or password." },
         { status: 401 }
       );
     }
 
-    // Check if the account is verified
     if (!account.isVerified) {
+      await logLoginAttempt({
+        email,
+        success: false,
+        ipAddress: ip,
+        userAgent,
+      });
+
       return NextResponse.json(
-        { error: "Account not verified" },
+        { error: "Please verify your account first." },
         { status: 403 }
       );
     }
-
-    // Use Prisma Role enum type directly
-    const accountRole: Role = account.role;
 
     // Generate tokens
     const accessToken = generateAccessToken({
       id: account.id,
       email: account.email,
-      role: accountRole,
+      role: account.role,
     });
 
     const newRefreshToken = generateRefreshToken({
@@ -86,23 +76,44 @@ export async function POST(req: Request) {
       tokenVersion: account.tokenVersion,
     });
 
-    return NextResponse.json({
-      message: "Login successful",
-      account: {
-        id: account.id,
-        name: account.name,
-        email: account.email,
-        role: accountRole,
-      },
-      accessToken,
+    // Create new session
+    await createSession({
+      accountId: account.id,
       refreshToken: newRefreshToken,
+      userAgent,
+      ip,
     });
-  } catch (err) {
-    console.error("Login Error:", err); // Logging the error for internal use
-    // Send a generic error message to the client for security reasons
+
+    await updateLastLogin(account.id);
+
+    await logLoginAttempt({
+      email,
+      success: true,
+      ipAddress: ip,
+      userAgent,
+    });
+
     return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
+      {
+        message: "Login successful.",
+        account: {
+          id: account.id,
+          name: account.name,
+          email: account.email,
+          role: account.role,
+        },
+        tokens: {
+          accessToken,
+          refreshToken: newRefreshToken,
+        },
+      },
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error("Login Error:", error);
+    return NextResponse.json(
+      { error: "Invalid request or internal server error." },
+      { status: 400 }
     );
   }
 }

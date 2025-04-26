@@ -7,6 +7,53 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Session {
+  id          String   @id @default(uuid())
+  accountId   String
+  refreshToken String
+  userAgent   String?
+  ipAddress   String?
+  createdAt   DateTime @default(now())
+  expiresAt   DateTime
+  account     Account  @relation(fields: [accountId], references: [id])
+}
+
+model SessionActivity {
+  id         String   @id @default(uuid())
+  accountId  String
+  activity   String
+  ipAddress  String?
+  userAgent  String?
+  timestamp  DateTime @default(now())
+}
+
+model AccountAction {
+  id        String   @id @default(uuid())
+  accountId String
+  action    String
+  timestamp DateTime @default(now())
+}
+
+model ErrorLog {
+  id        String   @id @default(uuid())
+  message   String
+  stack     String?
+  context   String
+  timestamp DateTime @default(now())
+}
+
+model LoginAttempt {
+  id         String   @id @default(uuid())
+  email      String
+  success    Boolean
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+  accountId  String?
+  account    Account? @relation(fields: [accountId], references: [id])
+  timestamp  DateTime @default(now())
+}
+
 model Account {
   id              String    @id @default(cuid())
   name            String
@@ -24,6 +71,7 @@ model Account {
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
   referralCode    String    @unique @default("")
+  lastLoginAt     DateTime?
 
   // Self-referencing relation
   referredById String?
@@ -33,7 +81,6 @@ model Account {
   // Other relations
   referralsMade     Referral[]   @relation("Referrer")
   referralsReceived Referral[]   @relation("Referred")
-
   reviewsGiven    Review[]       @relation("AccountReviews")
   reviewsReceived Review[]       @relation("SellerReviews")
   eventLogs       EventLog[]     @relation("AccountLogs")
@@ -47,11 +94,15 @@ model Account {
   messagesOwned   Message[]      @relation("AccountMessageOwner")
   conversations   Conversation[] @relation("ConversationParticipants")
   wishlists       Wishlist[]
-  activityType    ActivityType
-  voucherType     VoucherType
+  activityType    ActivityType?
+  voucherType     VoucherType?
   sales           Sales[]
   activities      Activity[]
   transaction     Transaction[]
+  cartItems       CartItem[]
+  auditLogs       AuditLog[]
+  sessions        Session[]
+  loginAttempts   LoginAttempt[]
 }
 
 model Market {
@@ -98,6 +149,7 @@ model Product {
   labels            Label[]     @relation("ProductLabels")
   sales             Sales[]
   activities        Activity[]
+  cartItems         CartItem[]
   // Promotional flags
   isNewArrival      Boolean     @default(false) // Product created within 24 hours
   isBestSeller      Boolean     @default(false) // Manually set or calculated
@@ -168,12 +220,15 @@ model Order {
 
 model OrderItem {
   id        String   @id @default(cuid())
+  accountId String
   order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
   orderId   String
   product   Product  @relation(fields: [productId], references: [id])
-  createdAt DateTime @default(now())
   productId String
   quantity  Int
+  price     Float
+  createdAt DateTime @default(now())
+ 
 }
 
 model Voucher {
@@ -388,10 +443,33 @@ model PaymentLog {
 model AuditLog {
   id        String   @id @default(uuid())
   action    String
-  orderId   String
-  user      String
+  orderId   String?
+  accountId String
+  account   Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
   reason    String?
   timestamp DateTime @default(now())
+}
+
+model CartItem {
+  id        String   @id @default(cuid())
+  accountId String
+  productId String
+  quantity  Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  account   Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id])
+  @@unique([accountId, productId]) // ensures each user has one entry per product
+}
+
+model AnalyticsEvent {
+  id        String   @id @default(cuid())
+  eventName String
+  accountId String?
+  metadata  Json?
+  timestamp DateTime @default(now())
+  createdAt DateTime @default(now())
 }
 
 enum Role {
@@ -405,6 +483,7 @@ enum OrderStatus {
   COMPLETED
   CANCELLED
   SHIPPED
+  DELIVERED
 }
 
 enum PaymentStatus {

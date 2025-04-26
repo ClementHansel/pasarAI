@@ -5,7 +5,7 @@ import { Notification } from "@/types/notification";
 import {
   fetchNotifications,
   markNotificationAsRead,
-} from "@/lib/notification/notificationService";
+} from "@/services/notification/notificationService";
 import NotificationList from "@/components/notifications/NotificationList";
 import NotificationDetail from "@/components/notifications/NotificationDetail";
 

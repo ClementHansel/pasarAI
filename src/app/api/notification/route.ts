@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
 import { db } from "@/lib/db/db"; // Prisma DB instance
-import { sendNotification } from "@/lib/notification/notificationService";
+import { sendNotification } from "@/services/notification/notificationService";
 
 // Schema validation for the incoming request body
 const notificationSchema = z.object({
