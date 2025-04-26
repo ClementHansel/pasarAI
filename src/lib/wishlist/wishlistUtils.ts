@@ -1,13 +1,12 @@
+// src/lib/wishlist/wishlistUtils.ts
+const mockWishlist = new Set<string>();
+
 export async function checkWishlistStatus(
   accountId: string,
   productId: string,
   marketId: string
 ) {
-  const res = await fetch(
-    `/api/wishlist/check?accountId=${accountId}&productId=${productId}&marketId=${marketId}`
-  );
-  const data = await res.json();
-  return data?.exists || false;
+  return mockWishlist.has(`${productId}-${marketId}`);
 }
 
 export async function toggleWishlist(
@@ -15,9 +14,11 @@ export async function toggleWishlist(
   productId: string,
   marketId: string
 ) {
-  const res = await fetch("/api/wishlist", {
-    method: "POST",
-    body: JSON.stringify({ accountId, productId, marketId }),
-  });
-  return res.json();
+  const key = `${productId}-${marketId}`;
+  if (mockWishlist.has(key)) {
+    mockWishlist.delete(key);
+    return { added: false, message: "Removed from wishlist" };
+  }
+  mockWishlist.add(key);
+  return { added: true, message: "Added to wishlist" };
 }

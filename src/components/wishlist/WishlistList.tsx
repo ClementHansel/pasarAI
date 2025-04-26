@@ -1,16 +1,17 @@
+// src/components/wishlist/WishlistList.tsx
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
-import { HeartOff } from "lucide-react";
-import { toast } from "react-hot-toast";
-import WishlistButton from "./WishlistButton";
+import { useState, useCallback } from "react";
+import { Currency } from "@/types/market";
+import { domesticProducts, globalProducts } from "@/lib/data/products";
+import WishlistCard from "./WishlistCard";
 import WishlistEmpty from "./WishlistEmpty";
+import Button from "../common/Button";
 
 type WishlistItem = {
   id: string;
   productId: string;
   marketId: string;
-  createdAt: string;
   product: {
     name: string;
     image: string;
@@ -18,91 +19,134 @@ type WishlistItem = {
   };
   market: {
     name: string;
+    currency: Currency;
   };
 };
 
-type WishlistListProps = {
-  accountId: string;
+// Mock data generator
+const generateMockWishlist = (): WishlistItem[] => {
+  const domesticItems = domesticProducts.flatMap((region) =>
+    region.subregions.flatMap((subregion) =>
+      subregion.cities.flatMap((city) =>
+        city.products.map((product, idx) => ({
+          id: `domestic-${product.id}`,
+          productId: product.id.toString(),
+          marketId: `market-${city.id}`,
+          product: {
+            name: product.name,
+            image: product.imageUrls[0],
+            price: product.price,
+          },
+          market: {
+            name: city.name,
+            currency: Currency.IDR,
+          },
+        }))
+      )
+    )
+  );
+
+  const globalItems = globalProducts.flatMap((region) =>
+    region.subregions.flatMap((subregion) =>
+      subregion.cities.flatMap((city) =>
+        city.products.map((product, idx) => ({
+          id: `global-${product.id}`,
+          productId: product.id.toString(),
+          marketId: `market-${city.id}`,
+          product: {
+            name: product.name,
+            image: product.imageUrls[0],
+            price: product.price,
+          },
+          market: {
+            name: city.name,
+            currency: Currency.USD,
+          },
+        }))
+      )
+    )
+  );
+
+  return [...domesticItems.slice(0, 3), ...globalItems.slice(0, 3)];
 };
 
-export default function WishlistList({ accountId }: WishlistListProps) {
-  const [wishlist, setWishlist] = useState<WishlistItem[]>([]);
-  const [loading, setLoading] = useState(true);
+export default function WishlistList({ accountId }: { accountId: string }) {
+  const [wishlist, setWishlist] = useState<WishlistItem[]>(
+    generateMockWishlist()
+  );
+  const [filter, setFilter] = useState<"all" | "domestic" | "global">("all");
 
-  const fetchWishlist = useCallback(async () => {
-    try {
-      const res = await fetch(`/api/wishlist?accountId=${accountId}`);
-      const data = await res.json();
-      setWishlist(data || []);
-    } catch (error) {
-      console.error("Failed to load wishlist:", error);
-      toast.error("Failed to load wishlist.");
-    } finally {
-      setLoading(false);
-    }
-  }, [accountId]);
+  const handleRemove = useCallback((productId: string, marketId: string) => {
+    setWishlist((prev) =>
+      prev.filter(
+        (item) => !(item.productId === productId && item.marketId === marketId)
+      )
+    );
+  }, []);
 
-  useEffect(() => {
-    fetchWishlist();
-  }, [fetchWishlist]);
+  const filteredItems = wishlist.filter((item) =>
+    filter === "all"
+      ? true
+      : filter === "domestic"
+      ? item.market.currency === Currency.IDR
+      : item.market.currency === Currency.USD
+  );
 
-  const handleRemove = async (productId: string, marketId: string) => {
-    try {
-      await fetch("/api/wishlist", {
-        method: "DELETE",
-        body: JSON.stringify({ accountId, productId, marketId }),
-      });
-      toast.success("Removed from wishlist");
-      fetchWishlist(); // Refresh list
-    } catch (error) {
-      console.error("Failed to remove from wishlist:", error);
-      toast.error("Failed to remove item");
-    }
-  };
-
-  if (loading) {
-    return <div className="text-center py-8">Loading wishlist...</div>;
-  }
-
-  if (wishlist.length === 0) {
+  if (!wishlist.length) {
     return <WishlistEmpty />;
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 p-4">
-      {wishlist.map((item) => (
-        <div
-          key={item.id}
-          className="border rounded-xl p-4 shadow-md hover:shadow-lg transition"
+    <div>
+      <div className="flex flex-wrap gap-4">
+        <Button
+          variant={filter === "all" ? "default" : "outline"}
+          onClick={() => setFilter("all")}
+          className={
+            filter === "all"
+              ? "bg-blue-600 text-white hover:bg-blue-700"
+              : "bg-transparent text-gray-600 hover:bg-gray-100"
+          }
         >
-          <img
-            src={item.product.image}
-            alt={item.product.name}
-            className="w-full h-48 object-cover rounded-md mb-2"
-          />
-          <div className="font-semibold text-lg">{item.product.name}</div>
-          <div className="text-gray-600 mb-1">Market: {item.market.name}</div>
-          <div className="text-blue-600 font-bold mb-2">
-            IDR {item.product.price.toLocaleString()}
-          </div>
+          All Markets
+        </Button>
+        <Button
+          variant={filter === "domestic" ? "default" : "outline"}
+          onClick={() => setFilter("domestic")}
+          className={
+            filter === "domestic"
+              ? "bg-blue-600 text-white hover:bg-blue-700"
+              : "bg-transparent text-gray-600 hover:bg-gray-100"
+          }
+        >
+          Domestic
+        </Button>
+        <Button
+          variant={filter === "global" ? "default" : "outline"}
+          onClick={() => setFilter("global")}
+          className={
+            filter === "global"
+              ? "bg-blue-600 text-white hover:bg-blue-700"
+              : "bg-transparent text-gray-600 hover:bg-gray-100"
+          }
+        >
+          International
+        </Button>
+      </div>
 
-          <div className="flex justify-between items-center">
-            <WishlistButton
-              accountId={accountId}
-              productId={item.productId}
-              marketId={item.marketId}
-            />
-            <button
-              onClick={() => handleRemove(item.productId, item.marketId)}
-              className="text-sm text-red-500 hover:underline"
-            >
-              <HeartOff size={16} />
-              {loading ? "Removing..." : "Remove"}
-              Remove
-            </button>
-          </div>
-        </div>
-      ))}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {filteredItems.map((item) => (
+          <WishlistCard
+            key={item.id}
+            accountId={accountId}
+            productId={item.productId}
+            marketId={item.marketId}
+            product={item.product}
+            market={item.market}
+            onRemove={handleRemove}
+          />
+        ))}
+      </div>
     </div>
   );
 }

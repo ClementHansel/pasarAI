@@ -10,8 +10,10 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
     | "secondary"
     | "danger"
     | "ghost"
+    | "global"
+    | "default"
     | "outline"
-    | "default";
+    | "destructive";
   size?: "sm" | "md" | "lg";
   className?: string;
 }
