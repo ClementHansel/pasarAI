@@ -1,13 +1,11 @@
 // src/components/product/ProductCard.tsx
 "use client";
 
-import { cn } from "@/lib/utils";
 import Link from "next/link";
 import Image from "next/image";
-import { ShoppingCart, Star, Heart, MapPin } from "lucide-react";
+import { ShoppingCart, Star, MapPin } from "lucide-react";
 import { toast } from "react-hot-toast";
 import type { Product } from "@/types/product";
-import { useState } from "react";
 
 interface ProductCardProps extends Product {
   viewMode?: "grid" | "list";
@@ -26,9 +24,15 @@ const ProductCard = ({
   viewMode = "grid",
   labels,
   brand,
+  seller,
 }: ProductCardProps) => {
-  const [isAdding, setIsAdding] = useState(false);
   const discountedPrice = price * (1 - discount / 100);
+
+  const handleAddToCart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    toast.success(`${name} added to cart`);
+    // Add actual cart logic here
+  };
 
   if (viewMode === "list") {
     return (
@@ -93,10 +97,7 @@ const ProductCard = ({
             </div>
 
             <button
-              onClick={(e) => {
-                e.preventDefault();
-                // Handle add to cart
-              }}
+              onClick={handleAddToCart}
               className="flex items-center gap-2 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
             >
               <ShoppingCart className="w-5 h-5" />
@@ -173,6 +174,16 @@ const ProductCard = ({
             >
               {stock > 0 ? `${stock} in stock` : "Out of stock"}
             </span>
+          </div>
+
+          <div className="mt-2">
+            <Link
+              href={`/seller/${sellerId}`}
+              onClick={(e) => e.stopPropagation()}
+              className="text-sm text-gray-500 hover:text-blue-600 hover:underline"
+            >
+              Sold by {sellerName}
+            </Link>
           </div>
         </div>
       </div>

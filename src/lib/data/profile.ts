@@ -71,6 +71,82 @@ interface Product {
   image: string;
 }
 
+// Base Seller Profile (for dashboard/internal use)
+export interface SellerProfile {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  address?: string;
+  avatar?: string;
+  joinDate: string;
+  businessInfo: {
+    storeName: string;
+    description: string;
+    category: string;
+    rating: number;
+    totalSales: number;
+    revenue: number;
+  };
+  products: Product[];
+  analytics: {
+    monthlyRevenue: number[];
+    monthlySales: number[];
+    topProducts: Product[];
+  };
+}
+
+// Public-facing Seller Profile (for customer view)
+export interface PublicSellerProfile
+  extends Pick<SellerProfile, "id" | "avatar" | "phone" | "address"> {
+  name: string;
+  description: string;
+  rating: number;
+  totalSales: number;
+  contact: {
+    email: string;
+    phone?: string;
+    address?: string;
+  };
+  products: Array<{
+    id: string;
+    name: string;
+    price: number;
+    image: string;
+    stock: number;
+    sold: number;
+  }>;
+}
+
+// Adapter function to convert SellerProfile to PublicSellerProfile
+export function toPublicSellerProfile(
+  seller: SellerProfile
+): PublicSellerProfile {
+  return {
+    id: seller.id,
+    name: seller.businessInfo.storeName,
+    description: seller.businessInfo.description,
+    rating: seller.businessInfo.rating,
+    totalSales: seller.businessInfo.totalSales,
+    avatar: seller.avatar,
+    phone: seller.phone,
+    address: seller.address,
+    contact: {
+      email: seller.email,
+      phone: seller.phone,
+      address: seller.address,
+    },
+    products: seller.products.map((p) => ({
+      id: p.id,
+      name: p.name,
+      price: p.price,
+      image: p.image,
+      stock: p.stock,
+      sold: p.sold,
+    })),
+  };
+}
+
 interface Transaction {
   id: string;
   type: "credit" | "debit";
@@ -267,3 +343,6 @@ export const mockSellerProfile: SellerProfile = {
     ],
   },
 };
+
+// Create public version when needed
+export const publicSellerProfile = toPublicSellerProfile(mockSellerProfile);
