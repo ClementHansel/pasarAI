@@ -3,8 +3,9 @@
 import { useState } from "react";
 import { Search } from "lucide-react"; // Icon library
 
-interface MarketFilterProps {
+export interface MarketFilterProps {
   onSearch: (query: string) => void;
+  placeholder: string;
 }
 
 export const MarketFilter = ({ onSearch }: MarketFilterProps) => {

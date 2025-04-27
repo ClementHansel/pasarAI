@@ -1,8 +1,9 @@
 // src/lib/auth/index.ts
-import { NextAuthOptions } from "next-auth";
+import { NextAuthOptions, Session, User } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { verifyPassword } from "@/lib/auth/authUtils";
 import { findAccountByEmail } from "./accountService";
+import { JWT } from "next-auth/jwt";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -19,13 +20,13 @@ export const authOptions: NextAuthOptions = {
 
         const account = await findAccountByEmail(credentials.email);
 
-        if (!account || !account.hashedPassword) {
+        if (!account || !account.password) {
           throw new Error("No account found");
         }
 
         const isValid = await verifyPassword(
           credentials.password,
-          account.hashedPassword
+          account.password
         );
 
         if (!isValid) {
@@ -44,24 +45,26 @@ export const authOptions: NextAuthOptions = {
     strategy: "jwt",
   },
   callbacks: {
-    async jwt({ token, account }) {
-      if (account) {
-        token.id = account.id;
-        token.role = account.role;
+    async jwt({ token, user }: { token: JWT; user?: User }) {
+      if (user) {
+        token.id = user.id;
+        token.email = user.email;
+        token.role = user.role;
       }
       return token;
     },
-    async session({ session, token }) {
-      if (session.account) {
-        session.account.id = token.id;
-        session.account.role = token.role;
+    async session({ session, token }: { session: Session; token: JWT }) {
+      if (session.user) {
+        session.user.id = token.id;
+        session.user.email = token.email;
+        session.user.role = token.role;
       }
       return session;
     },
   },
   pages: {
-    signIn: "/auth/login", // optional: custom login page
-    error: "/auth/error", // optional: error redirect
+    signIn: "/auth/login",
+    error: "/auth/error",
   },
   secret: process.env.NEXTAUTH_SECRET,
 };

@@ -3,87 +3,102 @@
 import { useState, useRef, useEffect } from "react";
 import { BellIcon } from "lucide-react";
 import NotificationDropdown from "./NotificationDropdown";
-
 import { useRouter } from "next/navigation";
 import { Notification } from "@/types/notification";
-import NotificationModal from "./NotificationModal"; // Import the modal
+import NotificationModal from "./NotificationModal";
 import { useNotifications } from "@/hooks/useNotifications";
 
 export default function NotificationBell() {
+  // const accountId = session?.user?.accountId || ""; // Set it after session set up (andreas)
   const [isOpen, setIsOpen] = useState(false);
   const [selectedNotification, setSelectedNotification] =
-    useState<Notification | null>(null); // To store the selected notification for modal
+    useState<Notification | null>(null);
   const bellRef = useRef<HTMLDivElement>(null);
-  const { unreadCount } = useNotifications(); // Get unread count from context
-  const [notifications, setNotifications] = useState<Notification[]>([]); // State to hold notifications
+  const { unreadCount, refreshUnreadCount } = useNotifications("buyer123"); // fix this after session is set (Andreas) and change it to (accountId)
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
-  // Function to handle "View All" button click
-  const handleViewAll = () => {
-    router.push("/notifications"); // Navigate to the full notifications page
+  // Fetch notifications
+  const fetchNotifications = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const res = await fetch("/api/notifications");
+      if (!res.ok) throw new Error("Failed to fetch notifications");
+
+      const data: Notification[] = await res.json();
+      setNotifications(data);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError("Error: " + err.message);
+      } else {
+        setError("An unknown error occurred.");
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Fetch notifications when the component mounts
   useEffect(() => {
-    const fetchNotifications = async () => {
-      try {
-        const response = await fetch("/api/notifications"); // Fetch notifications from API
-        if (!response.ok) {
-          throw new Error("Failed to fetch notifications");
-        }
-        const data = await response.json(); // Assuming API returns an array of notifications
-        setNotifications(data); // Set notifications to state
-      } catch (error) {
-        console.error("Error fetching notifications:", error);
-      }
-    };
-
     fetchNotifications();
 
-    // Optionally, you can set up polling to refresh notifications every 5 minutes
-    const interval = setInterval(fetchNotifications, 5 * 60 * 1000); // Refresh every 5 minutes
+    const interval = setInterval(() => {
+      fetchNotifications();
+    }, 5 * 60 * 1000); // 5 minutes
 
-    // Cleanup the interval when the component unmounts
     return () => clearInterval(interval);
   }, []);
 
-  // Close dropdown on click outside
+  // Close dropdown on outside click
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (bellRef.current && !bellRef.current.contains(event.target as Node)) {
-        setIsOpen(false); // Close the dropdown when clicking outside
+    const handleClickOutside = (e: MouseEvent) => {
+      if (bellRef.current && !bellRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
       }
     };
-
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Function to handle clicking a notification (mark as read and show details)
-  const handleNotificationClick = (notification: Notification) => {
-    // Mark notification as read (update state and send to server if needed)
-    const updatedNotifications = notifications.map((notif) =>
-      notif.id === notification.id ? { ...notif, read: true } : notif
-    );
-    setNotifications(updatedNotifications); // Update local state
-
-    // Optionally, send an API request to mark the notification as read on the server
-
-    setSelectedNotification(notification); // Set the selected notification for the modal
+  const handleViewAll = () => {
+    router.push("/notifications");
+    setIsOpen(false);
   };
 
-  // Mark a notification as read (parent handler)
-  const markAsRead = (id: number) => {
-    const updatedNotifications = notifications.map((notif) =>
-      notif.id === id ? { ...notif, read: true } : notif
-    );
-    setNotifications(updatedNotifications); // Update local state to reflect the change
+  const markAsRead = async (id: string) => {
+    try {
+      const res = await fetch(`/api/notifications/${id}/mark-as-read`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      if (!res.ok) throw new Error("Failed to mark notification as read");
+
+      const updatedNotifications = notifications.map((notif) =>
+        notif.id === id ? { ...notif, read: true } : notif
+      );
+      setNotifications(updatedNotifications);
+      refreshUnreadCount?.(); // If you have refresh function in context
+    } catch (err) {
+      console.error("Failed to mark as read:", err);
+    }
+  };
+
+  const handleNotificationClick = async (notification: Notification) => {
+    if (!notification.read) {
+      await markAsRead(notification.id);
+    }
+    setSelectedNotification(notification);
+    setIsOpen(false);
   };
 
   return (
     <div className="relative" ref={bellRef}>
+      {/* Bell Button */}
       <button
-        onClick={() => setIsOpen(!isOpen)} // Toggle the dropdown visibility
+        onClick={() => setIsOpen((prev) => !prev)}
         className="relative p-2 rounded-full hover:bg-gray-100 transition"
         aria-label="Notifications"
       >
@@ -95,25 +110,44 @@ export default function NotificationBell() {
         )}
       </button>
 
+      {/* Dropdown */}
       {isOpen && (
         <div className="absolute right-0 mt-2 w-[320px] z-50">
           <NotificationDropdown
-            notifications={notifications} // Passing fetched notifications
-            onViewAll={handleViewAll} // View all button click handler
-            onClose={() => setIsOpen(false)} // Close dropdown function
-            onNotificationClick={handleNotificationClick} // Pass the handler for clicking on notifications
-            markAsRead={markAsRead} // Pass markAsRead function
+            notifications={notifications}
+            onViewAll={handleViewAll}
+            onClose={() => setIsOpen(false)}
+            onNotificationClick={handleNotificationClick}
+            markAsRead={markAsRead}
+            loading={loading}
+            error={error}
           />
         </div>
       )}
 
-      {/* Modal to show notification details when clicked */}
+      {/* Modal */}
       {selectedNotification && (
         <NotificationModal
           notification={selectedNotification}
-          onClose={() => setSelectedNotification(null)} // Close the modal by clearing selected notification
+          onClose={() => setSelectedNotification(null)}
           markAsRead={markAsRead}
         />
+      )}
+
+      {/* Loading & Error - fallback if dropdown is closed */}
+      {!isOpen && (
+        <>
+          {loading && (
+            <div className="absolute top-0 left-0 right-0 text-center p-2 text-gray-600 text-sm">
+              Loading notifications...
+            </div>
+          )}
+          {error && (
+            <div className="absolute top-0 left-0 right-0 text-center p-2 text-red-500 text-sm">
+              {error}
+            </div>
+          )}
+        </>
       )}
     </div>
   );

@@ -44,7 +44,8 @@ const reviews: Review[] = [
 const createProduct = (
   id: number,
   name: string,
-  category: Category
+  category: Category,
+  accountId: string
 ): Product => ({
   id,
   name,
@@ -74,6 +75,7 @@ const createProduct = (
   discount: 10,
   isFeatured: id % 2 === 0,
   isActive: true,
+  accountId,
 });
 
 // Domestic Products
@@ -90,16 +92,16 @@ export const domesticProducts: ProductRegion[] = [
             id: "city-1",
             name: "Bandung",
             products: [
-              createProduct(1, "Organic Carrot", categoryVegetables),
-              createProduct(2, "Fresh Milk", categoryDairy),
+              createProduct(1, "Organic Carrot", categoryVegetables, "101"),
+              createProduct(2, "Fresh Milk", categoryDairy, "102"),
             ],
           },
           {
             id: "city-2",
             name: "Bogor",
             products: [
-              createProduct(3, "Red Apple", categoryFruits),
-              createProduct(4, "Broccoli", categoryVegetables),
+              createProduct(3, "Red Apple", categoryFruits, "101"),
+              createProduct(4, "Broccoli", categoryVegetables, "102"),
             ],
           },
         ],
@@ -118,8 +120,8 @@ export const domesticProducts: ProductRegion[] = [
             id: "city-3",
             name: "Medan",
             products: [
-              createProduct(5, "Avocado", categoryFruits),
-              createProduct(6, "Cassava", categoryVegetables),
+              createProduct(5, "Avocado", categoryFruits, "101"),
+              createProduct(6, "Cassava", categoryVegetables, "102"),
             ],
           },
         ],
@@ -142,8 +144,8 @@ export const globalProducts: ProductRegion[] = [
             id: "city-4",
             name: "Bangkok",
             products: [
-              createProduct(7, "Thai Mango", categoryFruits),
-              createProduct(8, "Coconut Milk", categoryDairy),
+              createProduct(7, "Thai Mango", categoryFruits, "101"),
+              createProduct(8, "Coconut Milk", categoryDairy, "102"),
             ],
           },
         ],
@@ -162,8 +164,8 @@ export const globalProducts: ProductRegion[] = [
             id: "city-5",
             name: "Paris",
             products: [
-              createProduct(9, "Camembert Cheese", categoryDairy),
-              createProduct(10, "Cherries", categoryFruits),
+              createProduct(9, "Camembert Cheese", categoryDairy, "101"),
+              createProduct(10, "Cherries", categoryFruits, "102"),
             ],
           },
         ],

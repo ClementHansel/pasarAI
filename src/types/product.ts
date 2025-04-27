@@ -25,6 +25,14 @@ export type Product = {
   accountId: string;
 };
 
+export type Brand = {
+  id: number;
+  name: string;
+  description?: string;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
 // Used for filtering between product types (e.g., Domestic vs Global)
 export type ProductType = "domestic" | "global";
 

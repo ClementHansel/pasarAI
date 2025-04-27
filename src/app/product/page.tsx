@@ -2,16 +2,7 @@
 "use client";
 
 import { useState } from "react";
-import {
-  Home,
-  Globe,
-  Filter,
-  RefreshCw,
-  X,
-  Grid,
-  List,
-  Sliders,
-} from "lucide-react";
+import { Home, Globe, RefreshCw, X, Grid, List, Sliders } from "lucide-react";
 import ProductCategory from "@/components/product/ProductCategory";
 import ProductFilter from "@/components/product/ProductFilter";
 import { LocationFilter } from "@/components/market/LocationFilter";

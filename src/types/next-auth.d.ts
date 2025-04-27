@@ -1,12 +1,20 @@
-import { DefaultSession } from "next-auth";
+// src/types/next-auth.d.ts
+import "next-auth";
+import "next-auth/jwt";
 
 declare module "next-auth" {
   interface Session {
-    account: {
+    user: {
       id: string;
       email: string;
       role: string;
-    } & DefaultSession["account"];
+    };
+  }
+
+  interface User {
+    id: string;
+    email: string;
+    role: string;
   }
 }
 

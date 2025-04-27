@@ -13,6 +13,7 @@ import { WalletCards, FileText, ArrowUpDown, History } from "lucide-react";
 import { TransactionHistory } from "@/components/wallet/TransactionHistory";
 import { TransactionFilter } from "@/components/wallet/TransactionFilter";
 import { Transaction } from "@/types/wallet";
+import { v4 as uuidv4 } from "uuid";
 
 const WalletPage = () => {
   const [balance, setBalance] = useState(1500000);
@@ -25,12 +26,54 @@ const WalletPage = () => {
   const userRole: "user" | "seller" = "seller";
 
   const initialTransactions: Transaction[] = [
-    { type: "initial", amount: 1500000, date: "2024-03-01T09:00:00" },
-    { type: "topup", amount: 500000, date: "2024-03-02T14:30:00" },
-    { type: "withdraw", amount: 200000, date: "2024-03-03T10:15:00" },
-    { type: "bills", amount: 150000, date: "2024-03-04T16:45:00" },
+    {
+      id: uuidv4(),
+      accountId: "demo-account",
+      amount: 1500000,
+      type: "initial",
+      status: "completed",
+      createdAt: new Date("2024-03-01T09:00:00"),
+      updatedAt: new Date("2024-03-01T09:00:00"),
+    },
+    {
+      id: uuidv4(),
+      accountId: "demo-account",
+      amount: 500000,
+      type: "topup",
+      status: "completed",
+      createdAt: new Date("2024-03-02T14:30:00"),
+      updatedAt: new Date("2024-03-02T14:30:00"),
+    },
+    {
+      id: uuidv4(),
+      accountId: "demo-account",
+      amount: 200000,
+      type: "withdraw",
+      status: "completed",
+      createdAt: new Date("2024-03-03T10:15:00"),
+      updatedAt: new Date("2024-03-03T10:15:00"),
+    },
+    {
+      id: uuidv4(),
+      accountId: "demo-account",
+      amount: 150000,
+      type: "bills",
+      status: "completed",
+      createdAt: new Date("2024-03-04T16:45:00"),
+      updatedAt: new Date("2024-03-04T16:45:00"),
+    },
     ...(userRole === "seller"
-      ? [{ type: "revenue", amount: 2500000, date: "2024-03-05T09:30:00" }]
+      ? [
+          {
+            id: uuidv4(),
+            accountId: "demo-account",
+            amount: 2500000,
+            type: "revenue",
+            status: "completed",
+            createdAt: new Date("2024-03-05T09:30:00"),
+            updatedAt: new Date("2024-03-05T09:30:00"),
+          } as const,
+        ]
       : []),
   ];
 
@@ -53,12 +96,19 @@ const WalletPage = () => {
       type === "topup" ? balance + numericAmount : balance - numericAmount;
 
     setBalance(newBalance);
+
+    const now = new Date();
+
     setTransactions([
       ...transactions,
       {
-        type,
+        id: uuidv4(),
+        accountId: "demo-account",
         amount: numericAmount,
-        date: new Date().toISOString(),
+        type,
+        status: "completed",
+        createdAt: now,
+        updatedAt: now,
       },
     ]);
 
