@@ -17,8 +17,8 @@ async function main() {
   console.log("🌱 Seeding started...");
 
   // 1. Users
-  const [user1, user2] = await Promise.all([
-    prisma.user.create({
+  const [account1, account2] = await Promise.all([
+    prisma.account.create({
       data: {
         name: "John Doe",
         email: "john@example.com",
@@ -31,7 +31,7 @@ async function main() {
         emailVerifiedAt: new Date(),
       },
     }),
-    prisma.user.create({
+    prisma.account.create({
       data: {
         name: "Jane Smith",
         email: "jane@example.com",
@@ -49,7 +49,7 @@ async function main() {
 
   // 2. Sellers
   const [seller1, seller2] = await Promise.all([
-    prisma.seller.create({
+    prisma.account.create({
       data: {
         name: "EcoFarm",
         email: "eco@farm.com",
@@ -60,7 +60,7 @@ async function main() {
         emailVerifiedAt: new Date(),
       },
     }),
-    prisma.seller.create({
+    prisma.account.create({
       data: {
         name: "NatureMarket",
         email: "nature@market.com",
@@ -86,7 +86,7 @@ async function main() {
     },
   });
 
-  const brand = await prisma..create({
+  const brand = await prisma.brand.create({
     data: {
       name: "All Fresh",
       description: "Hydrophonic Vegetables",
@@ -96,6 +96,11 @@ async function main() {
     },
   });
   console.log("✅ Brand created");
+    // Safely add brand relation if it exists
+    // if (brand) {
+    //   productData.brand = { connect: { id: brand.id } };
+    // }
+  console.log("✅ Market created");  
 
   // 4. Categories & Tags
   const [catFruit, catVeg] = await Promise.all([
@@ -120,7 +125,7 @@ async function main() {
       soldCount: 10,
       unit: "kg",
       categoryId: catFruit.id,
-      sellerId: seller1.id,
+      accountId: seller1.id,
       marketId: market.id,
       tags: {
         connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
@@ -153,7 +158,7 @@ async function main() {
       soldCount: 5,
       unit: "kg",
       categoryId: catVeg.id,
-      sellerId: seller2.id,
+      accountId: seller2.id,
       marketId: market.id,
       tags: {
         connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
@@ -175,7 +180,8 @@ async function main() {
     },
   });
 
-  const productData: Prisma.ProductCreateInput = {
+  const product3 = await prisma.product.create({ 
+    data:{
     name: "Tomato",
     description: "Fresh juicy tomatoes",
     price: 1.49,
@@ -184,7 +190,7 @@ async function main() {
     soldCount: 20,
     unit: "kg",
     category: { connect: { id: catVeg.id } },
-    seller: { connect: { id: seller1.id } },
+    account: { connect: { id: seller1.id } },
     market: { connect: { id: market.id } },
     tags: {
       connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
@@ -203,14 +209,11 @@ async function main() {
         },
       ],
     },
-  };
+  },
+});
 
-  // Safely add brand relation if it exists
-  if (brand) {
-    productData.brand = { connect: { id: brand.id } };
-  }
 
-  const product3 = await prisma.product.create({ data: productData });
+  
 
   const product4 = await prisma.product.create({
     data: {
@@ -222,7 +225,7 @@ async function main() {
       soldCount: 15,
       unit: "kg",
       categoryId: catFruit.id,
-      sellerId: seller1.id,
+      accountId: seller1.id,
       marketId: market.id,
       tags: {
         connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
@@ -255,7 +258,7 @@ async function main() {
       soldCount: 20,
       unit: "kg",
       categoryId: catFruit.id,
-      sellerId: seller1.id,
+      accountId: seller1.id,
       marketId: market.id,
       tags: {
         connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
@@ -288,7 +291,7 @@ async function main() {
       soldCount: 25,
       unit: "kg",
       categoryId: catFruit.id,
-      sellerId: seller1.id,
+      accountId: seller1.id,
       marketId: market.id,
       tags: {
         connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
@@ -320,7 +323,7 @@ async function main() {
       soldCount: 30,
       unit: "each",
       categoryId: catFruit.id,
-      sellerId: seller1.id,
+      accountId: seller1.id,
       marketId: market.id,
       tags: {
         connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
@@ -353,7 +356,7 @@ async function main() {
       soldCount: 18,
       unit: "each",
       categoryId: catFruit.id,
-      sellerId: seller1.id,
+      accountId: seller1.id,
       marketId: market.id,
       tags: {
         connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
@@ -386,7 +389,7 @@ async function main() {
       soldCount: 12,
       unit: "box",
       categoryId: catFruit.id,
-      sellerId: seller1.id,
+      accountId: seller1.id,
       marketId: market.id,
       tags: {
         connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
@@ -419,7 +422,7 @@ async function main() {
       soldCount: 22,
       unit: "each",
       categoryId: catFruit.id,
-      sellerId: seller1.id,
+      accountId: seller1.id,
       marketId: market.id,
       tags: {
         connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
@@ -452,7 +455,7 @@ async function main() {
       soldCount: 19,
       unit: "box",
       categoryId: catFruit.id,
-      sellerId: seller1.id,
+      accountId: seller1.id,
       marketId: market.id,
       tags: {
         connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
@@ -485,7 +488,7 @@ async function main() {
       soldCount: 28,
       unit: "kg",
       categoryId: catFruit.id,
-      sellerId: seller1.id,
+      accountId: seller1.id,
       marketId: market.id,
       tags: {
         connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
@@ -518,7 +521,7 @@ async function main() {
       soldCount: 8,
       unit: "kg",
       categoryId: catVeg.id,
-      sellerId: seller1.id,
+      accountId: seller1.id,
       marketId: market.id,
       tags: {
         connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
@@ -550,7 +553,7 @@ async function main() {
       soldCount: 30,
       unit: "kg",
       categoryId: catVeg.id,
-      sellerId: seller1.id,
+      accountId: seller1.id,
       marketId: market.id,
       tags: {
         connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
@@ -582,7 +585,7 @@ async function main() {
       soldCount: 15,
       unit: "bunch",
       categoryId: catVeg.id,
-      sellerId: seller1.id,
+      accountId: seller1.id,
       marketId: market.id,
       tags: {
         connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
@@ -613,7 +616,7 @@ async function main() {
       soldCount: 20,
       unit: "kg",
       categoryId: catVeg.id,
-      sellerId: seller1.id,
+      accountId: seller1.id,
       marketId: market.id,
       tags: {
         connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
@@ -645,7 +648,7 @@ async function main() {
       soldCount: 40,
       unit: "kg",
       categoryId: catVeg.id,
-      sellerId: seller1.id,
+      accountId: seller1.id,
       marketId: market.id,
       tags: {
         connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
@@ -676,7 +679,7 @@ async function main() {
       soldCount: 18,
       unit: "kg",
       categoryId: catVeg.id,
-      sellerId: seller1.id,
+      accountId: seller1.id,
       marketId: market.id,
       tags: {
         connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
@@ -707,7 +710,7 @@ async function main() {
       soldCount: 25,
       unit: "kg",
       categoryId: catVeg.id,
-      sellerId: seller1.id,
+      accountId: seller1.id,
       marketId: market.id,
       tags: {
         connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
@@ -738,7 +741,7 @@ async function main() {
       soldCount: 17,
       unit: "kg",
       categoryId: catVeg.id,
-      sellerId: seller1.id,
+      accountId: seller1.id,
       marketId: market.id,
       tags: {
         connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
@@ -769,7 +772,7 @@ async function main() {
       soldCount: 22,
       unit: "kg",
       categoryId: catVeg.id,
-      sellerId: seller1.id,
+      accountId: seller1.id,
       marketId: market.id,
       tags: {
         connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
@@ -800,7 +803,7 @@ async function main() {
       soldCount: 12,
       unit: "kg",
       categoryId: catVeg.id,
-      sellerId: seller1.id,
+      accountId: seller1.id,
       marketId: market.id,
       tags: {
         connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
@@ -831,7 +834,7 @@ async function main() {
       soldCount: 30,
       unit: "kg",
       categoryId: catVeg.id,
-      sellerId: seller1.id,
+      accountId: seller1.id,
       marketId: market.id,
       tags: {
         connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
@@ -862,7 +865,7 @@ async function main() {
       soldCount: 10,
       unit: "kg",
       categoryId: catVeg.id,
-      sellerId: seller1.id,
+      accountId: seller1.id,
       marketId: market.id,
       tags: {
         connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
@@ -887,10 +890,11 @@ async function main() {
   console.log("✅ Products created");
 
   // 6. GiftCard
-  const giftcard = await prisma.giftcard.create({
+  const vouchers = await prisma.voucher.create({
     data: {
       code: "WELCOME10",
       discount: 10,
+      type: "percentage",
     },
   });
   console.log("✅ Gift Card created");
@@ -898,7 +902,7 @@ async function main() {
   // 7. Orders & Order Items
   const order = await prisma.order.create({
     data: {
-      buyerId: user1.id,
+      buyerId: account1.id,
       status: OrderStatus.COMPLETED,
       paymentStatus: PaymentStatus.COMPLETED,
       paymentMethod: "Wallet",
@@ -906,7 +910,7 @@ async function main() {
       notes: "Please pack with care",
       totalPrice: 6.49,
       discountApplied: 1.0,
-      giftcardId: giftcard.id,
+      voucherId: vouchers.id,
       shippedAt: new Date(),
       orderItems: {
         create: [
@@ -944,147 +948,171 @@ async function main() {
     data: [
       {
         productId: product1.id,
-        userId: user1.id,
+        accountId: account1.id,
         rating: 5,
         comment: "Amazing apples!",
+        sellerId: ""
       },
       {
         productId: product2.id,
-        userId: user2.id,
+        accountId: account2.id,
         rating: 4,
         comment: "Very fresh and tasty",
+        sellerId: ""
       },
       {
         productId: product3.id,
-        userId: user2.id,
+        accountId: account2.id,
         rating: 2,
         comment: "Very cheap but not fresh",
+        sellerId: ""
       },
       {
         productId: product4.id,
-        userId: user1.id,
+        accountId: account1.id,
         rating: 3,
         comment: "Good quality but expensive",
+        sellerId: ""
       },
       {
         productId: product5.id,
-        userId: user2.id,
+        accountId: account2.id,
         rating: 5,
         comment: "Best mangoes ever!",
+        sellerId: ""
       },
       {
         productId: product6.id,
-        userId: user1.id,
+        accountId: account1.id,
         rating: 4,
         comment: "Great grapes, will buy again",
+        sellerId: ""
       },
       {
         productId: product7.id,
-        userId: user2.id,
+        accountId: account2.id,
         rating: 3,
         comment: "Watermelon was a bit overripe",
+        sellerId: ""
       },
       {
         productId: product8.id,
-        userId: user1.id,
+        accountId: account1.id,
         rating: 5,
         comment: "Delicious pineapple!",
+        sellerId: ""
       },
       {
         productId: product9.id,
-        userId: user2.id,
+        accountId: account2.id,
         rating: 4,
         comment: "Fresh strawberries, loved them",
+        sellerId: ""
       },
       {
         productId: product10.id,
-        userId: user1.id,
+        accountId: account1.id,
         rating: 2,
         comment: "Papaya was not ripe enough",
+        sellerId: ""
       },
       {
         productId: product11.id,
-        userId: user2.id,
+        accountId: account2.id,
         rating: 5,
         comment: "Kiwi was sweet and juicy",
+        sellerId: ""
       },
       {
         productId: product12.id,
-        userId: user1.id,
+        accountId: account1.id,
         rating: 4,
         comment: "Avocado was creamy and fresh",
+        sellerId: ""
       },
       {
         productId: product13.id,
-        userId: user2.id,
+        accountId: account2.id,
         rating: 3,
         comment: "Zucchini was okay, not the best",
+        sellerId: ""
       },
       {
         productId: product14.id,
-        userId: user1.id,
+        accountId: account1.id,
         rating: 5,
         comment: "Carrot was crunchy and sweet",
+        sellerId: ""
       },
       {
         productId: product15.id,
-        userId: user2.id,
+        accountId: account2.id,
         rating: 4,
         comment: "Spinach was fresh and green",
+        sellerId: ""
       },
       {
         productId: product16.id,
-        userId: user1.id,
+        accountId: account1.id,
         rating: 2,
         comment: "Tomato was not fresh enough",
+        sellerId: ""
       },
       {
         productId: product17.id,
-        userId: user2.id,
+        accountId: account2.id,
         rating: 5,
         comment: "Potato was starchy and delicious",
+        sellerId: ""
       },
       {
         productId: product18.id,
-        userId: user1.id,
+        accountId: account1.id,
         rating: 4,
         comment: "Cucumber was crisp and refreshing",
+        sellerId: ""
       },
       {
         productId: product19.id,
-        userId: user2.id,
+        accountId: account2.id,
         rating: 3,
         comment: "Broccoli was okay, not the best",
+        sellerId: ""
       },
       {
         productId: product20.id,
-        userId: user1.id,
+        accountId: account1.id,
         rating: 5,
         comment: "Cauliflower was fresh and white",
+        sellerId: ""
       },
       {
         productId: product21.id,
-        userId: user2.id,
+        accountId: account2.id,
         rating: 4,
         comment: "Bell pepper was colorful and sweet",
+        sellerId: ""
       },
       {
         productId: product22.id,
-        userId: user1.id,
+        accountId: account1.id,
         rating: 2,
         comment: "Eggplant was not fresh enough",
+        sellerId: ""
       },
       {
         productId: product23.id,
-        userId: user2.id,
+        accountId: account2.id,
         rating: 5,
         comment: "Chili pepper was spicy and fresh",
+        sellerId: ""
       },
       {
         productId: product24.id,
-        userId: user1.id,
+        accountId: account1.id,
         rating: 4,
         comment: "Green beans were fresh and crunchy",
+        sellerId: ""
       },
     ],
   });
@@ -1095,19 +1123,19 @@ async function main() {
     data: [
       {
         event: "User login",
-        userId: user1.id,
+        accountId: account1.id,
         action: "login",
       },
       {
         event: "Order placed",
         orderId: order.id,
-        userId: user1.id,
+        accountId: account1.id,
         action: "create_order",
       },
       {
         event: "Product updated",
         productId: product1.id,
-        sellerId: seller1.id,
+        accountId: seller1.id,
         action: "update_product",
       },
     ],

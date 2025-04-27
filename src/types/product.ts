@@ -24,6 +24,8 @@ export type Product = {
   isFeatured?: boolean;
   isActive?: boolean;
   accountId: string;
+  currency: string; // Currency of the product (e.g., USD, IDR)
+  market: 'global' | 'indonesia'; // Market the product is available in (e.g., global, Indonesia)
 };
 
 // Product creation input type (for creating new products)
@@ -103,3 +105,5 @@ export type InventoryStats = {
   lowStockCount: number; // Count of products with low stock
   outOfStockCount: number; // Count of products that are out of stock
 };
+
+export type Currency = 'USD' | 'IDR' | string;
