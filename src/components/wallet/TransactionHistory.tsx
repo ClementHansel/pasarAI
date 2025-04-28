@@ -1,10 +1,11 @@
 // src/components/wallet/TransactionHistory.tsx
 "use client";
 
+import React from "react";
 import { format } from "date-fns";
 import { History } from "lucide-react";
 import { Badge } from "@/components/common/Badge";
-import { Transaction } from "@/types/wallet";
+import type { Transaction } from "@/types/wallet";
 
 interface TransactionHistoryProps {
   transactions: Transaction[];
@@ -12,17 +13,22 @@ interface TransactionHistoryProps {
   userRole?: "user" | "seller";
 }
 
-export const TransactionHistory = ({
+export const TransactionHistory: React.FC<TransactionHistoryProps> = ({
   transactions,
   filter = "all",
   userRole = "user",
-}: TransactionHistoryProps) => {
-  const filteredTransactions = transactions.filter((transaction) => {
-    if (filter === "all") return true;
-    return transaction.type === filter;
-  });
+}) => {
+  // Determine default filter based on role
+  const defaultFilter = userRole === "seller" ? "revenue" : "all";
+  const effectiveFilter = filter !== "all" ? filter : defaultFilter;
 
-  const getTransactionColor = (type: string) => {
+  // Filter transactions by type
+  const filteredTransactions = transactions.filter((tx) =>
+    effectiveFilter === "all" ? true : tx.type === effectiveFilter
+  );
+
+  // Determine CSS classes for different transaction types
+  const getTransactionColor = (type: Transaction["type"]) => {
     switch (type) {
       case "topup":
       case "revenue":
@@ -37,10 +43,22 @@ export const TransactionHistory = ({
 
   return (
     <div className="space-y-4">
+      {/* Header with history icon and role-specific title */}
+      <div className="flex items-center gap-2 mb-2">
+        <History className="w-5 h-5 text-gray-500" />
+        <h3 className="text-lg font-semibold">
+          {userRole === "seller"
+            ? "Seller Transaction History"
+            : "Transaction History"}
+        </h3>
+      </div>
+
       <div className="text-sm text-gray-500 mb-4">
         Showing:{" "}
         <span className="font-medium text-blue-600">
-          {filter === "all" ? "All transactions" : `${filter} transactions`}
+          {effectiveFilter === "all"
+            ? "All transactions"
+            : `${effectiveFilter} transactions`}
         </span>
       </div>
 
@@ -51,39 +69,63 @@ export const TransactionHistory = ({
           </div>
         ) : (
           <div className="divide-y">
-            {filteredTransactions.map((transaction, index) => (
-              <div
-                key={index}
-                className="p-4 flex items-center justify-between"
-              >
-                <div className="flex items-center gap-3">
+            {filteredTransactions.map((transaction, index) => {
+              // Determine badge variant, defaulting for unknown types
+              let variant:
+                | "default"
+                | "revenue"
+                | "topup"
+                | "withdraw"
+                | "bills";
+              switch (transaction.type) {
+                case "topup":
+                case "revenue":
+                case "withdraw":
+                case "bills":
+                  variant = transaction.type;
+                  break;
+                default:
+                  variant = "default";
+              }
+
+              const dateObj = transaction.createdAt;
+              const dateStr = dateObj
+                ? format(new Date(dateObj), "dd MMM yyyy, HH:mm")
+                : "";
+
+              return (
+                <div
+                  key={index}
+                  className="p-4 flex items-center justify-between"
+                >
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={`p-2 rounded-lg ${getTransactionColor(
+                        transaction.type
+                      )}`}
+                    >
+                      <Badge variant={variant}>{transaction.type}</Badge>
+                    </div>
+                    <div>
+                      <div className="font-medium capitalize">
+                        {transaction.type}
+                      </div>
+                      <div className="text-sm text-gray-500">{dateStr}</div>
+                    </div>
+                  </div>
                   <div
-                    className={`p-2 rounded-lg ${getTransactionColor(
+                    className={`font-semibold ${getTransactionColor(
                       transaction.type
                     )}`}
                   >
-                    <Badge variant={transaction.type}>{transaction.type}</Badge>
-                  </div>
-                  <div>
-                    <div className="font-medium capitalize">
-                      {transaction.type}
-                    </div>
-                    <div className="text-sm text-gray-500">
-                      {format(new Date(transaction.date), "dd MMM yyyy, HH:mm")}
-                    </div>
+                    {["topup", "revenue"].includes(transaction.type)
+                      ? "+"
+                      : "-"}
+                    Rp{transaction.amount.toLocaleString("id-ID")}
                   </div>
                 </div>
-                <div
-                  className={`font-semibold ${getTransactionColor(
-                    transaction.type
-                  )}`}
-                >
-                  {["topup", "revenue"].includes(transaction.type) ? "+" : "-"}
-                  Rp
-                  {transaction.amount.toLocaleString("id-ID")}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

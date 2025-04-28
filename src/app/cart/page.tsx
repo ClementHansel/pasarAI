@@ -1,41 +1,20 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import CartSection from "@/components/Cart/full/CartSection";
-import { domesticProducts } from "@/lib/data/products";
+import { useCartStore } from "@/lib/cartStore";
+import type { CartState } from "@/lib/cartStore";
 
 const CartPage: React.FC = () => {
-  const [cartItems, setCartItems] = useState(() => {
-    // Use mock products from products.ts
-    return domesticProducts[0].subregions[0].cities[0].products.map(
-      (product) => ({
-        id: product.id.toString(),
-        name: product.name,
-        price: product.price,
-        discountedPrice: product.originalPrice,
-        quantity: 1,
-        image: product.imageUrls[0],
-        marketId: "market-1",
-        marketName: "Mock Market",
-      })
-    );
-  });
-
-  const handleUpdate = (id: string, quantity: number) => {
-    setCartItems((prev) =>
-      prev.map((item) =>
-        item.id === id ? { ...item, quantity: Math.max(quantity, 1) } : item
-      )
-    );
-  };
-
-  const handleRemove = (ids: string[]) => {
-    setCartItems((prev) => prev.filter((item) => !ids.includes(item.id)));
-  };
+  const cartItems = useCartStore((state: CartState) => state.items);
+  const updateQuantity = useCartStore(
+    (state: CartState) => state.updateQuantity
+  );
+  const removeItem = useCartStore((state: CartState) => state.removeItem);
 
   const handleMoveToWishlist = (id: string) => {
     console.log(`Moved item ${id} to wishlist`);
-    handleRemove([id]);
+    removeItem(id);
   };
 
   return (
@@ -43,8 +22,8 @@ const CartPage: React.FC = () => {
       <h1 className="text-2xl font-bold mb-4">Your Cart</h1>
       <CartSection
         items={cartItems}
-        onUpdate={handleUpdate}
-        onRemove={handleRemove}
+        onUpdate={updateQuantity}
+        onRemove={(ids) => ids.forEach((id) => removeItem(id))}
         onMoveToWishlist={handleMoveToWishlist}
       />
     </div>

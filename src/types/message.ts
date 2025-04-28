@@ -4,6 +4,7 @@ export type Message = {
   id: number;
   conversationId: number;
   sender: "admin" | "seller" | "buyer";
+  senderRole: "admin" | "seller" | "buyer"; // Added senderRole property
   text: string;
   timestamp: string;
   status?: "sent" | "delivered" | "read";

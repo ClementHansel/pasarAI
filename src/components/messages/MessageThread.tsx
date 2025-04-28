@@ -35,7 +35,7 @@ export default function MessageThread({
   const formatTime = (timestamp: string) => {
     try {
       return format(new Date(timestamp), "h:mm a");
-    } catch (error) {
+    } catch {
       return "";
     }
   };
@@ -54,8 +54,8 @@ export default function MessageThread({
         {messages.map((message) => (
           <MessageBubble
             key={message.id}
-            sender={message.sender}
             senderId={message.sender}
+            sender={message.senderRole}
             currentUserId={currentUserId}
             text={message.text}
             timestamp={formatTime(message.timestamp)}

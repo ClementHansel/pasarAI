@@ -1,13 +1,8 @@
+// src/components/review/SellerReview.tsx
 "use client";
 
 import React, { useEffect, useState } from "react";
-
-interface Review {
-  id: number;
-  rating: number;
-  comment: string;
-  reviewerName: string;
-}
+import type { Review } from "@/types/review";
 
 interface SellerReviewProps {
   sellerId: string;
@@ -15,8 +10,9 @@ interface SellerReviewProps {
   currentUserRole?: "admin" | "seller" | "buyer";
 }
 
-// Replace with actual fetch logic later
+// Mock fetch — replace with real API call
 const fetchSellerReviews = async (sellerId: string): Promise<Review[]> => {
+  console.log(`Fetching reviews for sellerId: ${sellerId}`);
   return new Promise((resolve) => {
     setTimeout(() => {
       resolve([
@@ -25,12 +21,14 @@ const fetchSellerReviews = async (sellerId: string): Promise<Review[]> => {
           rating: 5,
           comment: "Awesome experience. Highly recommend this seller!",
           reviewerName: "Alice",
+          timestamp: new Date().toISOString(),
         },
         {
           id: 2,
           rating: 4,
           comment: "Good seller, will buy again.",
           reviewerName: "Bob",
+          timestamp: new Date().toISOString(),
         },
       ]);
     }, 800);
@@ -46,13 +44,18 @@ export default function SellerReview({
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const loadReviews = async () => {
-      if (!sellerId) return;
-      const data = await fetchSellerReviews(sellerId);
-      setReviews(data);
-      setLoading(false);
+    if (!sellerId) return;
+    const load = async () => {
+      try {
+        const data = await fetchSellerReviews(sellerId);
+        setReviews(data);
+      } catch {
+        // handle error if needed
+      } finally {
+        setLoading(false);
+      }
     };
-    loadReviews();
+    load();
   }, [sellerId]);
 
   const canManage =
@@ -61,7 +64,10 @@ export default function SellerReview({
 
   return (
     <div className="w-full max-w-3xl mx-auto p-4">
-      <h2 className="text-2xl font-bold mb-4">Seller Reviews</h2>
+      {/* Using sellerId prop explicitly */}
+      <h2 className="text-2xl font-bold mb-4">
+        Reviews for seller <span className="font-mono">{sellerId}</span>
+      </h2>
 
       {loading ? (
         <div className="text-gray-500">Loading reviews...</div>
@@ -69,19 +75,19 @@ export default function SellerReview({
         <div className="text-gray-500">No reviews yet.</div>
       ) : (
         <div className="space-y-4">
-          {reviews.map((review) => (
+          {reviews.map((rev) => (
             <div
-              key={review.id}
+              key={rev.id}
               className="border rounded-lg p-4 shadow-sm bg-white"
             >
               <div className="flex items-center justify-between">
-                <span className="font-semibold">{review.reviewerName}</span>
+                <span className="font-semibold">{rev.reviewerName}</span>
                 <span className="text-yellow-500">
-                  {"★".repeat(review.rating)}
-                  {"☆".repeat(5 - review.rating)}
+                  {"★".repeat(rev.rating)}
+                  {"☆".repeat(5 - rev.rating)}
                 </span>
               </div>
-              <p className="mt-2 text-gray-700">{review.comment}</p>
+              <p className="mt-2 text-gray-700">{rev.comment}</p>
             </div>
           ))}
         </div>

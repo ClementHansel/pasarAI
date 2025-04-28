@@ -31,6 +31,7 @@ export type Product = {
   isFeatured?: boolean;
   isActive?: boolean;
   accountId: string;
+  marketType: ProductType; // Add marketType to indicate domestic or global
 };
 
 export type Brand = {

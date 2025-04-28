@@ -14,10 +14,11 @@ interface ProductCategoryProps {
   viewMode?: "grid" | "list";
   selectedFilters?: {
     region?: string;
-    subregion?: string;
+    subRegion?: string;
     city?: string;
   };
   onCategoryChange?: (category: string) => void;
+  onAddToCart?: (product: Product) => void; // Added onAddToCart prop
 }
 
 const ProductCategory = ({
@@ -46,8 +47,8 @@ const ProductCategory = ({
         subregions: region.subregions
           .filter((sub) => {
             if (
-              selectedFilters.subregion &&
-              sub.name !== selectedFilters.subregion
+              selectedFilters.subRegion &&
+              sub.name !== selectedFilters.subRegion
             )
               return false;
 

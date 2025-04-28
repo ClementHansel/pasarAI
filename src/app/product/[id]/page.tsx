@@ -3,11 +3,12 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import ProductDetails from "@/components/product/ProductDetails";
+import { useCartStore } from "@/lib/cartStore";
+import type { CartState } from "@/lib/cartStore";
+import type { Product } from "@/types/product";
 import ProductImages from "@/components/product/ProductImage";
+import ProductDetails from "@/components/product/ProductDetails";
 import { ProductDetailSkeleton } from "@/components/product/ProductDetailSkleton";
-import { Star } from "lucide-react";
-import { Product } from "@/types/product";
 import { Currency } from "@/types/market";
 
 export default function ProductDetailPage() {
@@ -16,6 +17,8 @@ export default function ProductDetailPage() {
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const addItem = useCartStore((state: CartState) => state.addItem);
 
   useEffect(() => {
     const id = params?.id;
@@ -30,7 +33,7 @@ export default function ProductDetailPage() {
       try {
         const res = await fetch(`/api/products/${id}`);
         if (res.status === 404) {
-          router.push("/product"); // redirect to listing or 404
+          router.push("/product");
           return;
         }
         if (!res.ok) {
@@ -48,74 +51,45 @@ export default function ProductDetailPage() {
     fetchProduct();
   }, [params, router]);
 
-  if (loading) {
-    return (
-      <div className="container mx-auto py-10 px-4 lg:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-start">
-          <ProductDetailSkeleton />
-          <div className="space-y-6">
-            <ProductDetailSkeleton />
-            <ProductDetailSkeleton />
-            <ProductDetailSkeleton />
-            <ProductDetailSkeleton />
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const handleAddToCart = (p: Product) => {
+    addItem({
+      id: p.id.toString(),
+      name: p.name,
+      price: p.price,
+      discountedPrice: p.originalPrice ?? 0,
+      quantity: 1,
+      image: p.imageUrls[0],
+      marketId: p.marketId,
+      marketName: p.location?.region ?? p.marketId,
+    });
+  };
 
-  if (error) {
-    return (
-      <div className="container mx-auto py-10 text-center">
-        <p className="text-xl text-red-500">{error}</p>
-      </div>
-    );
-  }
-
-  if (!product) {
-    return (
-      <div className="container mx-auto py-10 text-center">
-        <p className="text-xl text-red-500">Product not found</p>
-      </div>
-    );
-  }
+  if (loading) return <ProductDetailSkeleton />;
+  if (error) return <div className="text-red-500">{error}</div>;
+  if (!product) return <div className="text-red-500">Not found</div>;
 
   return (
     <div className="container mx-auto py-10 px-4 lg:px-8">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-start">
+        {/* Product Images */}
         <ProductImages images={product.imageUrls} />
+
+        {/* Product Details */}
         <ProductDetails
           product={product}
           marketId={product.marketId}
           currency={product.currency as Currency}
-          isDomestic={product.currency === Currency.IDR}
+          isDomestic={product.marketType === "domestic"}
         />
       </div>
 
-      {/* Reviews Section */}
-      <div className="mt-16 border-t pt-12">
-        <h2 className="text-2xl font-bold mb-6">Customer Reviews</h2>
-        <div className="space-y-6">
-          {product.reviews.map((review) => (
-            <div key={review.id} className="border-b pb-6">
-              <div className="flex items-center gap-2 mb-2">
-                {[...Array(5)].map((_, i) => (
-                  <Star
-                    key={i}
-                    className={`h-5 w-5 ${
-                      i < review.rating ? "text-yellow-400" : "text-gray-300"
-                    }`}
-                  />
-                ))}
-              </div>
-              <p className="text-gray-600">{review.comment}</p>
-              <p className="text-sm text-gray-500 mt-2">
-                {new Date(review.createdAt).toLocaleDateString()}
-              </p>
-            </div>
-          ))}
-        </div>
-      </div>
+      {/* Add to Cart Button */}
+      <button
+        onClick={() => handleAddToCart(product)}
+        className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
+      >
+        Add to Cart
+      </button>
     </div>
   );
 }

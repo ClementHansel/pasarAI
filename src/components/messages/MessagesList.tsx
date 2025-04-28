@@ -5,7 +5,7 @@ import { useState } from "react";
 import { format, isToday, isYesterday } from "date-fns";
 import Image from "next/image";
 
-type MessagesListProps = {
+export type MessagesListProps = {
   conversations: Conversation[];
   onConversationSelect: (conversationId: number) => void;
   userRole: "admin" | "seller" | "buyer";
@@ -25,18 +25,13 @@ export default function MessagesList({
     onConversationSelect(conversationId);
   };
 
-  // Format the last active time
   const formatLastActive = (timestamp: string) => {
     try {
       const date = new Date(timestamp);
-      if (isToday(date)) {
-        return format(date, "h:mm a");
-      } else if (isYesterday(date)) {
-        return "Yesterday";
-      } else {
-        return format(date, "MMM d");
-      }
-    } catch (error) {
+      if (isToday(date)) return format(date, "h:mm a");
+      if (isYesterday(date)) return "Yesterday";
+      return format(date, "MMM d");
+    } catch {
       return "";
     }
   };
@@ -71,7 +66,6 @@ export default function MessagesList({
       {/* Conversations list */}
       <div className="overflow-y-auto">
         {conversations.map((conversation) => {
-          // Customize what's shown based on user role
           const showUnread =
             (userRole === "buyer" && conversation.sender === "seller") ||
             (userRole === "seller" && conversation.sender === "buyer") ||
@@ -86,13 +80,13 @@ export default function MessagesList({
               }`}
             >
               {/* Avatar */}
-              <div className="w-12 h-12 rounded-full bg-gray-300 flex-shrink-0 mr-3">
+              <div className="w-12 h-12 rounded-full bg-gray-300 flex-shrink-0 mr-3 overflow-hidden">
                 <Image
                   width={40}
                   height={40}
-                  src={conversation.avatar}
+                  src={conversation.avatar ?? "https://via.placeholder.com/40"}
                   alt="Avatar"
-                  className="w-full h-full rounded-full"
+                  className="object-cover w-full h-full"
                 />
               </div>
 

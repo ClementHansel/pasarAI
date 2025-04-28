@@ -6,18 +6,22 @@ import { Product, ProductType } from "@/types/product";
 import ProductFilter from "@/components/product/ProductFilter";
 import { LocationFilter } from "@/components/market/LocationFilter";
 import ProductCategory from "@/components/product/ProductCategory";
-import { selectedFilters } from "@/types/market";
 import { Home, Globe, RefreshCw, Grid, List, Sliders, X } from "lucide-react";
 import { useDebounce } from "@/hooks/use-debounce"; // Assuming you have a useDebounce hook
+import { useCartStore } from "@/lib/cartStore";
+import type { CartState } from "@/lib/cartStore";
+import { SelectedFilters } from "@/types/market";
 
 const ProductPage = () => {
+  const addItem = useCartStore((state: CartState) => state.addItem);
+
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
   const [viewMode, setViewMode] = useState<"list" | "grid">("grid");
-  const [selectedFilters, setSelectedFilters] = useState<selectedFilters>({
+  const [selectedFilters, setSelectedFilters] = useState<SelectedFilters>({
     region: "",
-    subregion: "",
+    subRegion: "",
     city: "",
   });
 
@@ -76,7 +80,7 @@ const ProductPage = () => {
   };
 
   const handleLocationFilterChange = (
-    type: "region" | "subregion" | "city",
+    type: "region" | "subRegion" | "city",
     value: string
   ) => {
     setSelectedFilters((prevFilters) => ({
@@ -92,7 +96,24 @@ const ProductPage = () => {
   const resetFilters = () => {
     setSearchTerm("");
     setCategoryFilter("");
-    setSelectedFilters({ region: "", subregion: "", city: "" });
+    setSelectedFilters({
+      region: "",
+      subRegion: "",
+      city: "",
+    });
+  };
+
+  const handleAddToCart = (product: Product) => {
+    addItem({
+      id: product.id.toString(),
+      name: product.name,
+      price: product.price,
+      discountedPrice: product.originalPrice ?? 0,
+      quantity: 1,
+      image: product.imageUrls[0],
+      marketId: product.marketId,
+      marketName: product.location?.region ?? product.marketId,
+    });
   };
 
   return (
@@ -102,8 +123,8 @@ const ProductPage = () => {
           Product Marketplace
         </h1>
         <p className="text-gray-600 text-lg max-w-3xl mx-auto">
-          Discover {productType === "domestic" ? "local" : "global"} products.
-          Filter by category, search items, and find the best deals.
+          Discover local and global products. Filter by category, search items,
+          and find the best deals.
         </p>
       </header>
 
@@ -252,9 +273,11 @@ const ProductPage = () => {
           viewMode={viewMode}
           selectedFilters={selectedFilters}
           products={filteredProducts}
+          onAddToCart={handleAddToCart}
         />
       </div>
     </div>
   );
 };
+
 export default ProductPage;

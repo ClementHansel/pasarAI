@@ -1,6 +1,6 @@
 // component/homepage/header/CartPopover.tsx
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { ShoppingCart } from "lucide-react";
 import {
   Popover,
@@ -8,47 +8,20 @@ import {
   PopoverContent,
 } from "@/components/ui/popover";
 import CartPreview from "@/components/Cart/preview/CartPreview";
-import { CartItem } from "@/types/cart";
-import { domesticProducts } from "@/lib/data/products";
+import { useCartStore } from "@/lib/cartStore";
+import type { CartState } from "@/lib/cartStore";
 
-interface CartPopoverProps {
-  items?: CartItem[]; // Tambahkan tanda ? untuk prop opsional
-  onRemoveItem: (id: string) => void;
-}
-
-const CartPopover: React.FC<CartPopoverProps> = ({
-  items = [],
-  onRemoveItem,
-}) => {
+const CartPopover: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [mockItems, setMockItems] = useState<CartItem[]>([]);
-
-  useEffect(() => {
-    // Use mock products from products.ts
-    const mockCartItems =
-      domesticProducts[0].subregions[0].cities[0].products.map((product) => ({
-        id: product.id.toString(),
-        name: product.name,
-        price: product.price,
-        discountedPrice: product.originalPrice,
-        quantity: 1,
-        image: product.imageUrls[0],
-        marketId: "market-1",
-        marketName: "Mock Market",
-      }));
-    setMockItems(mockCartItems);
-  }, []);
-
-  const totalItems = mockItems.reduce(
-    (sum, item) => sum + (item?.quantity || 0),
-    0
-  );
+  const items = useCartStore((state: CartState) => state.items);
+  const removeItem = useCartStore((state: CartState) => state.removeItem);
+  const totalItems = useCartStore((state: CartState) => state.totalCount());
 
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger className="relative">
         <ShoppingCart className="w-6 h-6" />
-        {mockItems.length > 0 && (
+        {items.length > 0 && (
           <span className="absolute -top-2 -right-2 bg-primary text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
             {totalItems}
           </span>
@@ -59,11 +32,9 @@ const CartPopover: React.FC<CartPopoverProps> = ({
         align="end"
       >
         <CartPreview
-          items={mockItems}
+          items={items}
           onClose={() => setIsOpen(false)}
-          onRemoveItem={(id) =>
-            setMockItems((prev) => prev.filter((item) => item.id !== id))
-          }
+          onRemoveItem={(id) => removeItem(id)}
         />
       </PopoverContent>
     </Popover>

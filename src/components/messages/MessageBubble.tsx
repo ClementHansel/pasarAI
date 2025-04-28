@@ -1,7 +1,7 @@
 "use client";
 
 import clsx from "clsx";
-import { Check, CheckCheck } from "lucide-react";
+import { Check } from "lucide-react";
 
 export type MessageBubbleProps = {
   senderId: string;
@@ -20,7 +20,6 @@ export default function MessageBubble({
 }: MessageBubbleProps) {
   const isSender = senderId === currentUserId;
 
-  // Get appropriate background and text color based on sender role
   const getBubbleStyles = () => {
     if (isSender) {
       return "bg-blue-600 text-white rounded-br-none";
@@ -54,7 +53,12 @@ export default function MessageBubble({
           )}
         >
           <span>{timestamp}</span>
-          {isSender && <CheckCheck className="w-4 h-4 ml-1" />}
+          {isSender && (
+            <div className="flex items-center ml-1 gap-[-2px]">
+              <Check className="w-4 h-4" />
+              <Check className="w-4 h-4" />
+            </div>
+          )}
         </div>
       </div>
     </div>
