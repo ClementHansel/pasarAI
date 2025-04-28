@@ -3,7 +3,8 @@
 
 import Image from "next/image";
 import { Star, Store, Phone, Mail, MapPin, Package } from "lucide-react";
-import SellerProductCard from "../seller/SellerProductCard";
+import SellerProductCard from "./SellerProductCard";
+import { PublicSellerProfile } from "@/lib/data/profile";
 
 interface SellerPublicProfileProps {
   seller: PublicSellerProfile;
