@@ -16,15 +16,14 @@ import {
 } from "@/types/market";
 import { db } from "@/lib/db/db";
 
-// Helper: Group raw markets into hierarchical MarketRegion[]
+// (1) groupMarkets now pulls seller fields off the account + market record
 function groupMarkets(raws: MarketWithRelations[]): MarketRegion[] {
-  const regionMap = new Map<string, MarketRegion>();
+  const regions = new Map<string, MarketRegion>();
 
   raws.forEach((m) => {
     const regionKey = m.region?.name ?? "Unknown";
-    // initialize region
-    if (!regionMap.has(regionKey)) {
-      regionMap.set(regionKey, {
+    if (!regions.has(regionKey)) {
+      regions.set(regionKey, {
         id: m.region?.id ?? regionKey,
         name: regionKey,
         region: regionKey,
@@ -32,22 +31,20 @@ function groupMarkets(raws: MarketWithRelations[]): MarketRegion[] {
         sellers: [],
       });
     }
-    const reg = regionMap.get(regionKey)!;
+    const region = regions.get(regionKey)!;
 
-    // find or add subregion
-    const subKey = m.subregion?.name ?? "Unknown";
-    let sub = reg.subregions.find((s) => s.name === subKey);
+    const subRegionKey = m.subregion?.name ?? "Unknown";
+    let sub = region.subregions.find((s) => s.name === subRegionKey);
     if (!sub) {
       sub = {
-        id: m.subregion?.id ?? subKey,
-        name: subKey,
+        id: m.subregion?.id ?? subRegionKey,
+        name: subRegionKey,
         cities: [],
         sellers: [],
       };
-      reg.subregions.push(sub);
+      region.subregions.push(sub);
     }
 
-    // find or add city
     const cityKey = m.city?.name ?? "Unknown";
     let city = sub.cities.find((c) => c.name === cityKey);
     if (!city) {
@@ -55,30 +52,29 @@ function groupMarkets(raws: MarketWithRelations[]): MarketRegion[] {
       sub.cities.push(city);
     }
 
-    // add each seller of this market
-    m.sellers.forEach((account) => {
-      // map Prisma Account to our Seller type
+    // for each Account in m.sellers, build our Seller object
+    m.sellers.forEach((acct) => {
       const seller: Seller = {
-        id: account.id,
-        name: account.name,
-        role: account.role,
-        currency: account.currency?.name as Currency,
-        rating: account.rating ?? undefined,
-        location: account.location ?? undefined,
-        productCount: account.productCount ?? undefined,
-        joinDate: account.joinDate ?? undefined,
-        verified: account.verified ?? undefined,
+        id: acct.id,
+        name: acct.name,
+        role: acct.role,
+        currency: (acct.currency?.name as Currency) ?? Currency.IDR,
+        rating: m.rating ?? undefined,
+        location: m.location,
+        productCount: m.productCount ?? undefined,
+        joinDate: m.joinDate ?? undefined,
+        verified: m.verified ?? undefined,
       };
       city.sellers.push(seller);
       sub!.sellers.push(seller);
-      reg.sellers.push(seller);
+      region.sellers.push(seller);
     });
   });
 
-  return Array.from(regionMap.values());
+  return Array.from(regions.values());
 }
 
-// GET: fetch and group markets
+// GET: fetch + group
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -110,7 +106,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST: create market
+// POST: create
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -132,7 +128,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// PUT: update market
+// PUT: update
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
@@ -157,7 +153,7 @@ export async function PUT(request: NextRequest) {
   }
 }
 
-// DELETE: delete market
+// DELETE: remove
 export async function DELETE(request: NextRequest) {
   try {
     const body = await request.json();

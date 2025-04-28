@@ -72,5 +72,10 @@ export type MarketWithRelations = PrismaMarket & {
   subregion: { id: string; name: string } | null;
   city: { id: string; name: string } | null;
   currency: { id: string; name: string } | null;
-  sellers: { id: string; name: string; role: string }[];
+  sellers: Array<{
+    id: string;
+    name: string;
+    role: string;
+    currency: { id: string; name: string } | null;
+  }>;
 };
