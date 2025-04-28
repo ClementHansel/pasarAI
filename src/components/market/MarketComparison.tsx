@@ -12,7 +12,13 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
-import { MarketType } from "@/types/market";
+import {
+  City,
+  MarketRegion,
+  MarketType,
+  Seller,
+  Subregion,
+} from "@/types/market";
 import { domesticMarkets, globalMarkets } from "@/lib/data/markets";
 
 interface MarketStat {
@@ -37,51 +43,46 @@ export const MarketComparison = ({ marketType }: MarketComparisonProps) => {
     // Generate comparison data from the markets
     setIsLoading(true);
 
-    const domesticData = calculateMarketStats(domesticMarkets);
-    const globalData = calculateMarketStats(globalMarkets);
+    const domesticData = calculateMarketStats(domesticMarkets, "Domestic");
+    const globalData = calculateMarketStats(globalMarkets, "Global");
 
     // Create our comparison dataset
-    const data = [
-      {
-        name: "Domestic",
-        ...domesticData,
-      },
-      {
-        name: "Global",
-        ...globalData,
-      },
-    ];
+    const data = [domesticData, globalData];
 
     setComparisonData(data);
     setIsLoading(false);
   }, [marketType]);
 
   // Helper function to calculate statistics for a market
-  const calculateMarketStats = (markets: any[]): MarketStat => {
+  const calculateMarketStats = (
+    markets: MarketRegion[],
+    marketName: string
+  ): MarketStat => {
     let totalSellers = 0;
     let totalRating = 0;
-    let sellerCount = 0;
+    let sellerCountWithRating = 0;
 
     markets.forEach((region) => {
-      region.subregions.forEach((subregion) => {
-        subregion.cities.forEach((city) => {
+      region.subregions.forEach((subregion: Subregion) => {
+        subregion.cities.forEach((city: City) => {
           totalSellers += city.sellers.length;
 
           // Calculate average rating if ratings exist
-          city.sellers.forEach((seller) => {
+          city.sellers.forEach((seller: Seller) => {
             if (seller.rating) {
               totalRating += seller.rating;
-              sellerCount++;
+              sellerCountWithRating++;
             }
           });
         });
       });
     });
 
-    const avgRating = sellerCount > 0 ? totalRating / sellerCount : 0;
+    const avgRating =
+      sellerCountWithRating > 0 ? totalRating / sellerCountWithRating : 0;
 
     return {
-      name: markets[0]?.name || "Unknown",
+      name: marketName, // Use the provided marketName
       sellerCount: totalSellers,
       avgRating: parseFloat(avgRating.toFixed(1)),
       regions: markets.length,
@@ -91,11 +92,11 @@ export const MarketComparison = ({ marketType }: MarketComparisonProps) => {
   const formatYLabel = (value: number) => {
     switch (comparisonMetric) {
       case "avgRating":
-        return `${value.toFixed(1)}`;
+        return `${value?.toFixed(1) ?? "-"}`; // Handle potential undefined
       case "regions":
       case "sellerCount":
       default:
-        return value.toString();
+        return value?.toString() ?? "-"; // Handle potential undefined
     }
   };
 
@@ -104,6 +105,10 @@ export const MarketComparison = ({ marketType }: MarketComparisonProps) => {
     avgRating: "Average Rating",
     regions: "Region Count",
   };
+
+  if (isLoading) {
+    return <div>Loading market comparison data...</div>;
+  }
 
   return (
     <div>

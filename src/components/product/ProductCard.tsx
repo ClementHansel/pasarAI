@@ -1,13 +1,10 @@
-// src/components/product/ProductCard.tsx
 "use client";
 
-import { cn } from "@/lib/utils";
 import Link from "next/link";
 import Image from "next/image";
-import { ShoppingCart, Star, Heart, MapPin } from "lucide-react";
+import { ShoppingCart, Star, MapPin } from "lucide-react";
 import { toast } from "react-hot-toast";
 import type { Product } from "@/types/product";
-import { useState } from "react";
 
 interface ProductCardProps extends Product {
   viewMode?: "grid" | "list";
@@ -27,9 +24,15 @@ const ProductCard = ({
   labels,
   brand,
 }: ProductCardProps) => {
-  const [isAdding, setIsAdding] = useState(false);
   const discountedPrice = price * (1 - discount / 100);
 
+  const handleAddToCart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    // Add to cart logic here (e.g., dispatching to a cart context or local storage)
+    toast.success("Added to cart!");
+  };
+
+  // List View
   if (viewMode === "list") {
     return (
       <div className="group flex items-center gap-6 bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-300 border border-gray-100 hover:border-blue-300">
@@ -68,7 +71,7 @@ const ProductCard = ({
               <Star
                 key={i}
                 className={`w-4 h-4 ${
-                  i < rating ? "text-yellow-400 fill-current" : "text-gray-300"
+                  i < rating ? "text-yellow-400" : "text-gray-300"
                 }`}
               />
             ))}
@@ -93,10 +96,7 @@ const ProductCard = ({
             </div>
 
             <button
-              onClick={(e) => {
-                e.preventDefault();
-                // Handle add to cart
-              }}
+              onClick={handleAddToCart}
               className="flex items-center gap-2 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
             >
               <ShoppingCart className="w-5 h-5" />
@@ -142,7 +142,7 @@ const ProductCard = ({
             <Star
               key={i}
               className={`w-4 h-4 ${
-                i < rating ? "text-yellow-400 fill-current" : "text-gray-300"
+                i < rating ? "text-yellow-400" : "text-gray-300"
               }`}
             />
           ))}

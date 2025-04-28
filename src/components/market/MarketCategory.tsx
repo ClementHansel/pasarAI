@@ -18,7 +18,6 @@ export const MarketCategory = ({
   type,
   regions,
   viewMode,
-  searchQuery,
 }: MarketCategoryProps) => {
   return (
     <div

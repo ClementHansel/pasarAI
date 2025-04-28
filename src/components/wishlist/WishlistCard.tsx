@@ -25,7 +25,6 @@ type WishlistCardProps = {
 };
 
 export default function WishlistCard({
-  accountId,
   productId,
   marketId,
   product,

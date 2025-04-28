@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
 import { z } from "zod";
 import { db } from "@/lib/db/db";
 import { categorizeProduct } from "@/lib/db/productCategorization";
@@ -48,21 +48,112 @@ function formatTagsForCreateOrUpdate(tags?: string[]) {
   };
 }
 
-// GET: Fetch all products
-export async function GET() {
+// GET: Fetch all products with advanced filters, pagination, and sorting
+export async function GET(req: Request) {
   try {
+    const url = new URL(req.url);
+    const searchParams = url.searchParams;
+
+    // --- Extract Query Parameters ---
+    const market = searchParams.get("market"); // domestic or global
+    const city = searchParams.get("city");
+    const province = searchParams.get("province");
+    const country = searchParams.get("country");
+    const categoryId = searchParams.get("categoryId");
+
+    const page = parseInt(searchParams.get("page") || "1", 10);
+    const limit = parseInt(searchParams.get("limit") || "10", 10);
+
+    const sortByPrice = searchParams.get("sortByPrice"); // priceLow or priceHigh
+    const sortByTags = searchParams.get("sortByTags"); // onSale, bestSeller, newArrival
+
+    // --- Build Filters ---
+    const filters: Prisma.ProductWhereInput = {
+      ...(market && { marketId: market }),
+      ...(categoryId && {
+        categories: {
+          some: {
+            id: categoryId,
+          },
+        },
+      }),
+      ...(city || province || country
+        ? {
+            account: {
+              is: {
+                ...(city ? { city } : {}),
+                ...(province ? { province } : {}),
+                ...(country ? { country } : {}),
+              },
+            },
+          }
+        : {}),
+    };
+
+    // --- Build Sorting ---
+    const orderBy: Prisma.ProductOrderByWithRelationInput[] = [];
+
+    if (sortByPrice) {
+      if (sortByPrice === "priceLow") {
+        orderBy.push({ price: "asc" });
+      } else if (sortByPrice === "priceHigh") {
+        orderBy.push({ price: "desc" });
+      }
+    }
+
+    if (sortByTags) {
+      if (sortByTags === "onSale") {
+        orderBy.push({ isOnSale: "desc" });
+      } else if (sortByTags === "bestSeller") {
+        orderBy.push({ isBestSeller: "desc" });
+      } else if (sortByTags === "newArrival") {
+        orderBy.push({ createdAt: "desc" });
+      }
+    }
+
+    // 🚀 Future implementation (commented for now):
+    // Sorting by distance once buyer location is available
+    /*
+    if (sortByDistance === "closest") {
+      orderBy.push({ distance: "asc" });
+      // Note: Requires calculating distance manually or with raw SQL queries
+    }
+    */
+
+    // --- Pagination Calculations ---
+    const skip = (page - 1) * limit;
+
+    // --- Fetch Products ---
     const products = await db.product.findMany({
+      where: filters,
+      orderBy: orderBy.length > 0 ? orderBy : undefined,
+      skip,
+      take: limit,
       include: {
-        category: true,
-        account: true,
+        categories: true,
+        account: true, // Fetch seller details
         reviews: true,
         tags: true,
         labels: true,
       },
     });
-    return NextResponse.json(products);
+
+    const totalProducts = await db.product.count({
+      where: filters,
+    });
+
+    // --- Return Response ---
+    return NextResponse.json({
+      products,
+      pagination: {
+        totalProducts,
+        totalPages: Math.ceil(totalProducts / limit),
+        currentPage: page,
+        pageSize: limit,
+      },
+    });
   } catch (error) {
-    console.error("GET error:", error);
+    console.error("[PRODUCTS_GET_ERROR]", error);
     return NextResponse.json(
       { error: "Failed to fetch products" },
       { status: 500 }
@@ -168,7 +259,6 @@ export async function POST(req: Request) {
           stock,
           soldCount,
           unit,
-          categoryId: finalCategoryId,
           ecoCertifications,
           origin,
           sku,
@@ -182,8 +272,15 @@ export async function POST(req: Request) {
               ...autoLabelConnections.map((l) => ({ id: l.id })),
             ],
           },
+          categories: {
+            connect: [{ id: finalCategoryId }],
+          },
         },
-        include: { tags: true, category: true, labels: true },
+        include: {
+          tags: true,
+          labels: true,
+          categories: true,
+        },
       });
 
       return newProduct;
@@ -240,12 +337,17 @@ export async function PUT(req: Request) {
       );
     }
 
-    const existing = await prisma.product.findUnique({ where: { id } });
+    const existing = await prisma.product.findUnique({
+      where: { id },
+      include: { categories: true }, // important!
+    });
+
     if (!existing) {
       return NextResponse.json({ error: "Product not found" }, { status: 404 });
     }
 
     const transaction = await prisma.$transaction(async (prisma) => {
+      // Update category label if both categoryId and categoryLabel are provided
       if (categoryId && categoryLabel) {
         await prisma.category.update({
           where: { id: categoryId },
@@ -253,12 +355,13 @@ export async function PUT(req: Request) {
         });
       }
 
+      // Determine the final categoryId to set
       let finalCategoryId = categoryId;
       if (!finalCategoryId) {
         const newCat = await categorizeProduct(
           name + " " + (description || "")
         );
-        finalCategoryId = newCat || existing.categoryId;
+        finalCategoryId = newCat || existing.categories?.[0]?.id;
       }
 
       const updated = await prisma.product.update({
@@ -271,41 +374,43 @@ export async function PUT(req: Request) {
           stock,
           soldCount,
           unit,
-          categoryId: finalCategoryId,
           ecoCertifications,
           origin,
           sku,
           isActive,
           accountId,
           tags: {
-            set: [],
+            set: [], // Clear old tags first
             ...formatTagsForCreateOrUpdate(tags),
           },
+          ...(finalCategoryId && {
+            categories: {
+              set: [{ id: finalCategoryId }],
+            },
+          }),
         },
-        include: { tags: true, category: true },
+        include: {
+          tags: true,
+          categories: true,
+        },
       });
 
       return updated;
     });
 
     return NextResponse.json({
-      message: "Product updated",
+      message: "Product updated successfully",
       product: transaction,
     });
   } catch (error: unknown) {
-    if (error instanceof Error) {
-      console.error("PUT error:", error.message);
-      return NextResponse.json(
-        { error: error.message || "Failed to update product" },
-        { status: 500 }
-      );
-    } else {
-      console.error("PUT error:", error);
-      return NextResponse.json(
-        { error: "Failed to update product" },
-        { status: 500 }
-      );
-    }
+    console.error("PUT error:", error);
+    return NextResponse.json(
+      {
+        error:
+          error instanceof Error ? error.message : "Failed to update product",
+      },
+      { status: 500 }
+    );
   }
 }
 

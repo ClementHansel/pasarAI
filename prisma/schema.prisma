@@ -57,12 +57,15 @@ model LoginAttempt {
 model Account {
   id              String    @id @default(cuid())
   name            String
-  email           String    @unique
-  password        String
+  email           String?    @unique
+  password        String?
   avatar          String?
   role            Role      @default(BUYER)
   phone           String?
   address         String?
+  country         String?
+  province        String?
+  city            String?
   profileImage    String?
   ewallet         String?
   isVerified      Boolean   @default(false)
@@ -70,7 +73,7 @@ model Account {
   tokenVersion    Int       @default(0)
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
-  referralCode    String    @unique @default("")
+  referralCode    String?    @unique @default("")
   lastLoginAt     DateTime?
 
   // Self-referencing relation
@@ -103,20 +106,65 @@ model Account {
   auditLogs         AuditLog[]
   sessions          Session[]
   loginAttempts     LoginAttempt[]
+  currencyId        String        @unique
+  currency          Currency      @relation("AccountCurrency", fields: [currencyId], references: [id])
 }
 
 model Market {
   id          String     @id @default(cuid())
   name        String     @unique
   description String?
+  currencyId  String?
+  currency    Currency?   @relation(fields: [currencyId], references: [id])
   location    String     @default("Unknown")
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
   sellers     Account[]  @relation("AccountMarkets")
-  products    Product[] // Many-to-one relationship with products
+  products    Product[]  // Many-to-one relationship with products
+  marketType  String?
+  regionId    String?    // Foreign key to Region
+  subregionId String?    // Foreign key to Subregion
+  cityId      String?    // Foreign key to City
+  region      Region?    @relation(fields: [regionId], references: [id])
+  subregion   Subregion? @relation(fields: [subregionId], references: [id])
+  city        City?      @relation(fields: [cityId], references: [id])
   revenue     Float      @default(0.0)
   wishlists   Wishlist[]
+  rating      Int?
+  productCount Int?
+  joinDate    String?
+  verified    Boolean?
 }
+
+model Currency {
+  id          String @id @default(cuid())
+  name        String
+  markets     Market[]
+  description String?
+  accountId   String
+  account     Account?  @relation("AccountCurrency")
+}
+
+model Region {
+  id          String @id @default(cuid())
+  name        String
+  markets     Market[]
+  description String?
+}
+
+model Subregion {
+  id          String @id @default(cuid())
+  name        String
+  markets     Market[]
+  description String?
+}
+
+model City {
+  id         String @id @default(cuid())
+  name       String
+  markets    Market[]
+}
+
 
 model Product {
   id                String      @id @default(cuid())
@@ -129,8 +177,7 @@ model Product {
   soldCount         Int         @default(0)
   unit              String?
   tags              Tag[]       @relation("ProductTags")
-  category          Category?   @relation(fields: [categoryId], references: [id])
-  categoryId        String?
+  categories        Category[] @relation("ProductCategories")
   brand             Brand?      @relation(fields: [brandId], references: [id])
   brandId           String?
   account           Account     @relation("AccountProducts", fields: [accountId], references: [id])
@@ -161,7 +208,7 @@ model Product {
 model Category {
   id        String    @id @default(cuid())
   name      String    @unique
-  product   Product[] // Products in this category
+  product   Product[] @relation("ProductCategories") // Products in this category
   label     String? // Optional: "Best Seller", "New Arrival", etc.
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt

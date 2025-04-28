@@ -4,6 +4,7 @@
 import { Currency } from "@/types/market";
 import { Star, MapPin, Truck, ShieldCheck, ShoppingCart } from "lucide-react";
 import WishlistButton from "@/components/wishlist/WishlistButton";
+import { Product } from "@/types/product";
 
 export default function ProductDetails({
   product,
@@ -11,7 +12,7 @@ export default function ProductDetails({
   currency,
   isDomestic,
 }: {
-  product: any;
+  product: Product;
   marketId: string;
   currency: Currency;
   isDomestic: boolean;
@@ -58,12 +59,14 @@ export default function ProductDetails({
           {currency === Currency.IDR ? "IDR" : "USD"}{" "}
           {product.price.toLocaleString()}
         </p>
-        {product.discount > 0 && (
-          <span className="text-xl text-gray-500 line-through">
-            {currency === Currency.IDR ? "IDR" : "USD"}{" "}
-            {product.originalPrice.toLocaleString()}
-          </span>
-        )}
+        {product.discount &&
+          product.discount > 0 &&
+          product.originalPrice !== null && (
+            <span className="text-xl text-gray-500 line-through">
+              {currency === Currency.IDR ? "IDR" : "USD"}{" "}
+              {product.originalPrice?.toLocaleString()}
+            </span>
+          )}
       </div>
 
       {/* Product Metadata */}

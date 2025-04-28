@@ -1,4 +1,5 @@
 // src/types/market.ts
+import { Market as PrismaMarket } from "@prisma/client";
 
 // Enum for currency types to avoid repetition of strings
 export enum Currency {
@@ -13,6 +14,7 @@ export type MarketType = "domestic" | "global";
 export interface Seller {
   id: string; // Unique identifier for the seller
   name: string; // Name of the seller
+  role: string;
   currency: Currency; // The currency that the seller uses (IDR, USD, etc.)
   rating?: number; // Optional rating of the seller (out of 5)
   location?: string; // Optional location of the seller
@@ -23,18 +25,52 @@ export interface Seller {
 
 // City interface representing a city's details
 export interface City {
+  id: string;
   name: string; // The name of the city
   sellers: Seller[]; // List of sellers in this city
 }
 
 // Subregion interface representing a subregion's details (e.g., province for domestic, state/province for global)
 export interface Subregion {
+  id: string;
   name: string; // The name of the subregion (Province/State)
   cities: City[]; // List of cities within this subregion
+  sellers: Seller[];
 }
 
 // MarketRegion interface representing the market region (either a province for domestic or a country for global)
 export interface MarketRegion {
+  id: string;
   name: string; // The name of the region (Province or Country)
+  region: string;
   subregions: Subregion[]; // List of subregions (e.g., states/provinces within the region)
+  sellers: Seller[];
 }
+
+export type selectedFilters = {
+  region: string;
+  subregion: string;
+  city: string;
+};
+
+export interface Market {
+  id: string;
+  name: string;
+  location?: string;
+  currency: Currency;
+  region: string;
+  subregion: string;
+  city: string;
+  rating?: number;
+  productCount?: number;
+  joinDate?: string;
+  verified?: boolean;
+}
+
+export type MarketWithRelations = PrismaMarket & {
+  region: { id: string; name: string } | null;
+  subregion: { id: string; name: string } | null;
+  city: { id: string; name: string } | null;
+  currency: { id: string; name: string } | null;
+  sellers: { id: string; name: string; role: string }[];
+};

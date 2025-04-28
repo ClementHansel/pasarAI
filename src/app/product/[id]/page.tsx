@@ -3,71 +3,49 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { domesticProducts, globalProducts } from "@/lib/data/products";
 import ProductDetails from "@/components/product/ProductDetails";
-import { Currency } from "@/types/market";
 import ProductImages from "@/components/product/ProductImage";
 import { ProductDetailSkeleton } from "@/components/product/ProductDetailSkleton";
 import { Star } from "lucide-react";
+import { Product } from "@/types/product";
+import { Currency } from "@/types/market";
 
 export default function ProductDetailPage() {
   const router = useRouter();
   const params = useParams();
-  const [product, setProduct] = useState<any>(null);
-  const [marketId, setMarketId] = useState("");
-  const [currency, setCurrency] = useState<Currency>(Currency.IDR);
+  const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isDomestic, setIsDomestic] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const findProduct = () => {
-      const id = params?.id;
-      if (!id || Array.isArray(id)) return;
-
-      const productId = parseInt(id, 10);
-      if (isNaN(productId)) return;
-
-      // Search domestic products
-      for (const region of domesticProducts) {
-        for (const subregion of region.subregions) {
-          for (const city of subregion.cities) {
-            const found = city.products.find((p) => p.id === productId);
-            if (found) {
-              setCurrency(Currency.IDR);
-              setMarketId(city.id);
-              setIsDomestic(true);
-              return found;
-            }
-          }
-        }
-      }
-
-      // Search global products
-      for (const region of globalProducts) {
-        for (const subregion of region.subregions) {
-          for (const city of subregion.cities) {
-            const found = city.products.find((p) => p.id === productId);
-            if (found) {
-              setCurrency(Currency.USD);
-              setMarketId(city.id);
-              setIsDomestic(false);
-              return found;
-            }
-          }
-        }
-      }
-
-      return null;
-    };
-
-    const selectedProduct = findProduct();
-    if (!selectedProduct) {
-      router.push("/product");
+    const id = params?.id;
+    if (!id || Array.isArray(id)) {
+      setError("Invalid product ID");
+      setLoading(false);
       return;
     }
 
-    setProduct(selectedProduct);
-    setLoading(false);
+    const fetchProduct = async () => {
+      setLoading(true);
+      try {
+        const res = await fetch(`/api/products/${id}`);
+        if (res.status === 404) {
+          router.push("/product"); // redirect to listing or 404
+          return;
+        }
+        if (!res.ok) {
+          throw new Error(res.statusText || "Failed to fetch product");
+        }
+        const data: Product = await res.json();
+        setProduct(data);
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : "Unknown error");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProduct();
   }, [params, router]);
 
   if (loading) {
@@ -86,6 +64,14 @@ export default function ProductDetailPage() {
     );
   }
 
+  if (error) {
+    return (
+      <div className="container mx-auto py-10 text-center">
+        <p className="text-xl text-red-500">{error}</p>
+      </div>
+    );
+  }
+
   if (!product) {
     return (
       <div className="container mx-auto py-10 text-center">
@@ -100,9 +86,9 @@ export default function ProductDetailPage() {
         <ProductImages images={product.imageUrls} />
         <ProductDetails
           product={product}
-          marketId={marketId}
-          currency={currency}
-          isDomestic={isDomestic}
+          marketId={product.marketId}
+          currency={product.currency as Currency}
+          isDomestic={product.currency === Currency.IDR}
         />
       </div>
 
@@ -110,7 +96,7 @@ export default function ProductDetailPage() {
       <div className="mt-16 border-t pt-12">
         <h2 className="text-2xl font-bold mb-6">Customer Reviews</h2>
         <div className="space-y-6">
-          {product.reviews?.map((review: any) => (
+          {product.reviews.map((review) => (
             <div key={review.id} className="border-b pb-6">
               <div className="flex items-center gap-2 mb-2">
                 {[...Array(5)].map((_, i) => (

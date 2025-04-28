@@ -28,7 +28,7 @@ const generateMockWishlist = (): WishlistItem[] => {
   const domesticItems = domesticProducts.flatMap((region) =>
     region.subregions.flatMap((subregion) =>
       subregion.cities.flatMap((city) =>
-        city.products.map((product, idx) => ({
+        city.products.map((product) => ({
           id: `domestic-${product.id}`,
           productId: product.id.toString(),
           marketId: `market-${city.id}`,
@@ -49,7 +49,7 @@ const generateMockWishlist = (): WishlistItem[] => {
   const globalItems = globalProducts.flatMap((region) =>
     region.subregions.flatMap((subregion) =>
       subregion.cities.flatMap((city) =>
-        city.products.map((product, idx) => ({
+        city.products.map((product) => ({
           id: `global-${product.id}`,
           productId: product.id.toString(),
           marketId: `market-${city.id}`,

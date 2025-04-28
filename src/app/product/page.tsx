@@ -1,50 +1,98 @@
-// src/app/products/page.tsx
 "use client";
 
-import { useState } from "react";
-import { Home, Globe, RefreshCw, X, Grid, List, Sliders } from "lucide-react";
-import ProductCategory from "@/components/product/ProductCategory";
+import { useEffect, useState, useCallback } from "react";
+import { cn } from "@/lib/utils";
+import { Product, ProductType } from "@/types/product";
 import ProductFilter from "@/components/product/ProductFilter";
 import { LocationFilter } from "@/components/market/LocationFilter";
-import { ProductType } from "@/types/product";
-import { domesticProducts, globalProducts } from "@/lib/data/products";
-import { cn } from "@/lib/utils";
+import ProductCategory from "@/components/product/ProductCategory";
+import { selectedFilters } from "@/types/market";
+import { Home, Globe, RefreshCw, Grid, List, Sliders, X } from "lucide-react";
+import { useDebounce } from "@/hooks/use-debounce"; // Assuming you have a useDebounce hook
 
 const ProductPage = () => {
-  const [productType, setProductType] = useState<ProductType>("domestic");
+  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  const [showMobileFilters, setShowMobileFilters] = useState(false);
-  const [locationFilters, setLocationFilters] = useState({
+  const [viewMode, setViewMode] = useState<"list" | "grid">("grid");
+  const [selectedFilters, setSelectedFilters] = useState<selectedFilters>({
     region: "",
     subregion: "",
     city: "",
   });
 
-  const toggleProductType = (type: ProductType) => {
-    setProductType(type);
-    setSearchTerm("");
-    setCategoryFilter("");
-    setLocationFilters({ region: "", subregion: "", city: "" });
+  const [productType, setProductType] = useState<ProductType>("domestic");
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
+
+  const fetchProducts = useCallback(async () => {
+    try {
+      const url = new URL("/api/products", window.location.origin);
+
+      url.searchParams.set("market", productType);
+      if (selectedFilters.city)
+        url.searchParams.set("city", selectedFilters.city);
+      if (selectedFilters.region)
+        url.searchParams.set("province", selectedFilters.region); // Assuming region maps to province
+      if (selectedFilters.region && productType === "global")
+        url.searchParams.set("country", selectedFilters.region); // Adjust mapping for global
+      if (categoryFilter) url.searchParams.set("categoryId", categoryFilter);
+      if (debouncedSearchTerm)
+        url.searchParams.set("search", debouncedSearchTerm);
+
+      const res = await fetch(url, { cache: "no-store" });
+      if (!res.ok) {
+        throw new Error(`Failed to fetch products: ${res.status}`);
+      }
+      const data = await res.json();
+      setFilteredProducts(data.products); // Or handle pagination data if needed
+    } catch (error) {
+      console.error("Error fetching products:", error);
+      // Handle error state (e.g., display an error message)
+    }
+  }, [
+    productType,
+    selectedFilters.city,
+    selectedFilters.region,
+    categoryFilter,
+    debouncedSearchTerm,
+    setFilteredProducts, // Added setProducts to the dependency array
+  ]);
+
+  useEffect(() => {
+    fetchProducts();
+  }, [fetchProducts]);
+
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value);
   };
 
-  const handleLocationFilter = (
+  const handleCategoryChange = (value: string) => {
+    setCategoryFilter(value);
+  };
+
+  const handleViewChange = (value: "list" | "grid") => {
+    setViewMode(value);
+  };
+
+  const handleLocationFilterChange = (
     type: "region" | "subregion" | "city",
     value: string
   ) => {
-    setLocationFilters((prev) => ({
-      ...prev,
+    setSelectedFilters((prevFilters) => ({
+      ...prevFilters,
       [type]: value,
-      ...(type === "region" && { subregion: "", city: "" }),
-      ...(type === "subregion" && { city: "" }),
     }));
+  };
+
+  const toggleProductType = (type: ProductType) => {
+    setProductType(type);
   };
 
   const resetFilters = () => {
     setSearchTerm("");
     setCategoryFilter("");
-    setLocationFilters({ region: "", subregion: "", city: "" });
+    setSelectedFilters({ region: "", subregion: "", city: "" });
   };
 
   return (
@@ -91,23 +139,23 @@ const ProductPage = () => {
         <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
           <div className="w-full md:w-1/3">
             <ProductFilter
-              onSearch={setSearchTerm}
-              onCategoryChange={setCategoryFilter}
+              onSearchChange={handleSearchChange}
+              onCategoryChange={handleCategoryChange}
+              onViewChange={handleViewChange}
+              currentViewMode={viewMode}
             />
           </div>
 
           <div className="flex items-center gap-3 w-full md:w-auto">
             <LocationFilter
               marketType={productType}
-              markets={
-                productType === "domestic" ? domesticProducts : globalProducts
-              }
-              selectedFilters={locationFilters}
-              onFilterChange={handleLocationFilter}
+              markets={[] /* Replace with actual data fetching/state */}
+              selectedFilters={selectedFilters}
+              onFilterChange={handleLocationFilterChange}
+              isMobile={false} // Explicitly set isMobile for desktop
             />
-
             <div className="hidden md:flex items-center gap-4">
-              {(searchTerm || categoryFilter || locationFilters.region) && (
+              {(searchTerm || categoryFilter || selectedFilters.region) && (
                 <button
                   onClick={resetFilters}
                   className="flex items-center gap-2 px-4 py-2 text-blue-600 hover:bg-blue-50 rounded-xl"
@@ -136,7 +184,6 @@ const ProductPage = () => {
         </div>
       </div>
 
-      {/* Mobile Filters */}
       {showMobileFilters && (
         <div className="md:hidden bg-white rounded-2xl shadow-lg mb-6 p-6">
           <div className="flex justify-between items-center mb-4">
@@ -144,23 +191,26 @@ const ProductPage = () => {
             <button
               onClick={() => setShowMobileFilters(false)}
               className="text-gray-500 hover:text-gray-700"
-              aria-label="Filters"
+              aria-label="Show mobile filters"
             >
               <X size={24} />
             </button>
           </div>
           <div className="space-y-4">
             <ProductFilter
-              onSearch={setSearchTerm}
-              onCategoryChange={setCategoryFilter}
+              onSearchChange={handleSearchChange}
+              onCategoryChange={handleCategoryChange}
+              onViewChange={handleViewChange}
+              currentViewMode={viewMode}
             />
             <LocationFilter
               marketType={productType}
               markets={
-                productType === "domestic" ? domesticProducts : globalProducts
+                productType === "domestic" ? [] : [] // Replace with actual data
               }
-              selectedFilters={locationFilters}
-              onFilterChange={handleLocationFilter}
+              selectedFilters={selectedFilters}
+              onFilterChange={handleLocationFilterChange}
+              isMobile={true} // Explicitly set isMobile for mobile
             />
             <button
               onClick={resetFilters}
@@ -172,14 +222,21 @@ const ProductPage = () => {
         </div>
       )}
 
+      <div className="md:hidden mb-4">
+        <button
+          onClick={() => setShowMobileFilters(true)}
+          className="w-full py-2 px-4 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-100 flex items-center justify-center gap-2"
+        >
+          <Sliders size={18} />
+          Show Filters
+        </button>
+      </div>
+
       {/* Main Content */}
       <div className="bg-white rounded-2xl shadow-lg p-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
           <h2 className="text-2xl font-bold text-gray-900">
             {productType === "domestic" ? "Local" : "Global"} Products
-            <span className="text-gray-500 ml-2 text-lg">
-              ({/* Add product count here if available */}
-            </span>
           </h2>
 
           <div className="flex items-center gap-3 text-sm text-gray-500">
@@ -193,11 +250,11 @@ const ProductPage = () => {
           searchTerm={searchTerm}
           categoryFilter={categoryFilter}
           viewMode={viewMode}
-          selectedFilters={locationFilters}
+          selectedFilters={selectedFilters}
+          products={filteredProducts}
         />
       </div>
     </div>
   );
 };
-
 export default ProductPage;

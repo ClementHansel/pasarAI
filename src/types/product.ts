@@ -1,4 +1,5 @@
 import { Label } from "@prisma/client";
+import { Seller } from "./market";
 
 // Product Types
 export type Product = {
@@ -12,6 +13,13 @@ export type Product = {
   isAvailable: boolean;
   category?: Category; // Category is optional
   tags: string[];
+  marketId: string;
+  location?: {
+    region: string;
+    subregion: string;
+    city: string;
+  };
+  currency: "IDR" | "USD";
   imageUrls: string[];
   createdAt: Date;
   updatedAt: Date;
@@ -117,16 +125,19 @@ export type ProductCity = {
   id: string;
   name: string;
   products: Product[];
+  sellers: Seller[];
 };
 
 export type ProductSubregion = {
   id: string;
   name: string;
   cities: ProductCity[];
+  sellers: Seller[];
 };
 
 export type ProductRegion = {
   id: string;
   name: string;
   subregions: ProductSubregion[];
+  sellers: Seller[];
 };

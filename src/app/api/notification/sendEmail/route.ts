@@ -1,23 +1,54 @@
+// src/app/api/notification/sendEmail/route.ts
+
+import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { sendEmail } from "@/services/notification/notificationService";
-import { NextApiRequest, NextApiResponse } from "next";
 
-// API route to send email notifications
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
-  if (req.method === "POST") {
-    const { subject, recipient, text } = req.body;
+// 1) Define a Zod schema for the POST body
+const sendEmailSchema = z.object({
+  subject: z.string().min(1, "Subject is required"),
+  recipient: z.string().email("Must be a valid email"),
+  text: z.string().min(1, "Text is required"),
+});
 
-    try {
-      // Call sendEmail function to send the email
-      await sendEmail(subject, recipient, text);
-      res.status(200).json({ message: "Email sent successfully" });
-    } catch (error) {
-      console.error("Error sending email:", error);
-      res.status(500).json({ error: "Email sending failed" });
-    }
-  } else {
-    res.status(405).json({ error: "Method Not Allowed" });
+// 2) Handle POST /api/notification/sendEmail
+export async function POST(req: NextRequest) {
+  // Parse & validate JSON
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch (err) {
+    console.error("sendEmail: invalid JSON", err);
+    return NextResponse.json(
+      { error: "Invalid JSON payload" },
+      { status: 400 }
+    );
   }
+
+  const result = sendEmailSchema.safeParse(body);
+  if (!result.success) {
+    // Return all validation errors
+    return NextResponse.json(
+      { errors: result.error.flatten().fieldErrors },
+      { status: 400 }
+    );
+  }
+  const { subject, recipient, text } = result.data;
+
+  // Attempt to send
+  try {
+    await sendEmail(subject, recipient, text);
+    return NextResponse.json({ message: "Email sent successfully" });
+  } catch (err) {
+    console.error("sendEmail error:", err);
+    return NextResponse.json(
+      { error: "Email sending failed" },
+      { status: 500 }
+    );
+  }
+}
+
+// 3) For any other HTTP method, return 405
+export async function GET() {
+  return NextResponse.json({ error: "Method Not Allowed" }, { status: 405 });
 }

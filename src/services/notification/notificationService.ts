@@ -1,116 +1,137 @@
-import nodemailer from "nodemailer";
-import { getAccountById } from "../account/accountService";
+// src/services/notification/notificationService.ts
 
-// Create a transporter for Nodemailer
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.EMAIL_ACCOUNT,
-    pass: process.env.EMAIL_PASS,
-  },
-});
+import { Notification } from "@/types/notification";
 
-// Function to send email
+type HistoryResponse = {
+  notifications: Notification[];
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+};
+
+// Sends an email by calling App Router endpoint:
 export async function sendEmail(
   subject: string,
   recipient: string,
   text: string
-) {
-  const mailOptions = {
-    from: process.env.EMAIL_ACCOUNT,
-    to: recipient,
-    subject: subject,
-    text: text,
-  };
-
-  try {
-    await transporter.sendMail(mailOptions);
-    console.log("Email sent successfully");
-  } catch (error) {
-    console.error("Error sending email:", error);
-    throw new Error("Email sending failed");
+): Promise<void> {
+  const res = await fetch("/api/notification/sendEmail", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ subject, recipient, text }),
+  });
+  if (!res.ok) {
+    // try to extract error from JSON, else fallback
+    let errMsg: string;
+    try {
+      const payload = await res.json();
+      errMsg = payload.error ?? res.statusText;
+    } catch {
+      errMsg = res.statusText;
+    }
+    throw new Error(errMsg);
   }
 }
 
-// Send Notification (either email or push)
+// Creates a new notification (and sends it via email or push) by calling:
 export async function sendNotification(
   type: "email" | "push",
   accountId: string,
   title: string,
   message: string
-) {
-  if (type === "email") {
-    const account = await getAccountById(accountId);
-    if (account?.email) {
-      // Send email via the sendEmail function
-      await sendEmail(title, account.email, message);
+): Promise<Notification> {
+  const res = await fetch("/api/notification", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ accountId, type, title, message }),
+  });
+  if (!res.ok) {
+    let errMsg: string;
+    try {
+      const payload = await res.json();
+      errMsg = payload.error ?? res.statusText;
+    } catch {
+      errMsg = res.statusText;
     }
-  } else if (type === "push") {
-    // Here we will just simulate the sending of a push notification.
-    // In a real-world scenario, you could integrate a service like Firebase Cloud Messaging (FCM) here.
-    console.log("Push notification sent:", title, message);
+    throw new Error(errMsg);
   }
+  const { notification } = (await res.json()) as { notification: Notification };
+  return notification as Notification;
 }
 
-// Fetch notifications for an account
-export async function fetchNotifications(accountId: string) {
-  try {
-    const response = await fetch(
-      `/api/notification/history?accountId=${accountId}`
-    );
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || "Failed to fetch notifications");
+// Fetches the notification history (paginated) for one account:
+
+export async function fetchNotifications(
+  accountId: string,
+  page = 1,
+  limit = 20
+): Promise<HistoryResponse> {
+  const url = `/api/notification/history?accountId=${encodeURIComponent(
+    accountId
+  )}&page=${page}&limit=${limit}`;
+
+  const res = await fetch(url);
+  if (!res.ok) {
+    let errMsg: string;
+    try {
+      const payload = await res.json();
+      errMsg = payload.error ?? res.statusText;
+    } catch {
+      errMsg = res.statusText;
     }
-    const data = await response.json();
-    return data.notifications;
-  } catch (error) {
-    console.error("Error fetching notifications:", error);
-    throw error;
+    throw new Error(errMsg);
   }
+  return (await res.json()) as HistoryResponse;
 }
 
-// Mark a notification as read
-export async function markNotificationAsRead(notificationId: string) {
-  try {
-    const response = await fetch(`/api/notification/${notificationId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ read: true }),
-    });
+// Marks a single notification as read:
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || "Failed to update notification");
+export async function markNotificationAsRead(
+  notificationId: string
+): Promise<Notification> {
+  const res = await fetch(`/api/notification/${notificationId}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ read: true }),
+  });
+  if (!res.ok) {
+    let errMsg: string;
+    try {
+      const payload = await res.json();
+      errMsg = payload.error ?? res.statusText;
+    } catch {
+      errMsg = res.statusText;
     }
-    const data = await response.json();
-    return data.notification;
-  } catch (error) {
-    console.error("Error marking notification as read:", error);
-    throw error;
+    throw new Error(errMsg);
   }
+  const { notification } = (await res.json()) as { notification: Notification };
+  return notification as Notification;
 }
 
-// **Add the function to update notification status**:
+// Updates notification:
+
 export async function updateNotificationStatus(
   notificationId: string,
-  status: "read" | "unread"
-) {
-  try {
-    const response = await fetch(`/api/notification/${notificationId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ read: status === "read" }),
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || "Failed to update notification status");
+  read: boolean
+): Promise<Notification> {
+  const res = await fetch(`/api/notification/${notificationId}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ read }),
+  });
+  if (!res.ok) {
+    let errMsg: string;
+    try {
+      const payload = await res.json();
+      errMsg = payload.error ?? res.statusText;
+    } catch {
+      errMsg = res.statusText;
     }
-    const data = await response.json();
-    return data.notification;
-  } catch (error) {
-    console.error("Error updating notification status:", error);
-    throw error;
+    throw new Error(errMsg);
   }
+  const { notification } = (await res.json()) as { notification: Notification };
+  return notification as Notification;
 }

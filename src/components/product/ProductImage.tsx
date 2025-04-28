@@ -31,6 +31,7 @@ export default function ProductImages({ images }: { images: string[] }) {
                   )
                 }
                 className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/80 p-2 rounded-full shadow-md hover:bg-white transition-all opacity-0 group-hover:opacity-100"
+                aria-label="Previous Image"
               >
                 <ChevronLeft className="w-6 h-6" />
               </button>
@@ -41,6 +42,7 @@ export default function ProductImages({ images }: { images: string[] }) {
                   )
                 }
                 className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/80 p-2 rounded-full shadow-md hover:bg-white transition-all opacity-0 group-hover:opacity-100"
+                aria-label="Next Image"
               >
                 <ChevronRight className="w-6 h-6" />
               </button>
@@ -61,6 +63,7 @@ export default function ProductImages({ images }: { images: string[] }) {
                   ? "border-blue-500"
                   : "border-gray-200 hover:border-blue-300"
               }`}
+              aria-label="Select Image"
             >
               <Image
                 src={image}

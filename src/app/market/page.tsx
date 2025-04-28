@@ -17,8 +17,14 @@ import { MarketCategory } from "@/components/market/MarketCategory";
 import { MarketFilter } from "@/components/market/MarketFilter";
 import { MarketComparison } from "@/components/market/MarketComparison";
 import { LocationFilter } from "@/components/market/LocationFilter";
-import { domesticMarkets, globalMarkets } from "@/lib/data/markets";
-import { MarketRegion, MarketType } from "@/types/market";
+import {
+  City,
+  MarketRegion,
+  MarketType,
+  MarketWithRelations,
+  Seller,
+  Subregion,
+} from "@/types/market";
 import { cn } from "@/lib/utils";
 
 const MarketPage = () => {
@@ -33,15 +39,47 @@ const MarketPage = () => {
   const [filteredData, setFilteredData] = useState<MarketRegion[]>([]);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-
-  const getMarketData = (type: MarketType): MarketRegion[] => {
-    return type === "domestic" ? domesticMarkets : globalMarkets;
-  };
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [allMarketData, setAllMarketData] = useState<MarketRegion[]>([]);
 
   useEffect(() => {
-    const marketData = getMarketData(marketType);
+    const fetchMarkets = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const response = await fetch("/api/markets");
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        if (data.success && data.data) {
+          const structuredData = transformMarket(data.data, marketType); // fixed function name
+          setAllMarketData(structuredData);
+        } else {
+          setError("Failed to fetch market data.");
+        }
+      } catch (error: unknown) {
+        if (error instanceof Error) {
+          console.error("Error fetching markets:", error);
+          setError("Failed to fetch market data.");
+        } else {
+          // Handle cases where error is not an instance of Error
+          console.error("Unknown error:", error);
+          setError("Failed to fetch market data.");
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-    let data = marketData.filter(
+    fetchMarkets();
+  }, [marketType]);
+
+  useEffect(() => {
+    if (!allMarketData.length) return; // fixed typo
+
+    let data = allMarketData.filter(
       (region) =>
         region.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         region.subregions.some(
@@ -58,7 +96,7 @@ const MarketPage = () => {
     );
 
     if (filters.region) {
-      data = data.filter((region) => region.name === filters.region);
+      data = data.filter((region) => region.name === filters.region); // fixed wrong var
     }
 
     if (filters.subregion) {
@@ -87,7 +125,73 @@ const MarketPage = () => {
     }
 
     setFilteredData(data);
-  }, [marketType, filters, searchQuery]);
+  }, [allMarketData, filters, searchQuery]);
+
+  const transformMarket = (
+    backendData: MarketWithRelations[], // Use MarketWithRelations type to match the backend data
+    type: MarketType
+  ): MarketRegion[] => {
+    if (type === "domestic") {
+      return backendData
+        .filter((market) => market.marketType === "domestic")
+        .map((market) => ({
+          id: market.id.toString(),
+          name: market.location,
+          region: market.region?.name ?? "Unknown Region",
+          subregions: mapSubregions(market), // Handle subregions
+          sellers: mapSellers(market), // Top-level sellers
+        }));
+    } else {
+      return backendData
+        .filter((market) => market.marketType === "global")
+        .map((market) => ({
+          id: market.id.toString(),
+          name: market.location,
+          region: market.region?.name ?? "Unknown Region",
+          subregions: mapSubregions(market),
+          sellers: mapSellers(market),
+        }));
+    }
+  };
+
+  // Helper function to map subregions (handle multiple subregions)
+  const mapSubregions = (market: MarketWithRelations): Subregion[] => {
+    if (market.subregion) {
+      return [
+        {
+          id: market.subregion.id,
+          name: market.subregion.name ?? "Unknown Subregion",
+          cities: mapCities(market),
+          sellers: mapSellers(market),
+        },
+      ];
+    }
+    return [];
+  };
+
+  // Helper function to map cities (handle multiple cities)
+  const mapCities = (market: MarketWithRelations): City[] => {
+    if (market.city) {
+      return [
+        {
+          id: market.city.id,
+          name: market.city.name ?? "Unknown City",
+          sellers: mapSellers(market),
+        },
+      ];
+    }
+    return [];
+  };
+
+  // Helper function to map sellers (handle sellers within regions, subregions, and cities)
+  const mapSellers = (market: MarketWithRelations): Seller[] => {
+    return market.sellers.map((seller) => ({
+      id: seller.id,
+      name: seller.name,
+      role: seller.role,
+      currency: seller.currency ?? "Unknown Currency", // Ensure the currency field exists
+    }));
+  };
 
   const toggleMarketType = (type: MarketType) => {
     setMarketType(type);
@@ -112,6 +216,14 @@ const MarketPage = () => {
     setFilters({ region: "", subregion: "", city: "" });
     setSearchQuery("");
   };
+
+  if (isLoading) {
+    return <div>Loading market data...</div>;
+  }
+
+  if (error) {
+    return <div className="text-red-500">Error: {error}</div>;
+  }
 
   return (
     <div className="container mx-auto py-8 px-4 md:px-6">
@@ -175,7 +287,7 @@ const MarketPage = () => {
             <div className="hidden md:flex items-center gap-4">
               <LocationFilter
                 marketType={marketType}
-                markets={getMarketData(marketType)}
+                markets={fetchMarkets(marketType)}
                 selectedFilters={filters}
                 onFilterChange={handleFilterChange}
               />
@@ -238,7 +350,7 @@ const MarketPage = () => {
           <div className="space-y-4">
             <LocationFilter
               marketType={marketType}
-              markets={getMarketData(marketType)}
+              markets={fetchMarkets(marketType)}
               selectedFilters={filters}
               onFilterChange={handleFilterChange}
               isMobile={true}

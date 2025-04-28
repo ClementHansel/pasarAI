@@ -1,3 +1,4 @@
+"use client";
 import { useState } from "react";
 import { Notification } from "@/types/notification";
 import { useNotifications } from "@/hooks/useNotifications";

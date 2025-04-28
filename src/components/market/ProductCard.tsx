@@ -90,6 +90,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
           className={`absolute top-4 right-4 p-2 rounded-full ${
             isWishlist ? "bg-red-500 text-white" : "bg-white text-gray-600"
           } shadow-md hover:scale-110 transition-all`}
+          aria-label="Toggle wishlist"
         >
           <Heart className={`w-5 h-5 ${isWishlist ? "fill-current" : ""}`} />
         </button>
