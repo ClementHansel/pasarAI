@@ -1,228 +1,133 @@
-// src/app/market/page.tsx
-"use client";
-
-import { useState, useEffect } from "react";
-import {
-  Home,
-  Globe,
-  Filter,
-  BarChart2,
-  RefreshCw,
-  X,
-  Grid,
-  List,
-  Sliders,
-} from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { Spinner } from "react-bootstrap";
 import { MarketCategory } from "@/components/market/MarketCategory";
 import { MarketFilter } from "@/components/market/MarketFilter";
 import { MarketComparison } from "@/components/market/MarketComparison";
 import { LocationFilter } from "@/components/market/LocationFilter";
-import {
-  City,
-  MarketRegion,
-  MarketType,
-  MarketWithRelations,
-  Seller,
-  Subregion,
-} from "@/types/market";
+import { City, MarketRegion, MarketType, SubRegion } from "@/types/market";
 import { cn } from "@/lib/utils";
+import {
+  BarChart2,
+  Filter,
+  Globe,
+  Grid,
+  Home,
+  List,
+  RefreshCw,
+  Sliders,
+  X,
+} from "lucide-react";
 
 const MarketPage = () => {
   const [marketType, setMarketType] = useState<MarketType>("domestic");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [showComparison, setShowComparison] = useState(false);
-  const [filters, setFilters] = useState({
-    region: "",
-    subregion: "",
-    city: "",
-  });
-  const [filteredData, setFilteredData] = useState<MarketRegion[]>([]);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [isLoading, setIsLoading] = useState(true);
+  const [filters, setFilters] = useState({
+    region: "",
+    subRegion: "",
+    city: "",
+  });
+
+  const [marketData, setMarketData] = useState<MarketRegion[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [allMarketData, setAllMarketData] = useState<MarketRegion[]>([]);
 
-  useEffect(() => {
-    const fetchMarkets = async () => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        const response = await fetch("/api/markets");
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const data = await response.json();
-        if (data.success && data.data) {
-          const structuredData = transformMarket(data.data, marketType); // fixed function name
-          setAllMarketData(structuredData);
-        } else {
-          setError("Failed to fetch market data.");
-        }
-      } catch (error: unknown) {
-        if (error instanceof Error) {
-          console.error("Error fetching markets:", error);
-          setError("Failed to fetch market data.");
-        } else {
-          // Handle cases where error is not an instance of Error
-          console.error("Unknown error:", error);
-          setError("Failed to fetch market data.");
-        }
-      } finally {
-        setIsLoading(false);
+  const fetchMarketData = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const params = new URLSearchParams({
+        type: marketType,
+        search: searchQuery,
+        region: filters.region,
+        subRegion: filters.subRegion,
+        city: filters.city,
+      });
+
+      const response = await fetch(`/api/markets?${params.toString()}`);
+      if (!response.ok) {
+        throw new Error(`Error ${response.status}`);
       }
-    };
 
-    fetchMarkets();
-  }, [marketType]);
+      const data = await response.json();
+      if (data.success && data.data) {
+        setMarketData(data.data);
+      } else {
+        setError("Failed to load market data.");
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Unknown error";
+      setError(message);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [marketType, searchQuery, filters]);
 
   useEffect(() => {
-    if (!allMarketData.length) return; // fixed typo
+    fetchMarketData();
+  }, [fetchMarketData]);
 
-    let data = allMarketData.filter(
-      (region) =>
-        region.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        region.subregions.some(
-          (sub) =>
-            sub.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            sub.cities.some(
-              (city) =>
-                city.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                city.sellers.some((seller) =>
-                  seller.name.toLowerCase().includes(searchQuery.toLowerCase())
-                )
-            )
-        )
-    );
-
-    if (filters.region) {
-      data = data.filter((region) => region.name === filters.region); // fixed wrong var
-    }
-
-    if (filters.subregion) {
-      data = data
-        .map((region) => ({
-          ...region,
-          subregions: region.subregions.filter(
-            (sub) => sub.name === filters.subregion
-          ),
-        }))
-        .filter((region) => region.subregions.length > 0);
-    }
-
-    if (filters.city) {
-      data = data
-        .map((region) => ({
-          ...region,
-          subregions: region.subregions
-            .map((sub) => ({
-              ...sub,
-              cities: sub.cities.filter((city) => city.name === filters.city),
-            }))
-            .filter((sub) => sub.cities.length > 0),
-        }))
-        .filter((region) => region.subregions.length > 0);
-    }
-
-    setFilteredData(data);
-  }, [allMarketData, filters, searchQuery]);
-
-  const transformMarket = (
-    backendData: MarketWithRelations[], // Use MarketWithRelations type to match the backend data
-    type: MarketType
-  ): MarketRegion[] => {
-    if (type === "domestic") {
-      return backendData
-        .filter((market) => market.marketType === "domestic")
-        .map((market) => ({
-          id: market.id.toString(),
-          name: market.location,
-          region: market.region?.name ?? "Unknown Region",
-          subregions: mapSubregions(market), // Handle subregions
-          sellers: mapSellers(market), // Top-level sellers
-        }));
-    } else {
-      return backendData
-        .filter((market) => market.marketType === "global")
-        .map((market) => ({
-          id: market.id.toString(),
-          name: market.location,
-          region: market.region?.name ?? "Unknown Region",
-          subregions: mapSubregions(market),
-          sellers: mapSellers(market),
-        }));
-    }
-  };
-
-  // Helper function to map subregions (handle multiple subregions)
-  const mapSubregions = (market: MarketWithRelations): Subregion[] => {
-    if (market.subregion) {
-      return [
-        {
-          id: market.subregion.id,
-          name: market.subregion.name ?? "Unknown Subregion",
-          cities: mapCities(market),
-          sellers: mapSellers(market),
-        },
-      ];
-    }
-    return [];
-  };
-
-  // Helper function to map cities (handle multiple cities)
-  const mapCities = (market: MarketWithRelations): City[] => {
-    if (market.city) {
-      return [
-        {
-          id: market.city.id,
-          name: market.city.name ?? "Unknown City",
-          sellers: mapSellers(market),
-        },
-      ];
-    }
-    return [];
-  };
-
-  // Helper function to map sellers (handle sellers within regions, subregions, and cities)
-  const mapSellers = (market: MarketWithRelations): Seller[] => {
-    return market.sellers.map((seller) => ({
-      id: seller.id,
-      name: seller.name,
-      role: seller.role,
-      currency: seller.currency ?? "Unknown Currency", // Ensure the currency field exists
+  const handleFilterChange = (
+    filterType: keyof typeof filters,
+    value: string
+  ) => {
+    setFilters((prev) => ({
+      ...prev,
+      [filterType]: value,
+      ...(filterType === "region" && { subRegion: "", city: "" }),
+      ...(filterType === "subRegion" && { city: "" }),
     }));
   };
 
-  const toggleMarketType = (type: MarketType) => {
-    setMarketType(type);
-    setFilters({ region: "", subregion: "", city: "" });
-    setSearchQuery("");
-  };
-
-  const handleFilterChange = (
-    filterType: "region" | "subregion" | "city",
-    value: string
-  ) => {
-    if (filterType === "region") {
-      setFilters({ region: value, subregion: "", city: "" });
-    } else if (filterType === "subregion") {
-      setFilters({ ...filters, subregion: value, city: "" });
-    } else {
-      setFilters({ ...filters, [filterType]: value });
-    }
-  };
-
   const resetFilters = () => {
-    setFilters({ region: "", subregion: "", city: "" });
+    setFilters({ region: "", subRegion: "", city: "" });
     setSearchQuery("");
   };
+
+  const handleMarketTypeChange = (type: MarketType) => {
+    setMarketType(type);
+    resetFilters();
+  };
+
+  const sellerCount = marketData.reduce(
+    (account: number, region: MarketRegion) =>
+      account +
+      region.subRegions.reduce(
+        (subRegionAccount: number, subRegion: SubRegion) =>
+          subRegionAccount +
+          subRegion.cities.reduce(
+            (cityAccount: number, city: City) =>
+              cityAccount + city.sellers.length,
+            0
+          ),
+        0
+      ),
+    0
+  );
 
   if (isLoading) {
-    return <div>Loading market data...</div>;
+    return (
+      <div className="flex justify-center items-center h-96">
+        <Spinner />
+        <p className="ml-4 text-gray-500">Loading market data...</p>
+      </div>
+    );
   }
 
   if (error) {
-    return <div className="text-red-500">Error: {error}</div>;
+    return (
+      <div className="flex flex-col items-center justify-center h-96 text-red-500">
+        <p>Error: {error}</p>
+        <button
+          onClick={fetchMarketData}
+          className="mt-4 px-4 py-2 bg-red-500 text-white rounded-md"
+        >
+          Retry
+        </button>
+      </div>
+    );
   }
 
   return (
@@ -244,7 +149,7 @@ const MarketPage = () => {
           {["domestic", "global"].map((type) => (
             <button
               key={type}
-              onClick={() => toggleMarketType(type as MarketType)}
+              onClick={() => handleMarketTypeChange(type as MarketType)}
               className={cn(
                 "flex items-center px-8 py-3 rounded-xl transition-all",
                 marketType === type
@@ -287,12 +192,12 @@ const MarketPage = () => {
             <div className="hidden md:flex items-center gap-4">
               <LocationFilter
                 marketType={marketType}
-                markets={fetchMarkets(marketType)}
+                markets={marketData}
                 selectedFilters={filters}
                 onFilterChange={handleFilterChange}
               />
 
-              {(filters.region || filters.subregion || filters.city) && (
+              {(filters.region || filters.subRegion || filters.city) && (
                 <button
                   onClick={resetFilters}
                   className="flex items-center gap-2 px-4 py-2 text-blue-600 hover:bg-blue-50 rounded-xl"
@@ -350,7 +255,7 @@ const MarketPage = () => {
           <div className="space-y-4">
             <LocationFilter
               marketType={marketType}
-              markets={fetchMarkets(marketType)}
+              markets={marketData}
               selectedFilters={filters}
               onFilterChange={handleFilterChange}
               isMobile={true}
@@ -391,22 +296,7 @@ const MarketPage = () => {
           <h2 className="text-2xl font-bold text-gray-900">
             {marketType === "domestic" ? "Local" : "Global"} Sellers
             <span className="text-gray-500 ml-2 text-lg">
-              (
-              {filteredData.reduce(
-                (acc, region) =>
-                  acc +
-                  region.subregions.reduce(
-                    (subAcc, sub) =>
-                      subAcc +
-                      sub.cities.reduce(
-                        (cityAcc, city) => cityAcc + city.sellers.length,
-                        0
-                      ),
-                    0
-                  ),
-                0
-              )}{" "}
-              results)
+              ({sellerCount} results)
             </span>
           </h2>
 
@@ -418,7 +308,7 @@ const MarketPage = () => {
 
         <MarketCategory
           type={marketType}
-          regions={filteredData}
+          regions={marketData}
           viewMode={viewMode}
           searchQuery={searchQuery}
         />

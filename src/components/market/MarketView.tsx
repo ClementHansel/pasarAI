@@ -66,7 +66,7 @@ export const MarketView = ({ type, regions }: MarketViewProps) => {
 
             {expandedRegions[region.name] && (
               <div className="p-2 sm:p-4">
-                {region.subregions.map((sub) => (
+                {region.subRegions.map((sub) => (
                   <div key={sub.name} className="mb-4 last:mb-0">
                     <div
                       className="flex justify-between items-center p-3 bg-gray-50 rounded-lg cursor-pointer"

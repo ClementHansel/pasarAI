@@ -55,12 +55,12 @@ model LoginAttempt {
 }
 
 model Account {
-  id              String    @id @default(cuid())
+  id              String            @id @default(cuid())
   name            String
-  email           String?    @unique
+  email           String?           @unique
   password        String?
   avatar          String?
-  role            Role      @default(BUYER)
+  role            Role              @default(BUYER)
   phone           String?
   address         String?
   country         String?
@@ -68,34 +68,34 @@ model Account {
   city            String?
   profileImage    String?
   ewallet         String?
-  isVerified      Boolean   @default(false)
+  isVerified      Boolean           @default(false)
   emailVerifiedAt DateTime?
-  tokenVersion    Int       @default(0)
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  referralCode    String?    @unique @default("")
+  tokenVersion    Int               @default(0)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  referralCode    String?           @unique @default("")
   lastLoginAt     DateTime?
 
   // Self-referencing relation
-  referredById String?
-  referredBy   Account?  @relation("AccountReferrals", fields: [referredById], references: [id])
-  referrals    Account[] @relation("AccountReferrals")
+  referredById   String?
+  referredBy     Account?           @relation("AccountReferrals", fields: [referredById], references: [id])
+  referrals      Account[]          @relation("AccountReferrals")
 
   // Other relations
-  referralsMade     Referral[]     @relation("Referrer")
-  referralsReceived Referral[]     @relation("Referred")
-  reviewsGiven      Review[]       @relation("AccountReviews")
-  reviewsReceived   Review[]       @relation("SellerReviews")
-  eventLogs         EventLog[]     @relation("AccountLogs")
-  orders            Order[]        @relation("AccountOrders")
-  products          Product[]      @relation("AccountProducts")
-  brands            Brand[]        @relation("AccountBrands")
-  markets           Market[]       @relation("AccountMarkets")
+  referralsMade     Referral[]      @relation("Referrer")
+  referralsReceived Referral[]      @relation("Referred")
+  reviewsGiven      Review[]        @relation("AccountReviews")
+  reviewsReceived   Review[]        @relation("SellerReviews")
+  eventLogs         EventLog[]      @relation("AccountLogs")
+  orders            Order[]         @relation("AccountOrders")
+  products          Product[]       @relation("AccountProducts")
+  brands            Brand[]         @relation("AccountBrands")
+  markets           Market[]        @relation("AccountMarkets")
   wallets           Wallet[]
-  wallet_balance    Float          @default(0)
-  messagesSent      Message[]      @relation("SenderAccount")
-  messagesOwned     Message[]      @relation("AccountMessageOwner")
-  conversations     Conversation[] @relation("ConversationParticipants")
+  wallet_balance    Float           @default(0)
+  messagesSent      Message[]       @relation("SenderAccount")
+  messagesOwned     Message[]        @relation("AccountMessageOwner")
+  conversations     Conversation[]  @relation("ConversationParticipants")
   wishlists         Wishlist[]
   activityType      ActivityType?
   voucherType       VoucherType?
@@ -106,8 +106,11 @@ model Account {
   auditLogs         AuditLog[]
   sessions          Session[]
   loginAttempts     LoginAttempt[]
-  currencyId        String        @unique
-  currency          Currency      @relation("AccountCurrency", fields: [currencyId], references: [id])
+  currencyId        String          @unique
+  currency          Currency        @relation("AccountCurrency", fields: [currencyId], references: [id])
+
+  // Seller-specific relations
+  cities           City[]           @relation("AccountCities")   // Sellers are associated with cities (multiple sellers can exist in a city)
 }
 
 model Market {
@@ -115,18 +118,18 @@ model Market {
   name        String     @unique
   description String?
   currencyId  String?
-  currency    Currency?   @relation(fields: [currencyId], references: [id])
+  currency    Currency?  @relation(fields: [currencyId], references: [id])
   location    String     @default("Unknown")
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
   sellers     Account[]  @relation("AccountMarkets")
   products    Product[]  // Many-to-one relationship with products
   marketType  String?
-  regionId    String?    // Foreign key to Region
-  subregionId String?    // Foreign key to Subregion
-  cityId      String?    // Foreign key to City
+  regionId    Int?    // Foreign key to Region
+  subRegionId Int?    // Foreign key to Subregion
+  cityId      Int?    // Foreign key to City
   region      Region?    @relation(fields: [regionId], references: [id])
-  subregion   Subregion? @relation(fields: [subregionId], references: [id])
+  subRegion   SubRegion? @relation(fields: [subRegionId], references: [id])
   city        City?      @relation(fields: [cityId], references: [id])
   revenue     Float      @default(0.0)
   wishlists   Wishlist[]
@@ -136,35 +139,42 @@ model Market {
   verified    Boolean?
 }
 
+model Region {
+  id          Int           @id @default(autoincrement())
+  name        String        @unique
+  description String?
+  subRegions  SubRegion[]
+  markets     Market[]
+}
+
+model SubRegion {
+  id         Int       @id @default(autoincrement())
+  name       String
+  description String?
+  region     Region    @relation(fields: [regionId], references: [id])
+  regionId   Int
+  cities     City[]
+  markets    Market[]
+}
+
+model City {
+  id            Int         @id @default(autoincrement())
+  name          String
+  description   String?
+  subRegion     SubRegion   @relation(fields: [subRegionId], references: [id])
+  subRegionId   Int
+  markets       Market[]
+  account       Account[]   @relation("AccountCities")
+}
+
 model Currency {
-  id          String @id @default(cuid())
+  id          String    @id @default(cuid())
   name        String
   markets     Market[]
   description String?
   accountId   String
   account     Account?  @relation("AccountCurrency")
 }
-
-model Region {
-  id          String @id @default(cuid())
-  name        String
-  markets     Market[]
-  description String?
-}
-
-model Subregion {
-  id          String @id @default(cuid())
-  name        String
-  markets     Market[]
-  description String?
-}
-
-model City {
-  id         String @id @default(cuid())
-  name       String
-  markets    Market[]
-}
-
 
 model Product {
   id                String      @id @default(cuid())

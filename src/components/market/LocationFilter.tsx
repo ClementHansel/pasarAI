@@ -3,18 +3,18 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { ChevronDown } from "lucide-react";
-import { selectedFilters, MarketRegion, MarketType } from "@/types/market";
+import { MarketRegion, MarketType, SelectedFilters } from "@/types/market";
 
 interface LocationFilterProps {
   marketType: MarketType;
   markets: MarketRegion[];
   selectedFilters: {
     region: string;
-    subregion: string;
+    subRegion: string;
     city: string;
   };
   onFilterChange: (
-    type: "region" | "subregion" | "city",
+    type: "region" | "subRegion" | "city",
     value: string
   ) => void;
   isMobile?: boolean;
@@ -27,7 +27,7 @@ export const LocationFilter = ({
   onFilterChange,
   isMobile = false,
 }: LocationFilterProps) => {
-  const [subregions, setSubregions] = useState<string[]>([]);
+  const [subRegions, setSubRegions] = useState<string[]>([]);
   const [cities, setCities] = useState<string[]>([]);
 
   const regions = useMemo(
@@ -39,9 +39,9 @@ export const LocationFilter = ({
     const region = markets.find((r) => r.name === selectedFilters.region);
 
     if (region) {
-      setSubregions(region.subregions.map((sub) => sub.name));
+      setSubRegions(region.subRegions.map((sub) => sub.name));
     } else {
-      setSubregions([]);
+      setSubRegions([]);
     }
 
     // Always reset cities if region changes
@@ -50,28 +50,28 @@ export const LocationFilter = ({
 
   useEffect(() => {
     const region = markets.find((r) => r.name === selectedFilters.region);
-    const subregion = region?.subregions.find(
-      (s) => s.name === selectedFilters.subregion
+    const subRegion = region?.subRegions.find(
+      (s) => s.name === selectedFilters.subRegion
     );
 
-    if (subregion) {
-      setCities(subregion.cities.map((city) => city.name));
+    if (subRegion) {
+      setCities(subRegion.cities.map((city) => city.name));
     } else {
       setCities([]);
     }
-  }, [selectedFilters.region, selectedFilters.subregion, markets]);
+  }, [selectedFilters.region, selectedFilters.subRegion, markets]);
 
-  const getFilterLabel = (filterType: keyof selectedFilters) => {
+  const getFilterLabel = (filterType: keyof SelectedFilters) => {
     const labelMap =
       marketType === "domestic"
-        ? { region: "Province", subregion: "City", city: "District" }
-        : { region: "Country", subregion: "State/Province", city: "City" };
+        ? { region: "Province", subRegion: "City", city: "District" }
+        : { region: "Country", subRegion: "State/Province", city: "City" };
 
     return labelMap[filterType];
   };
 
   const renderSelect = (
-    filterType: keyof selectedFilters,
+    filterType: keyof SelectedFilters,
     options: string[],
     selectedValue: string,
     disabled = false
@@ -105,9 +105,9 @@ export const LocationFilter = ({
     <div className="space-y-3">
       {renderSelect("region", regions, selectedFilters.region)}
       {selectedFilters.region &&
-        renderSelect("subregion", subregions, selectedFilters.subregion)}
+        renderSelect("subRegion", subRegions, selectedFilters.subRegion)}
       {selectedFilters.region &&
-        selectedFilters.subregion &&
+        selectedFilters.subRegion &&
         renderSelect("city", cities, selectedFilters.city)}
     </div>
   );
@@ -116,9 +116,9 @@ export const LocationFilter = ({
     <div className="flex items-center gap-2">
       {renderSelect("region", regions, selectedFilters.region)}
       {selectedFilters.region &&
-        renderSelect("subregion", subregions, selectedFilters.subregion)}
+        renderSelect("subRegion", subRegions, selectedFilters.subRegion)}
       {selectedFilters.region &&
-        selectedFilters.subregion &&
+        selectedFilters.subRegion &&
         renderSelect("city", cities, selectedFilters.city)}
     </div>
   );

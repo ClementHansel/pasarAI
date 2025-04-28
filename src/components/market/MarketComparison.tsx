@@ -17,7 +17,7 @@ import {
   MarketRegion,
   MarketType,
   Seller,
-  Subregion,
+  SubRegion,
 } from "@/types/market";
 import { domesticMarkets, globalMarkets } from "@/lib/data/markets";
 
@@ -63,8 +63,8 @@ export const MarketComparison = ({ marketType }: MarketComparisonProps) => {
     let sellerCountWithRating = 0;
 
     markets.forEach((region) => {
-      region.subregions.forEach((subregion: Subregion) => {
-        subregion.cities.forEach((city: City) => {
+      region.subRegions.forEach((subRegion: SubRegion) => {
+        subRegion.cities.forEach((city: City) => {
           totalSellers += city.sellers.length;
 
           // Calculate average rating if ratings exist

@@ -1,65 +1,67 @@
 // src/types/market.ts
 import { Market as PrismaMarket } from "@prisma/client";
 
-// Enum for currency types to avoid repetition of strings
+// Enum for currency types
 export enum Currency {
   IDR = "IDR", // Indonesian Rupiah
   USD = "USD", // United States Dollar
 }
 
-// Type for market types: "domestic" for local regions, "global" for international regions
+// Market types: domestic for local, global for international
 export type MarketType = "domestic" | "global";
 
-// Seller interface representing a seller's details
+// Basic Seller interface
 export interface Seller {
-  id: string; // Unique identifier for the seller
-  name: string; // Name of the seller
+  id: string;
+  name: string;
   role: string;
-  currency: Currency; // The currency that the seller uses (IDR, USD, etc.)
-  rating?: number; // Optional rating of the seller (out of 5)
-  location?: string; // Optional location of the seller
-  productCount?: number; // Optional count of products the seller has
-  joinDate?: string; // Optional date when the seller joined
-  verified?: boolean; // Optional verification status
+  currency: Currency;
+  rating?: number;
+  location?: string;
+  productCount?: number;
+  joinDate?: string;
+  verified?: boolean;
 }
 
-// City interface representing a city's details
+// City interface
 export interface City {
   id: string;
-  name: string; // The name of the city
-  sellers: Seller[]; // List of sellers in this city
-}
-
-// Subregion interface representing a subregion's details (e.g., province for domestic, state/province for global)
-export interface Subregion {
-  id: string;
-  name: string; // The name of the subregion (Province/State)
-  cities: City[]; // List of cities within this subregion
+  name: string;
   sellers: Seller[];
 }
 
-// MarketRegion interface representing the market region (either a province for domestic or a country for global)
+// SubRegion interface (Province or State)
+export interface SubRegion {
+  id: string;
+  name: string;
+  cities: City[];
+  sellers: Seller[];
+}
+
+// MarketRegion interface (Country or Major Province)
 export interface MarketRegion {
   id: string;
-  name: string; // The name of the region (Province or Country)
+  name: string;
   region: string;
-  subregions: Subregion[]; // List of subregions (e.g., states/provinces within the region)
+  subRegions: SubRegion[];
   sellers: Seller[];
 }
 
-export type selectedFilters = {
+// Selected filters for UI
+export type SelectedFilters = {
   region: string;
-  subregion: string;
+  subRegion: string;
   city: string;
 };
 
+// Flat Market item for simple market listing
 export interface Market {
   id: string;
   name: string;
   location?: string;
   currency: Currency;
   region: string;
-  subregion: string;
+  subRegion: string;
   city: string;
   rating?: number;
   productCount?: number;
@@ -67,15 +69,40 @@ export interface Market {
   verified?: boolean;
 }
 
+// Seller with optional currency relation
+export type SellerWithRelations = {
+  id: string;
+  name: string;
+  role: string;
+  currency: Currency | null;
+};
+
+// City with sellers (from Prisma relation)
+export type CityWithRelations = {
+  id: string;
+  name: string;
+  sellers: SellerWithRelations[];
+};
+
+// SubRegion with nested cities and sellers (from Prisma relation)
+export type SubRegionWithRelations = {
+  id: string;
+  name: string;
+  cities: CityWithRelations[];
+  sellers: SellerWithRelations[];
+};
+
+// MarketWithRelations type (full relational model for Prisma queries)
 export type MarketWithRelations = PrismaMarket & {
-  region: { id: string; name: string } | null;
-  subregion: { id: string; name: string } | null;
-  city: { id: string; name: string } | null;
-  currency: { id: string; name: string } | null;
-  sellers: Array<{
+  region: {
     id: string;
     name: string;
-    role: string;
-    currency: { id: string; name: string } | null;
-  }>;
+  } | null;
+  subRegion: SubRegionWithRelations | null;
+  city: CityWithRelations | null;
+  currency: {
+    id: string;
+    name: string;
+  } | null;
+  sellers: SellerWithRelations[];
 };
