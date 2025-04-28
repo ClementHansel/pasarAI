@@ -63,19 +63,25 @@ export const MarketComparison = ({ marketType }: MarketComparisonProps) => {
     let sellerCountWithRating = 0;
 
     markets.forEach((region) => {
-      region.subRegions.forEach((subRegion: SubRegion) => {
-        subRegion.cities.forEach((city: City) => {
-          totalSellers += city.sellers.length;
+      // Ensure subRegions is an array and exists
+      if (Array.isArray(region.subRegions)) {
+        region.subRegions.forEach((subRegion: SubRegion) => {
+          // Ensure cities is an array and exists
+          if (Array.isArray(subRegion.cities)) {
+            subRegion.cities.forEach((city: City) => {
+              totalSellers += city.sellers.length;
 
-          // Calculate average rating if ratings exist
-          city.sellers.forEach((seller: Seller) => {
-            if (seller.rating) {
-              totalRating += seller.rating;
-              sellerCountWithRating++;
-            }
-          });
+              // Calculate average rating if ratings exist
+              city.sellers.forEach((seller: Seller) => {
+                if (seller.rating) {
+                  totalRating += seller.rating;
+                  sellerCountWithRating++;
+                }
+              });
+            });
+          }
         });
-      });
+      }
     });
 
     const avgRating =

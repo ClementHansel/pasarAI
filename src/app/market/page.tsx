@@ -1,3 +1,4 @@
+"use client";
 import { useState, useEffect, useCallback } from "react";
 import { Spinner } from "react-bootstrap";
 import { MarketCategory } from "@/components/market/MarketCategory";
