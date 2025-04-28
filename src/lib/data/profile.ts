@@ -96,13 +96,16 @@ export interface SellerProfile {
   };
 }
 
-// Public-facing Seller Profile (for customer view)
+// types/profile.ts
 export interface PublicSellerProfile
   extends Pick<SellerProfile, "id" | "avatar" | "phone" | "address"> {
   name: string;
   description: string;
   rating: number;
   totalSales: number;
+  verificationStatus: "new" | "verified" | "premium";
+  sellerSince: Date;
+  markets: string[];
   contact: {
     email: string;
     phone?: string;
@@ -115,6 +118,15 @@ export interface PublicSellerProfile
     image: string;
     stock: number;
     sold: number;
+    rating: number; // Add product-level rating
+  }>;
+  reviews: Array<{
+    id: string;
+    buyerName: string;
+    rating: number;
+    comment: string;
+    date: Date;
+    productId?: string;
   }>;
 }
 

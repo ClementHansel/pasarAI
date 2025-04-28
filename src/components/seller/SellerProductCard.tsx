@@ -3,10 +3,18 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Star } from "lucide-react";
+import { RatingStars } from "@/components/ui/RatingStars";
 
 interface SellerProductCardProps {
-  product: SellerProduct;
+  product: {
+    id: string;
+    name: string;
+    price: number;
+    image: string;
+    stock: number;
+    sold: number;
+    rating: number;
+  };
 }
 
 const SellerProductCard = ({ product }: SellerProductCardProps) => {
@@ -19,23 +27,20 @@ const SellerProductCard = ({ product }: SellerProductCardProps) => {
             alt={product.name}
             fill
             className="object-cover hover:scale-105 transition-transform"
+            sizes="(max-width: 640px) 100vw, 50vw, 33vw"
           />
         </div>
 
         <div className="p-4">
-          <h3 className="text-lg font-semibold text-gray-900">
+          <h3 className="text-lg font-semibold text-gray-900 line-clamp-1">
             {product.name}
           </h3>
 
-          <div className="flex items-center gap-1 mt-2">
-            {[...Array(5)].map((_, i) => (
-              <Star
-                key={i}
-                className={`w-4 h-4 ${
-                  i < 4 ? "text-yellow-400 fill-current" : "text-gray-300"
-                }`}
-              />
-            ))}
+          <div className="flex items-center gap-2 mt-2">
+            <RatingStars rating={product.rating} />
+            <span className="text-sm text-gray-500">
+              ({product.rating.toFixed(1)})
+            </span>
           </div>
 
           <div className="mt-4 flex justify-between items-center">
