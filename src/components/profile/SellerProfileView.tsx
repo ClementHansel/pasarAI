@@ -422,6 +422,7 @@ export const SellerProfileView: React.FC<SellerProfileViewProps> = ({
                   type="text"
                   defaultValue={profile.businessInfo.storeName}
                   className="w-full rounded-lg border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 px-4 py-2"
+                  aria-label="Input for Store Name"
                 />
               </div>
               <div>
@@ -432,6 +433,7 @@ export const SellerProfileView: React.FC<SellerProfileViewProps> = ({
                   type="text"
                   defaultValue={profile.businessInfo.category}
                   className="w-full rounded-lg border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 px-4 py-2"
+                  aria-label="Input for Category Name"
                 />
               </div>
             </div>
@@ -444,6 +446,7 @@ export const SellerProfileView: React.FC<SellerProfileViewProps> = ({
                 defaultValue={profile.businessInfo.description}
                 rows={3}
                 className="w-full rounded-lg border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 px-4 py-2"
+                aria-label="Input for Store Description"
               />
             </div>
 
@@ -458,6 +461,7 @@ export const SellerProfileView: React.FC<SellerProfileViewProps> = ({
                     type="email"
                     defaultValue={profile.email}
                     className="w-full rounded-lg border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 px-4 py-2"
+                    aria-label="Input for Store Email Address"
                   />
                 </div>
                 <div>
@@ -468,6 +472,7 @@ export const SellerProfileView: React.FC<SellerProfileViewProps> = ({
                     type="tel"
                     defaultValue={profile.phone}
                     className="w-full rounded-lg border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 px-4 py-2"
+                    aria-label="Input for Store Phone Number"
                   />
                 </div>
               </div>
@@ -480,6 +485,7 @@ export const SellerProfileView: React.FC<SellerProfileViewProps> = ({
                   defaultValue={profile.address}
                   rows={3}
                   className="w-full rounded-lg border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 px-4 py-2"
+                  aria-label="Input for Store Address"
                 />
               </div>
             </div>
