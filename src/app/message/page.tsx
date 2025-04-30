@@ -1,3 +1,4 @@
+"use client";
 import { useEffect, useState } from "react";
 import MessagesList from "../../components/messages/MessagesList";
 import MessageThread from "../../components/messages/MessageThread";

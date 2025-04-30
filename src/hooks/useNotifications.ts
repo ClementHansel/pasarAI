@@ -12,9 +12,9 @@ export const useNotifications = (
   error: string | null;
 } => {
   const context = useContext(NotificationContext); // Access the context for global state
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
+  const [notifications, setNotifications] = useState<Notification[]>([]); // Local state for fetched notifications
+  const [loading, setLoading] = useState<boolean>(false); // Loading state
+  const [error, setError] = useState<string | null>(null); // Error state
 
   // Throw error if context is not available
   if (!context) {
@@ -31,33 +31,33 @@ export const useNotifications = (
   // Fetch notifications when the accountId changes
   useEffect(() => {
     const fetchNotificationsData = async () => {
-      setLoading(true);
+      setLoading(true); // Start loading
       try {
-        const response = await fetchNotifications(accountId);
-        setNotifications(response.notifications); // <- FIXED
-        setError(null); // Clear error if fetching is successful
+        const response = await fetchNotifications(accountId); // Fetch notifications from the backend
+        setNotifications(response.notifications); // Update local state with fetched notifications
+        setError(null); // Clear any previous errors
       } catch (error) {
         console.error("Error fetching notifications:", error);
-        setError("Failed to fetch notifications");
+        setError("Failed to fetch notifications"); // Set error if fetching fails
       } finally {
-        setLoading(false);
+        setLoading(false); // Stop loading
       }
     };
 
     if (accountId) {
-      fetchNotificationsData();
+      fetchNotificationsData(); // Fetch notifications when accountId is available
     }
-  }, [accountId]);
+  }, [accountId]); // Dependency array ensures re-fetch when accountId changes
 
-  // Combine fetched notifications with global notifications in context
+  // Combine fetched notifications with global notifications from context
   const combinedNotifications = [...globalNotifications, ...notifications];
 
-  // Return context along with the fetched notifications data
+  // Return context data along with the fetched notifications
   return {
-    ...context, // Include the context data (e.g., global notification state)
-    notifications: combinedNotifications, // Return combined notifications
+    ...context, // Include global notification state
+    notifications: combinedNotifications, // Return the combined notifications
     loading,
     error,
-    setNotifications: setGlobalNotifications, // Expose the global setNotifications function
+    setNotifications: setGlobalNotifications, // Expose global setNotifications to allow updates
   };
 };

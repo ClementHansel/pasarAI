@@ -1,28 +1,49 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Notification } from "@/types/notification";
 import { useNotifications } from "@/hooks/useNotifications";
 import NotificationList from "@/components/notifications/NotificationList";
 import NotificationDetail from "@/components/notifications/NotificationDetail";
+import {
+  fetchNotifications,
+  markNotificationAsRead,
+} from "@/services/notification/notificationService"; // Import the API service
 
 export default function NotificationPage() {
   const accountId = "user123"; // Replace with actual account ID
 
-  const { notifications, loading, error, markAsRead, setNotifications } =
-    useNotifications(accountId);
+  const { notifications, loading, error, setNotifications } =
+    useNotifications(accountId); // Using the hook
 
   const [selectedNotification, setSelectedNotification] =
     useState<Notification | null>(null);
 
-  // Handle marking a notification as read
-  const handleMarkAsRead = (id: string) => {
-    markAsRead(id); // Pass a string ID
+  // Fetch notifications when component mounts
+  useEffect(() => {
+    const loadNotifications = async () => {
+      try {
+        const data = await fetchNotifications(accountId); // Fetch from backend API
+        setNotifications(data.notifications); // Update notifications in the state
+      } catch (err) {
+        console.error("Error loading notifications:", err);
+      }
+    };
 
-    // Directly update notifications to mark the notification as read
-    const updatedNotifications = notifications.map((notif) =>
-      notif.id === id ? { ...notif, read: true } : notif
-    );
-    setNotifications(updatedNotifications); // Set the updated notifications
+    loadNotifications();
+  }, [accountId, setNotifications]); // Dependencies to trigger the effect
+
+  // Handle marking a notification as read
+  const handleMarkAsRead = async (id: string) => {
+    try {
+      await markNotificationAsRead(id); // Mark the notification as read in the backend
+      // Directly update notifications to mark the notification as read
+      const updatedNotifications = notifications.map((notif) =>
+        notif.id === id ? { ...notif, read: true } : notif
+      );
+      setNotifications(updatedNotifications); // Set the updated notifications
+    } catch (err) {
+      console.error("Error marking notification as read:", err);
+    }
   };
 
   // Handle selecting a notification to view its detail

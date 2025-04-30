@@ -12,7 +12,51 @@ export type HistoryResponse = {
   };
 };
 
-// Sends an email by calling App Router endpoint:
+// Async Email Queue
+export async function queueEmail(
+  subject: string,
+  recipient: string,
+  text: string
+): Promise<{ success: boolean; message?: string }> {
+  const res = await fetch("/api/notification/queueEmail", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ subject, recipient, text }),
+  });
+
+  if (!res.ok) {
+    const errMsg = await extractError(res);
+    logNotificationActivity("email-queue-failed", {
+      subject,
+      recipient,
+      error: errMsg,
+    });
+    throw new Error(errMsg);
+  }
+
+  const result = await res.json();
+  logNotificationActivity("email-queued", { subject, recipient });
+  return result;
+}
+
+// Used by admin dashboard or CRON process
+export async function processQueuedEmails(): Promise<{ processed: number }> {
+  const res = await fetch("/api/notification/processQueue", {
+    method: "POST",
+  });
+
+  if (!res.ok) {
+    const errMsg = await extractError(res);
+    logNotificationActivity("queue-process-failed", { error: errMsg });
+    throw new Error(errMsg);
+  }
+
+  const result = await res.json();
+  logNotificationActivity("queue-processed", { ...result });
+  return result;
+}
+
+// Core Email Sender
 export async function sendEmail(
   subject: string,
   recipient: string,
@@ -23,20 +67,21 @@ export async function sendEmail(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ subject, recipient, text }),
   });
+
   if (!res.ok) {
-    // try to extract error from JSON, else fallback
-    let errMsg: string;
-    try {
-      const payload = await res.json();
-      errMsg = payload.error ?? res.statusText;
-    } catch {
-      errMsg = res.statusText;
-    }
+    const errMsg = await extractError(res);
+    logNotificationActivity("email-failed", {
+      subject,
+      recipient,
+      error: errMsg,
+    });
     throw new Error(errMsg);
   }
+
+  logNotificationActivity("email-sent", { subject, recipient });
 }
 
-// Creates a new notification (and sends it via email or push) by calling:
+// Create Notification
 export async function sendNotification(
   type: "email" | "push",
   accountId: string,
@@ -48,22 +93,24 @@ export async function sendNotification(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ accountId, type, title, message }),
   });
+
   if (!res.ok) {
-    let errMsg: string;
-    try {
-      const payload = await res.json();
-      errMsg = payload.error ?? res.statusText;
-    } catch {
-      errMsg = res.statusText;
-    }
+    const errMsg = await extractError(res);
+    logNotificationActivity("notification-send-failed", {
+      type,
+      accountId,
+      title,
+      error: errMsg,
+    });
     throw new Error(errMsg);
   }
+
   const { notification } = (await res.json()) as { notification: Notification };
-  return notification as Notification;
+  logNotificationActivity("notification-sent", { type, accountId, title });
+  return notification;
 }
 
-// Fetches the notification history (paginated) for one account:
-
+// Fetch Notifications
 export async function fetchNotifications(
   accountId: string,
   page = 1,
@@ -72,23 +119,17 @@ export async function fetchNotifications(
   const url = `/api/notification/history?accountId=${encodeURIComponent(
     accountId
   )}&page=${page}&limit=${limit}`;
-
   const res = await fetch(url);
+
   if (!res.ok) {
-    let errMsg: string;
-    try {
-      const payload = await res.json();
-      errMsg = payload.error ?? res.statusText;
-    } catch {
-      errMsg = res.statusText;
-    }
+    const errMsg = await extractError(res);
     throw new Error(errMsg);
   }
+
   return (await res.json()) as HistoryResponse;
 }
 
-// Marks a single notification as read:
-
+// Mark Notification as Read
 export async function markNotificationAsRead(
   notificationId: string
 ): Promise<Notification> {
@@ -97,22 +138,17 @@ export async function markNotificationAsRead(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ read: true }),
   });
+
   if (!res.ok) {
-    let errMsg: string;
-    try {
-      const payload = await res.json();
-      errMsg = payload.error ?? res.statusText;
-    } catch {
-      errMsg = res.statusText;
-    }
+    const errMsg = await extractError(res);
     throw new Error(errMsg);
   }
+
   const { notification } = (await res.json()) as { notification: Notification };
-  return notification as Notification;
+  return notification;
 }
 
-// Updates notification:
-
+// Update Notification Read Status
 export async function updateNotificationStatus(
   notificationId: string,
   read: boolean
@@ -122,16 +158,33 @@ export async function updateNotificationStatus(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ read }),
   });
+
   if (!res.ok) {
-    let errMsg: string;
-    try {
-      const payload = await res.json();
-      errMsg = payload.error ?? res.statusText;
-    } catch {
-      errMsg = res.statusText;
-    }
+    const errMsg = await extractError(res);
     throw new Error(errMsg);
   }
+
   const { notification } = (await res.json()) as { notification: Notification };
-  return notification as Notification;
+  return notification;
+}
+
+function logNotificationActivity(event: string, data: Record<string, unknown>) {
+  console.log(`[NotificationLog] ${event}:`, data);
+
+  // send to backend log service:
+  fetch("/api/log", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ event, data, timestamp: new Date().toISOString() }),
+  });
+}
+
+// Helper: Extract readable error
+async function extractError(res: Response): Promise<string> {
+  try {
+    const payload = await res.json();
+    return payload.error ?? res.statusText;
+  } catch {
+    return res.statusText;
+  }
 }
