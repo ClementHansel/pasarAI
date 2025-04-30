@@ -330,3 +330,39 @@ export const getRecentFailedAttempts = async ({
     throw new DatabaseError("Failed to get recent failed login attempts.");
   }
 };
+
+// Fetch account by referral code
+export const getAccountByReferralCode = async (referralCode: string) => {
+  try {
+    return await db.account.findUnique({
+      where: { referralCode },
+    });
+  } catch (error) {
+    console.error(
+      `[AccountService] Failed to fetch account by referralCode (${referralCode}):`,
+      error
+    );
+    throw new DatabaseError("Failed to fetch account by referral code.");
+  }
+};
+
+// Create referral entry
+export const createReferral = async (
+  referrerId: string,
+  referredId: string
+) => {
+  try {
+    return await db.referral.create({
+      data: {
+        referrerId,
+        referredId,
+      },
+    });
+  } catch (error) {
+    console.error(
+      `[AccountService] Failed to create referral from ${referrerId} to ${referredId}:`,
+      error
+    );
+    throw new DatabaseError("Failed to create referral.");
+  }
+};

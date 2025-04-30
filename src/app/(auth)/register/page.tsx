@@ -1,39 +1,37 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import RegisterForm from "@/components/auth/RegisterForm";
 import { toast } from "react-hot-toast";
+import { RegisterFormValues } from "@/lib/utils/validation/registerSchema";
+import { useState } from "react";
+import { RegisterForm } from "@/components/auth/RegisterForm";
 
 export default function RegisterPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleRegister = async (data: {
-    name: string;
-    email: string;
-    password: string;
-    role: "CONSUMER" | "SELLER";
-    referralCode?: string;
-  }) => {
+  const handleRegister = async (data: RegisterFormValues) => {
     setIsLoading(true);
     try {
-      const res = await fetch("/api/auth/register", {
+      const response = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          ...data,
+          // Map frontend role names to backend if needed
+          role: data.role === "BUYER" ? "BUYER" : "SELLER",
+        }),
       });
 
-      const responseData = await res.json();
-
-      if (!res.ok) {
-        throw new Error(responseData.error || "Registration failed");
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Registration failed");
       }
 
       toast.success("Account created successfully!");
       router.push("/login");
-    } catch (err) {
+    } catch (err: unknown) {
       if (err instanceof Error) {
         toast.error(err.message);
       } else {

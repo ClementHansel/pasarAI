@@ -10,7 +10,7 @@ const ACCESS_TOKEN_EXPIRES_IN = "15m";
 const REFRESH_TOKEN_EXPIRES_IN = "7d";
 
 // --- Custom Role Type ---
-type Role = "ADMIN" | "BUYER" | "MODERATOR" | "SELLER" | "CONSUMER";
+type Role = "ADMIN" | "BUYER" | "MODERATOR" | "SELLER";
 
 // --- PASSWORD UTILS ---
 export async function hashPassword(password: string): Promise<string> {

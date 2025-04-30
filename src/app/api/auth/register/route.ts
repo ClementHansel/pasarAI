@@ -1,11 +1,14 @@
-import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
+import { Role } from "@prisma/client"; // Import the Role enum
 import { hashPassword } from "@/lib/auth/authUtils";
 import { generateReferralCode } from "@/lib/referral/referralUtils";
-import { createReferralVouchers } from "@/lib/voucher/generateVoucherCode";
 import { validateEmail, validatePassword } from "@/lib/validation/utils";
-
-const prisma = new PrismaClient();
+import { createReferralVouchers } from "@/lib/voucher/generateVoucherCode";
+import {
+  createAccount,
+  getAccountByEmail,
+  getAccountByReferralCode,
+} from "@/services/account/accountService";
+import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
   try {
@@ -15,6 +18,13 @@ export async function POST(req: Request) {
       password,
       role,
       referralCode: usedCode,
+      phone,
+      address,
+      country,
+      province,
+      city,
+      profileImage,
+      currencyId,
     } = await req.json();
 
     // Basic validations
@@ -43,14 +53,16 @@ export async function POST(req: Request) {
       );
     }
 
-    // Determine the account role with fallback
-    const accountRole =
-      role && (role === "SELLER" || role === "ACCOUNT") ? role : "ACCOUNT";
+    // Adjusted to use "BUYER" instead of "CONSUMER" in the role mapping.
+    let accountRole: Role = Role.BUYER; // Default to BUYER
+    if (role === "SELLER") {
+      accountRole = Role.SELLER;
+    } else {
+      accountRole = Role.BUYER; // Default to BUYER for all other cases
+    }
 
     // Check if the account already exists
-    const existingAccount = await prisma.account.findUnique({
-      where: { email },
-    });
+    const existingAccount = await getAccountByEmail(email);
     if (existingAccount) {
       return NextResponse.json(
         { error: "Account already exists" },
@@ -64,41 +76,34 @@ export async function POST(req: Request) {
     // Generate a new referral code
     const newReferralCode = generateReferralCode();
 
-    // Create a new account in a transaction to ensure atomicity
-    const newAccount = await prisma.$transaction(async (prisma) => {
-      // Create account first
-      const account = await prisma.account.create({
-        data: {
-          name,
-          email,
-          password: hashedPassword,
-          role: accountRole,
-          referralCode: newReferralCode,
-        },
-      });
-
-      // Handle referral if a code was provided
-      if (usedCode) {
-        const referrer = await prisma.account.findUnique({
-          where: { referralCode: usedCode },
-        });
-
-        if (referrer) {
-          // Create referral entry
-          await prisma.referral.create({
-            data: {
-              referrerId: referrer.id,
-              referredId: account.id,
-            },
-          });
-
-          // Generate referral vouchers for both referrer and referred
-          await createReferralVouchers(referrer.id, account.id);
-        }
-      }
-
-      return account;
+    // Create a new account using service layer
+    const newAccount = await createAccount({
+      name,
+      email,
+      password: hashedPassword,
+      role: accountRole,
+      referralCode: newReferralCode,
+      phone,
+      address,
+      country,
+      province,
+      city,
+      profileImage,
+      currencyId,
     });
+
+    // Handle referral if a code was provided
+    if (usedCode) {
+      const referrer = await getAccountByReferralCode(usedCode);
+
+      if (referrer) {
+        // Create referral entry
+        await createReferralVouchers(referrer.id, newAccount.id);
+
+        // Generate referral vouchers for both referrer and referred
+        await createReferralVouchers(referrer.id, newAccount.id);
+      }
+    }
 
     // Return successful response with minimal account info
     return NextResponse.json({
@@ -114,7 +119,6 @@ export async function POST(req: Request) {
   } catch (error: unknown) {
     console.error("Register Error:", error);
 
-    // Check if the error is an instance of Error
     if (error instanceof Error) {
       return NextResponse.json(
         { error: "Internal server error", details: error.message },
@@ -122,7 +126,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // Fallback if the error is not an instance of Error
     return NextResponse.json(
       { error: "Internal server error", details: "Unknown error occurred" },
       { status: 500 }
