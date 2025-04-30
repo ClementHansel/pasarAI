@@ -11,6 +11,7 @@ export interface SessionData {
 }
 export interface CartItem {
   id: string;
+  productId: string;
   name: string;
   price: number;
   discountedPrice?: number;

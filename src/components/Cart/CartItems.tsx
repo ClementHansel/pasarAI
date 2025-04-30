@@ -50,12 +50,14 @@ const CartItems: React.FC<CartItemProps> = ({
             <button
               onClick={() => onMoveToWishlist(item.id)}
               className="text-gray-400 hover:text-primary"
+              aria-label="wishlist toggle"
             >
               <Heart className="w-5 h-5" />
             </button>
             <button
               onClick={onRemove}
               className="text-gray-400 hover:text-destructive"
+              aria-label="clear cart"
             >
               <Trash className="w-5 h-5" />
             </button>
@@ -68,6 +70,7 @@ const CartItems: React.FC<CartItemProps> = ({
               onClick={() => onUpdate(item.id, item.quantity - 1)}
               disabled={item.quantity <= 1}
               className="p-2 text-gray-600 hover:text-gray-900 disabled:opacity-50"
+              aria-label="reduce item quantity in cart"
             >
               <Minus className="w-4 h-4" />
             </button>
@@ -75,6 +78,7 @@ const CartItems: React.FC<CartItemProps> = ({
             <button
               onClick={() => onUpdate(item.id, item.quantity + 1)}
               className="p-2 text-gray-600 hover:text-gray-900"
+              aria-label="increase item quantity in cart"
             >
               <Plus className="w-4 h-4" />
             </button>

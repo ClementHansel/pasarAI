@@ -3,13 +3,19 @@ import React, { useState } from "react";
 import type { CartItem } from "@/types/cart";
 import MarketGroup from "./MarketGroup";
 import OrderSummary from "./OrderSummary";
+import { WishlistItem } from "@/hooks/useWishlist";
 
 interface CartSectionProps {
   items: CartItem[];
   onUpdate: (id: string, quantity: number) => void;
   onRemove: (ids: string[]) => void;
-  onMoveToWishlist: (id: string) => void;
-  onClearCart: () => void; // Added onClearCart prop
+  onMoveToWishlist: (id: string, productId: string, marketId: string) => void;
+  onClearCart: () => void;
+  onToggleWishlist: (
+    productId: string,
+    marketId: string
+  ) => void | Promise<void>;
+  wishlistItems: WishlistItem[];
 }
 
 const CartSection: React.FC<CartSectionProps> = ({

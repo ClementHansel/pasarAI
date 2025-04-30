@@ -13,7 +13,7 @@ interface MarketGroupProps {
   onSelect: (ids: string[]) => void;
   onUpdate: (id: string, quantity: number) => void;
   onRemove: (ids: string[]) => void;
-  onMoveToWishlist: (id: string) => void;
+  onMoveToWishlist: (id: string, productId: string, marketId: string) => void;
 }
 
 const MarketGroup: React.FC<MarketGroupProps> = ({
@@ -69,7 +69,9 @@ const MarketGroup: React.FC<MarketGroupProps> = ({
             }
             onUpdate={onUpdate}
             onRemove={() => onRemove([item.id])}
-            onMoveToWishlist={onMoveToWishlist}
+            onMoveToWishlist={() =>
+              onMoveToWishlist(item.id, item.productId, item.marketId)
+            }
           />
         ))}
       </div>
