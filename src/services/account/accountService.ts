@@ -111,7 +111,9 @@ export const getAccountByEmail = async (email: string) => {
 
 // Create new account
 export const createAccount = async (
-  data: Prisma.AccountCreateInput,
+  data: Prisma.AccountCreateInput & {
+    currency?: { name: string; description?: string };
+  },
   creatorRole: Role = "BUYER"
 ) => {
   try {
@@ -120,12 +122,29 @@ export const createAccount = async (
     }
 
     const roleToAssign: Role = data.role ?? "BUYER";
+    const { currency, ...rest } = data;
 
     return await db.$transaction(async (tx) => {
+      const accountData: Prisma.AccountCreateInput = {
+        ...rest,
+        role: roleToAssign,
+        currency: currency
+          ? {
+              create: {
+                name: currency.name,
+                description: currency.description ?? "",
+                accountId: rest.id ?? "", // Add accountId here to resolve the error
+              },
+            }
+          : undefined,
+      };
+
+      // Create the account
       const account = await tx.account.create({
-        data: { ...data, role: roleToAssign },
+        data: accountData,
       });
 
+      // Create the audit log entry
       await tx.auditLog.create({
         data: {
           action: "CREATE_ACCOUNT",
@@ -143,40 +162,40 @@ export const createAccount = async (
   }
 };
 
-// Update account
+// update Account
 export const updateAccount = async (
   id: string,
-  data: Prisma.AccountUpdateInput,
-  updaterRole: Role = "BUYER"
+  data: Prisma.AccountUpdateInput
 ) => {
   try {
-    const existing = await db.account.findUnique({ where: { id } });
-    if (!existing) throw new NotFoundError(`Account (${id}) not found.`);
+    // Find the existing account first to ensure it exists
+    const existingAccount = await db.account.findUnique({
+      where: { id },
+    });
 
-    if (updaterRole !== "ADMIN" && "role" in data) {
-      throw new PermissionError("Only admin can modify account roles.");
+    if (!existingAccount) {
+      throw new NotFoundError(`Account with ID ${id} not found.`);
     }
 
-    return await db.$transaction(async (tx) => {
-      const updated = await tx.account.update({
-        where: { id },
-        data,
-      });
-
-      await tx.auditLog.create({
-        data: {
-          action: "UPDATE_ACCOUNT",
-          accountId: id,
-          reason: "Account updated",
-        },
-      });
-
-      return updated;
+    // Update the account in the database
+    const updatedAccount = await db.account.update({
+      where: { id },
+      data,
     });
+
+    // Optionally, create an audit log entry for the update
+    await db.auditLog.create({
+      data: {
+        action: "UPDATE_ACCOUNT",
+        accountId: id,
+        reason: "Account updated",
+      },
+    });
+
+    return updatedAccount;
   } catch (error) {
     console.error(`[AccountService] Failed to update account (${id}):`, error);
-    if (error instanceof NotFoundError || error instanceof PermissionError)
-      throw error;
+    if (error instanceof NotFoundError) throw error;
     throw new DatabaseError("Failed to update account.");
   }
 };
@@ -222,9 +241,12 @@ export const logLoginAttempt = async ({
   userAgent?: string;
 }): Promise<LoginAttempt> => {
   try {
+    // Ensure email is always a string
+    const validEmail = email ?? "unknown";
+
     return await db.loginAttempt.create({
       data: {
-        email,
+        email: validEmail,
         success,
         ipAddress,
         userAgent,

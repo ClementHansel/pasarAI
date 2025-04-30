@@ -33,8 +33,8 @@ export const useNotifications = (
     const fetchNotificationsData = async () => {
       setLoading(true);
       try {
-        const notificationsData = await fetchNotifications(accountId); // Use accountId to fetch notifications
-        setNotifications(notificationsData);
+        const response = await fetchNotifications(accountId);
+        setNotifications(response.notifications); // <- FIXED
         setError(null); // Clear error if fetching is successful
       } catch (error) {
         console.error("Error fetching notifications:", error);

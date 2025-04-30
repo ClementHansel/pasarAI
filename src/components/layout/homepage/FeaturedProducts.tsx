@@ -3,47 +3,131 @@ import ProductCard from "./ProductCard";
 import { Product } from "@/types/product";
 
 const pictureNotFound = "/images/picture-not-found.png";
-// Enhanced mock data with better images and more details
+
 const mockFeaturedProducts: Product[] = [
   {
-    id: 1,
+    id: "1",
     name: "Wireless Noise-Cancelling Headphones",
     price: 129.99,
+    originalPrice: 159.99,
     description:
       "Premium noise-cancelling over-ear headphones with 40-hour battery life.",
-    imageUrl: null,
+    imageUrls: [],
     rating: 4.8,
     discount: 15,
+    stock: 50,
+    isAvailable: true,
+    labels: [
+      { name: "New", id: "new", createdAt: new Date(), updatedAt: new Date() },
+    ],
+    brand: [
+      { id: 1, name: "Brand A", createdAt: new Date(), updatedAt: new Date() },
+    ],
+    tags: ["electronics", "headphones"],
+    marketId: "market1",
+    currency: "USD",
+    accountId: "account1",
+    marketType: "domestic",
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    location: { region: "North America", subregion: "US", city: "New York" },
+    lastSoldAt: null,
+    reviews: [],
   },
   {
     id: "2",
     name: "Smart Fitness Watch",
     price: 199.99,
+    originalPrice: 249.99,
     description:
       "Track your fitness, sleep, and notifications with this waterproof smartwatch.",
-    imageUrl: null,
+    imageUrls: [],
     rating: 4.5,
-    labels: { name: "New", id: "new" },
+    labels: [
+      { name: "New", id: "new", createdAt: new Date(), updatedAt: new Date() },
+    ],
+    stock: 150,
+    isAvailable: true,
+    brand: [
+      { id: 2, name: "Brand B", createdAt: new Date(), updatedAt: new Date() },
+    ],
+    tags: ["electronics", "smartwatch"],
+    marketId: "market2",
+    currency: "USD",
+    accountId: "account2",
+    marketType: "global",
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    location: { region: "Europe", subregion: "UK", city: "London" },
+    lastSoldAt: null,
+    reviews: [],
   },
   {
-    id: 3,
+    id: "3",
     name: "Portable Bluetooth Speaker",
     price: 89.99,
+    originalPrice: 99.99,
     description:
       "Portable speaker with 360° sound, deep bass and 24-hour playtime.",
-    imageUrl: null,
+    imageUrls: [],
     rating: 4.2,
     discount: 10,
+    stock: 100,
+    isAvailable: true,
+    labels: [
+      { name: "New", id: "new", createdAt: new Date(), updatedAt: new Date() },
+    ],
+    brand: [
+      { id: 3, name: "Brand C", createdAt: new Date(), updatedAt: new Date() },
+    ],
+    tags: ["electronics", "speaker"],
+    marketId: "market3",
+    currency: "USD",
+    accountId: "account3",
+    marketType: "domestic",
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    location: {
+      region: "North America",
+      subregion: "US",
+      city: "San Francisco",
+    },
+    lastSoldAt: null,
+    reviews: [],
   },
   {
-    id: 4,
+    id: "4",
     name: "Ultra-thin Laptop",
     price: 899.99,
+    originalPrice: 999.99,
     description:
       "Lightweight laptop with 16GB RAM, 512GB SSD and all-day battery life.",
-    imageUrl: null,
+    imageUrls: [],
     rating: 4.7,
-    labels: { name: "Bestseller", id: "bestseller" },
+    discount: 10,
+    stock: 50,
+    isAvailable: true,
+    labels: [
+      {
+        name: "Bestseller",
+        id: "bestseller",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    ],
+    brand: [
+      { id: 4, name: "Brand D", createdAt: new Date(), updatedAt: new Date() },
+    ],
+    tags: ["electronics", "laptop"],
+    marketId: "market4",
+    currency: "USD",
+    accountId: "account4",
+    marketType: "global",
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    location: { region: "Europe", subregion: "Germany", city: "Berlin" },
+    lastSoldAt: null,
+    reviews: [],
   },
 ];
 
@@ -90,8 +174,21 @@ const FeaturedProducts = () => {
             {products.map((product) => (
               <ProductCard
                 key={product.id}
-                {...product}
-                imageUrl={product.imageUrl || pictureNotFound}
+                id={product.id}
+                name={product.name}
+                description={product.description}
+                price={product.price}
+                imageUrl={product.imageUrls[0] || pictureNotFound}
+                rating={product.rating}
+                discount={product.discount}
+                labels={[
+                  {
+                    id: "bestseller",
+                    name: "Bestseller",
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                  },
+                ]}
               />
             ))}
           </div>

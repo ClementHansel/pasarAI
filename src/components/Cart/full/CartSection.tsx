@@ -1,4 +1,3 @@
-// src/components/cart/full/CartSection.tsx
 "use client";
 import React, { useState } from "react";
 import type { CartItem } from "@/types/cart";
@@ -10,6 +9,7 @@ interface CartSectionProps {
   onUpdate: (id: string, quantity: number) => void;
   onRemove: (ids: string[]) => void;
   onMoveToWishlist: (id: string) => void;
+  onClearCart: () => void; // Added onClearCart prop
 }
 
 const CartSection: React.FC<CartSectionProps> = ({
@@ -17,6 +17,7 @@ const CartSection: React.FC<CartSectionProps> = ({
   onUpdate,
   onRemove,
   onMoveToWishlist,
+  onClearCart, // Destructured onClearCart
 }) => {
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [voucher, setVoucher] = useState("");
@@ -43,13 +44,23 @@ const CartSection: React.FC<CartSectionProps> = ({
         ))}
       </div>
 
-      <OrderSummary
-        items={items}
-        selectedItems={selectedItems}
-        voucher={voucher}
-        onVoucherChange={setVoucher}
-        onRemove={onRemove}
-      />
+      <div className="lg:col-span-1 space-y-6">
+        <OrderSummary
+          items={items}
+          selectedItems={selectedItems}
+          voucher={voucher}
+          onVoucherChange={setVoucher}
+          onRemove={onRemove}
+        />
+
+        {/* Add a Clear Cart Button */}
+        <button
+          onClick={onClearCart}
+          className="w-full bg-red-500 text-white py-2 rounded-md mt-4"
+        >
+          Clear Cart
+        </button>
+      </div>
     </div>
   );
 };

@@ -3,107 +3,106 @@
 import React, { useState, useEffect } from "react";
 import ProductCard from "./ProductCard";
 import SkeletonCard from "@/components/ui/SkeletonCard";
-import { Product } from "@/types/product";
+import { Category, Product } from "@/types/product";
 
 const ITEMS_PER_PAGE = 8;
 const PICTURE_NOT_FOUND = "/images/picture-not-found.png";
 
-// Extended mock data with 12 products (8 initial + 4 more for load more)
-const mockProducts = [
+const now = new Date();
+
+const mockCategories: Category[] = [
+  {
+    id: "1",
+    name: "Headphones",
+    description: "Various types of headphones",
+    createdAt: now,
+  },
+  {
+    id: "2",
+    name: "Smart Watches",
+    description: "Fitness tracking and smartwatches",
+    createdAt: now,
+  },
+];
+
+const mockProducts: Product[] = [
   {
     id: "1",
     name: "Wireless Noise-Cancelling Headphones",
-    price: 129.99,
     description: "Premium noise-cancelling over-ear headphones",
-    imageUrls: [PICTURE_NOT_FOUND],
-    labels: [{ name: "Best Seller", id: "bs1" }],
+    brand: [
+      {
+        id: 1,
+        name: "SoundPro",
+        createdAt: now,
+        updatedAt: now,
+      },
+    ],
+    price: 129.99,
+    originalPrice: 149.99,
+    stock: 12,
+    isAvailable: true,
+    category: mockCategories[0], // Use the first mock category
+    tags: ["electronics", "headphones"], // Example tags
+    marketId: "soundpro-market", // Example market ID
+    location: {
+      region: "Asia",
+      subregion: "Southeast Asia",
+      city: "Jakarta",
+    },
+    currency: "USD",
+    imageUrls: [PICTURE_NOT_FOUND], // Placeholder for image
+    createdAt: now,
+    updatedAt: now,
     rating: 4.8,
-    discount: 15,
+    reviews: [], // Empty array for now
+    labels: [
+      { name: "Best Seller", id: "bs1", createdAt: now, updatedAt: now },
+    ],
+    discount: 15, // 15% discount
+    isFeatured: true, // Marked as featured product
+    isActive: true, // Product is active
+    accountId: "user123", // Example account ID
+    marketType: "domestic", // Indicate that this is a domestic product
   },
   {
     id: "2",
     name: "Smart Fitness Watch",
-    price: 199.99,
     description: "Waterproof smartwatch with fitness tracking",
-    imageUrls: [PICTURE_NOT_FOUND],
-    labels: [{ name: "New Arrival", id: "na1" }],
-    rating: 4.5,
-  },
-  {
-    id: "1",
-    name: "Wireless Noise-Cancelling Headphones",
-    price: 129.99,
-    description: "Premium noise-cancelling over-ear headphones",
-    imageUrls: [PICTURE_NOT_FOUND],
-    labels: [{ name: "Best Seller", id: "bs1" }],
-    rating: 4.8,
-    discount: 15,
-  },
-  {
-    id: "2",
-    name: "Smart Fitness Watch",
+    brand: [
+      {
+        id: 2,
+        name: "FitTech",
+        createdAt: now,
+        updatedAt: now,
+      },
+    ],
     price: 199.99,
-    description: "Waterproof smartwatch with fitness tracking",
-    imageUrls: [PICTURE_NOT_FOUND],
-    labels: [{ name: "New Arrival", id: "na1" }],
+    originalPrice: 219.99,
+    stock: 20,
+    isAvailable: true,
+    category: mockCategories[1], // Use the second mock category
+    tags: ["fitness", "smartwatch"], // Example tags
+    marketId: "fittech-market", // Example market ID
+    location: {
+      region: "Asia",
+      subregion: "Southeast Asia",
+      city: "Jakarta",
+    },
+    currency: "USD",
+    imageUrls: [PICTURE_NOT_FOUND], // Placeholder for image
+    createdAt: now,
+    updatedAt: now,
     rating: 4.5,
-  },
-  {
-    id: "1",
-    name: "Wireless Noise-Cancelling Headphones",
-    price: 129.99,
-    description: "Premium noise-cancelling over-ear headphones",
-    imageUrls: [PICTURE_NOT_FOUND],
-    labels: [{ name: "Best Seller", id: "bs1" }],
-    rating: 4.8,
-    discount: 15,
-  },
-  {
-    id: "2",
-    name: "Smart Fitness Watch",
-    price: 199.99,
-    description: "Waterproof smartwatch with fitness tracking",
-    imageUrls: [PICTURE_NOT_FOUND],
-    labels: [{ name: "New Arrival", id: "na1" }],
-    rating: 4.5,
-  },
-  {
-    id: "1",
-    name: "Wireless Noise-Cancelling Headphones",
-    price: 129.99,
-    description: "Premium noise-cancelling over-ear headphones",
-    imageUrls: [PICTURE_NOT_FOUND],
-    labels: [{ name: "Best Seller", id: "bs1" }],
-    rating: 4.8,
-    discount: 15,
-  },
-  {
-    id: "2",
-    name: "Smart Fitness Watch",
-    price: 199.99,
-    description: "Waterproof smartwatch with fitness tracking",
-    imageUrls: [PICTURE_NOT_FOUND],
-    labels: [{ name: "New Arrival", id: "na1" }],
-    rating: 4.5,
-  },
-  {
-    id: "1",
-    name: "Wireless Noise-Cancelling Headphones",
-    price: 129.99,
-    description: "Premium noise-cancelling over-ear headphones",
-    imageUrls: [PICTURE_NOT_FOUND],
-    labels: [{ name: "Best Seller", id: "bs1" }],
-    rating: 4.8,
-    discount: 15,
-  },
-  {
-    id: "2",
-    name: "Smart Fitness Watch",
-    price: 199.99,
-    description: "Waterproof smartwatch with fitness tracking",
-    imageUrls: [PICTURE_NOT_FOUND],
-    labels: [{ name: "New Arrival", id: "na1" }],
-    rating: 4.5,
+    reviews: [], // Empty array for now
+    labels: [
+      { name: "New Arrival", id: "na1", createdAt: now, updatedAt: now },
+    ],
+    discount: 10, // 10% discount
+    isFeatured: false, // Not marked as featured
+    isActive: true, // Product is active
+    accountId: "user123", // Example account ID
+    marketType: "domestic", // Indicate that this is a domestic product
   },
 ];
 
@@ -119,7 +118,7 @@ const ProductsSection = () => {
         const res = await fetch("/api/products");
         if (!res.ok) throw new Error("Failed to fetch");
         const data = await res.json();
-        const productList =
+        const productList: Product[] =
           Array.isArray(data) && data.length > 0 ? data : mockProducts;
 
         setProducts(productList);
@@ -180,14 +179,17 @@ const ProductsSection = () => {
                 >
                   <ProductCard
                     id={product.id}
-                    brand={product.brand}
                     name={product.name}
-                    price={product.price}
                     description={product.description}
-                    imageUrl={product.imageUrls?.[0] || PICTURE_NOT_FOUND}
+                    price={product.price}
+                    imageUrl={product.imageUrls[0] || PICTURE_NOT_FOUND}
                     rating={product.rating}
-                    labels={product.labels?.[0]}
                     discount={product.discount}
+                    labels={product.labels.map((label) => ({
+                      ...label,
+                      createdAt: new Date(),
+                      updatedAt: new Date(),
+                    }))}
                   />
                 </div>
               ))}

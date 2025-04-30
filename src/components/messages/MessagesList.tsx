@@ -67,9 +67,9 @@ export default function MessagesList({
       <div className="overflow-y-auto">
         {conversations.map((conversation) => {
           const showUnread =
-            (userRole === "buyer" && conversation.sender === "seller") ||
-            (userRole === "seller" && conversation.sender === "buyer") ||
-            conversation.sender === "admin";
+            (userRole === "buyer" && conversation.senderRole === "seller") ||
+            (userRole === "seller" && conversation.senderRole === "buyer") ||
+            conversation.senderRole === "admin";
 
           return (
             <div
@@ -112,17 +112,19 @@ export default function MessagesList({
                 </div>
 
                 {/* Role-specific indicators */}
-                {userRole === "seller" && conversation.sender === "buyer" && (
-                  <span className="inline-block mt-1 text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded">
-                    Customer
-                  </span>
-                )}
-                {userRole === "buyer" && conversation.sender === "seller" && (
-                  <span className="inline-block mt-1 text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded">
-                    Seller
-                  </span>
-                )}
-                {conversation.sender === "admin" && (
+                {userRole === "seller" &&
+                  conversation.senderRole === "buyer" && (
+                    <span className="inline-block mt-1 text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded">
+                      Customer
+                    </span>
+                  )}
+                {userRole === "buyer" &&
+                  conversation.senderRole === "seller" && (
+                    <span className="inline-block mt-1 text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded">
+                      Seller
+                    </span>
+                  )}
+                {conversation.senderRole === "admin" && (
                   <span className="inline-block mt-1 text-xs bg-purple-100 text-purple-800 px-2 py-0.5 rounded">
                     Support
                   </span>

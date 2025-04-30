@@ -3,7 +3,7 @@ import { Seller } from "./market";
 
 // Product Types
 export type Product = {
-  id: number;
+  id: string;
   name: string;
   description: string;
   brand: Brand[];
@@ -77,8 +77,8 @@ export type ProductWithUser = Product & {
 
 // Review type
 export type Review = {
-  id: number; // Unique identifier for the review
-  accountId: number; // ID of the user who posted the review
+  id: string; // Unique identifier for the review
+  accountId: string; // ID of the user who posted the review
   rating: number; // Rating given in the review (e.g., out of 5)
   comment: string; // Text comment in the review
   createdAt: Date; // When the review was posted
@@ -106,7 +106,7 @@ export type ProductAvailabilityUpdate = {
 
 // Category Type
 export type Category = {
-  id: number;
+  id: string;
   name: string;
   description: string;
   createdAt: Date;

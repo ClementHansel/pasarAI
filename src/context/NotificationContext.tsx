@@ -10,6 +10,7 @@ import React, {
 import { Notification, NotificationContextType } from "@/types/notification";
 import {
   fetchNotifications,
+  HistoryResponse,
   updateNotificationStatus,
 } from "@/services/notification/notificationService";
 
@@ -33,7 +34,9 @@ export const NotificationProvider = ({
   useEffect(() => {
     const loadNotifications = async () => {
       try {
-        const fetchedNotifications = await fetchNotifications(accountId);
+        const response: HistoryResponse = await fetchNotifications(accountId);
+        const fetchedNotifications = response.notifications;
+
         setNotifications(fetchedNotifications);
         setUnreadCount(
           fetchedNotifications.filter((notif: Notification) => !notif.read)
@@ -94,7 +97,7 @@ export const NotificationProvider = ({
     setUnreadCount((prev) => prev - 1);
 
     try {
-      await updateNotificationStatus(id, "read");
+      await updateNotificationStatus(id, true);
     } catch (error) {
       console.error("Error updating notification status:", error);
     }
@@ -108,7 +111,7 @@ export const NotificationProvider = ({
     setUnreadCount(0);
 
     try {
-      await updateNotificationStatus("all", "read");
+      await updateNotificationStatus("all", true);
     } catch (error) {
       console.error("Error updating all notification statuses:", error);
     }

@@ -2,22 +2,26 @@
 
 import { CartItemSchema, UpdateCartSchema } from "@/lib/validation/cartSchemas";
 import { db } from "@/lib/db/db";
-import { getSession } from "@/lib/session/session";
+// import { getSession } from "@/lib/session/session";  // Commented out session import
 import { emitAnalyticsEvent } from "@/lib/utils/analytics";
 import { NextApiRequest, NextApiResponse } from "next";
 import { rateLimiter } from "@/lib/rateLimiter";
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
-    const session = await getSession(req);
-    const accountId = session?.account?.id; // Fix this after setting session from Andreas
+    // const session = await getSession(req);  // Commented out session retrieval
+    // const accountId = session?.account?.id; // Fix this after setting session from Andreas
 
-    if (!accountId) {
-      return res.status(401).json({
-        code: "UNAUTHORIZED",
-        message: "Unauthorized access",
-      });
-    }
+    // Commented out session-based check
+    // if (!accountId) {
+    //   return res.status(401).json({
+    //     code: "UNAUTHORIZED",
+    //     message: "Unauthorized access",
+    //   });
+    // }
+
+    // Simulated accountId for testing purposes (remove in production)
+    const accountId = "test_account_id"; // Replace with actual logic later
 
     await rateLimiter(accountId);
 

@@ -4,9 +4,9 @@ import type { CartItem } from "@/types/cart";
 
 export interface CartState {
   items: CartItem[];
-  addItem: (item: CartItem) => void;
-  removeItem: (id: string) => void;
-  updateQuantity: (id: string, quantity: number) => void;
+  addItem: (item: CartItem) => Promise<void>;
+  removeItem: (id: string) => Promise<void>;
+  updateQuantity: (id: string, quantity: number) => Promise<void>;
   clearCart: () => void;
   totalCount: () => number;
 }
@@ -15,7 +15,7 @@ export const useCartStore = create<CartState>()(
   persist(
     (set, get) => ({
       items: [],
-      addItem: (item: CartItem): void => {
+      addItem: async (item: CartItem): Promise<void> => {
         set((state) => {
           const exists = state.items.find((i) => i.id === item.id);
           if (exists) {
@@ -29,21 +29,50 @@ export const useCartStore = create<CartState>()(
           }
           return { items: [...state.items, item] };
         });
-        // TODO: POST to backend (e.g., /api/cart) to persist on server
+
+        try {
+          await fetch("/api/cart", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(item),
+          });
+        } catch (error) {
+          console.error("Failed to add item to cart", error);
+        }
       },
-      removeItem: (id: string): void => {
+      removeItem: async (id: string): Promise<void> => {
         set((state) => ({
           items: state.items.filter((i) => i.id !== id),
         }));
-        // TODO: DELETE from backend
+
+        try {
+          await fetch(`/api/cart/${id}`, {
+            method: "DELETE",
+          });
+        } catch (error) {
+          console.error("Failed to remove item from cart", error);
+        }
       },
-      updateQuantity: (id: string, quantity: number): void => {
+      updateQuantity: async (id: string, quantity: number): Promise<void> => {
         set((state) => ({
           items: state.items.map((i) =>
             i.id === id ? { ...i, quantity: Math.max(1, quantity) } : i
           ),
         }));
-        // TODO: PATCH to backend
+
+        try {
+          await fetch(`/api/cart/${id}`, {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ quantity }),
+          });
+        } catch (error) {
+          console.error("Failed to update item quantity", error);
+        }
       },
       clearCart: (): void => set({ items: [] }),
       totalCount: (): number =>
@@ -51,7 +80,6 @@ export const useCartStore = create<CartState>()(
     }),
     {
       name: "cart-storage", // name of item in localStorage
-      // Optionally, you can add migrations or custom serialize/deserialize
     }
   )
 );

@@ -15,7 +15,7 @@ const conversations: Conversation[] = [
     id: 1,
     title: "Conversation with John Doe",
     lastMessage: "Looking forward to our deal!",
-    sender: "buyer",
+    senderRole: "buyer",
     avatar: "/api/placeholder/40/40", // Placeholder avatar
     unreadCount: 2,
     lastActive: new Date().toISOString(),
@@ -24,7 +24,7 @@ const conversations: Conversation[] = [
     id: 2,
     title: "Conversation with Jane Smith",
     lastMessage: "Let me know if you have any questions.",
-    sender: "seller",
+    senderRole: "seller",
     avatar: "/api/placeholder/40/40", // Placeholder avatar
     unreadCount: 0,
     lastActive: new Date().toISOString(),
@@ -33,7 +33,7 @@ const conversations: Conversation[] = [
     id: 3,
     title: "Marketplace Support",
     lastMessage: "Your account has been approved!",
-    sender: "admin",
+    senderRole: "admin",
     avatar: "/api/placeholder/40/40", // Placeholder avatar
     unreadCount: 1,
     lastActive: new Date().toISOString(),
@@ -44,35 +44,35 @@ const allMessages: Message[] = [
   {
     id: 1,
     conversationId: 1,
-    sender: "buyer",
+    senderRole: "buyer",
     text: "Hello, I have some questions about the product.",
     timestamp: new Date(Date.now() - 1000 * 60 * 60).toISOString(), // 1 hour ago
   },
   {
     id: 2,
     conversationId: 1,
-    sender: "seller",
+    senderRole: "seller",
     text: "Sure! What would you like to know?",
     timestamp: new Date(Date.now() - 1000 * 60 * 30).toISOString(), // 30 minutes ago
   },
   {
     id: 3,
     conversationId: 2,
-    sender: "buyer",
+    senderRole: "buyer",
     text: "I'm interested in your product, can you provide more details?",
     timestamp: new Date(Date.now() - 1000 * 60 * 20).toISOString(), // 20 minutes ago
   },
   {
     id: 4,
     conversationId: 2,
-    sender: "seller",
+    senderRole: "seller",
     text: "Of course! Here are the details: The product is brand new and comes with a 1-year warranty. It's available in 3 colors.",
     timestamp: new Date(Date.now() - 1000 * 60 * 15).toISOString(), // 15 minutes ago
   },
   {
     id: 5,
     conversationId: 3,
-    sender: "admin",
+    senderRole: "admin",
     text: "Your account has been approved! Welcome to our marketplace.",
     timestamp: new Date(Date.now() - 1000 * 60 * 5).toISOString(), // 5 minutes ago
   },
@@ -119,7 +119,7 @@ export default function MessagePage() {
       const newMessage: Message = {
         id: Math.max(...messages.map((m) => m.id)) + 1,
         conversationId: selectedConversationId,
-        sender: userRole,
+        senderRole: userRole,
         text,
         timestamp: new Date().toISOString(),
       };

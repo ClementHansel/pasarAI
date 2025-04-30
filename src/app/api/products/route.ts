@@ -120,10 +120,20 @@ export async function GET(req: Request) {
     }
     */
 
-    // --- Pagination Calculations ---
+    // Search debounced
+    const search = searchParams.get("search");
+    if (search) {
+      filters.OR = [
+        { name: { contains: search, mode: "insensitive" } },
+        { description: { contains: search, mode: "insensitive" } },
+        { tags: { some: { name: { contains: search, mode: "insensitive" } } } },
+      ];
+    }
+
+    // Pagination Calculations
     const skip = (page - 1) * limit;
 
-    // --- Fetch Products ---
+    // Fetch Products
     const products = await db.product.findMany({
       where: filters,
       orderBy: orderBy.length > 0 ? orderBy : undefined,
@@ -131,7 +141,7 @@ export async function GET(req: Request) {
       take: limit,
       include: {
         categories: true,
-        account: true, // Fetch seller details
+        account: true,
         reviews: true,
         tags: true,
         labels: true,
@@ -142,7 +152,7 @@ export async function GET(req: Request) {
       where: filters,
     });
 
-    // --- Return Response ---
+    // Return Response
     return NextResponse.json({
       products,
       pagination: {

@@ -54,8 +54,8 @@ export default function MessageThread({
         {messages.map((message) => (
           <MessageBubble
             key={message.id}
-            senderId={message.sender}
-            sender={message.senderRole}
+            senderId={message.senderRole}
+            senderRole={message.senderRole}
             currentUserId={currentUserId}
             text={message.text}
             timestamp={formatTime(message.timestamp)}

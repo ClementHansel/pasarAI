@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { ShoppingCart, Star } from "lucide-react";
 import { toast } from "react-hot-toast";
+import { Label } from "@prisma/client";
 
 interface ProductCardProps {
   id: string;
@@ -13,7 +14,7 @@ interface ProductCardProps {
   description: string;
   imageUrl: string;
   rating?: number;
-  labels?: { name: string; id: string };
+  labels?: Label[];
   discount?: number;
   badgeText?: string;
 }

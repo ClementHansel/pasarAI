@@ -1,14 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { ProductType, ProductRegion, Product } from "@/types/product";
+import { useEffect, useState } from "react";
+import { ProductType, Product } from "@/types/product";
 import ProductCard from "./ProductCard";
-import { domesticProducts, globalProducts } from "@/lib/data/products";
 import { cn } from "@/lib/utils";
 
 interface ProductCategoryProps {
   type: ProductType;
-  products: Product[];
   searchTerm?: string;
   categoryFilter?: string;
   viewMode?: "grid" | "list";
@@ -17,95 +15,69 @@ interface ProductCategoryProps {
     subRegion?: string;
     city?: string;
   };
+  products: Product[];
   onCategoryChange?: (category: string) => void;
   onAddToCart?: (product: Product) => void; // Added onAddToCart prop
 }
 
 const ProductCategory = ({
   type,
-  products,
   searchTerm,
   categoryFilter,
   viewMode = "grid",
   selectedFilters = {},
 }: ProductCategoryProps) => {
-  const [filteredRegions, setFilteredRegions] = useState<ProductRegion[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Filter products based on the selected filters (region, subregion, city)
+  // Fetch filtered products from the backend
   useEffect(() => {
-    const marketData = type === "domestic" ? domesticProducts : globalProducts;
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const queryParams = new URLSearchParams({
+          type,
+          searchTerm: searchTerm || "",
+          categoryFilter: categoryFilter || "",
+          region: selectedFilters.region || "",
+          subRegion: selectedFilters.subRegion || "",
+          city: selectedFilters.city || "",
+        }).toString();
 
-    const filtered = marketData
-      .filter((region) => {
-        if (selectedFilters.region && region.name !== selectedFilters.region)
-          return false;
+        const response = await fetch(`/api/products?${queryParams}`);
 
-        return true;
-      })
-      .map((region) => ({
-        ...region,
-        subregions: region.subregions
-          .filter((sub) => {
-            if (
-              selectedFilters.subRegion &&
-              sub.name !== selectedFilters.subRegion
-            )
-              return false;
+        if (!response.ok) throw new Error("Failed to fetch products");
 
-            return true;
-          })
-          .map((sub) => ({
-            ...sub,
-            cities: sub.cities.filter((city) => {
-              if (selectedFilters.city && city.name !== selectedFilters.city)
-                return false;
+        const data: Product[] = await response.json();
+        setProducts(data);
+      } catch (error: unknown) {
+        if (error instanceof Error) {
+          setError(error.message || "Error fetching products");
+        } else {
+          setError("An unknown error occurred");
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
 
-              return true;
-            }),
-          })),
-      }));
+    fetchData();
+  }, [type, searchTerm, categoryFilter, selectedFilters]);
 
-    setFilteredRegions(filtered);
-  }, [type, selectedFilters]);
-
-  // Extract and filter the products from filtered regions
-  const allProducts = useMemo(() => {
-    return filteredRegions.flatMap((region) =>
-      region.subregions.flatMap((sub) =>
-        sub.cities.flatMap((city) =>
-          city.products.filter((product) => {
-            // Filter by search term
-            const matchesSearch = product.name
-              .toLowerCase()
-              .includes(searchTerm?.toLowerCase() || "");
-            // Filter by category if a category is selected
-            const matchesCategory =
-              !categoryFilter || product.category?.name === categoryFilter;
-            return matchesSearch && matchesCategory;
-          })
-        )
-      )
+  if (loading) {
+    return (
+      <div className="text-center py-12 text-gray-500">Loading products...</div>
     );
-  }, [filteredRegions, searchTerm, categoryFilter]);
+  }
 
-  // Add products that are directly passed through props if selectedFilters are empty
-  const filteredProducts = useMemo(() => {
-    if (Object.keys(selectedFilters).length === 0) {
-      return products.filter((product) => {
-        const matchesSearch = product.name
-          .toLowerCase()
-          .includes(searchTerm?.toLowerCase() || "");
-        const matchesCategory =
-          !categoryFilter || product.category?.name === categoryFilter;
-        return matchesSearch && matchesCategory;
-      });
-    }
-    return allProducts;
-  }, [selectedFilters, products, searchTerm, categoryFilter, allProducts]);
+  if (error) {
+    return <div className="text-center py-12 text-red-500">{error}</div>;
+  }
 
   return (
     <div className="space-y-6">
-      {filteredProducts.length === 0 ? (
+      {products.length === 0 ? (
         <div className="text-center py-12 text-gray-500 bg-gray-50 rounded-xl">
           No products found matching your criteria
         </div>
@@ -118,7 +90,7 @@ const ProductCategory = ({
               : "grid-cols-1"
           )}
         >
-          {filteredProducts.map((product) => (
+          {products.map((product: Product) => (
             <ProductCard key={product.id} {...product} viewMode={viewMode} />
           ))}
         </div>

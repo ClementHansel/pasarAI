@@ -106,8 +106,8 @@ model Account {
   auditLogs         AuditLog[]
   sessions          Session[]
   loginAttempts     LoginAttempt[]
-  currencyId        String          @unique
-  currency          Currency        @relation("AccountCurrency", fields: [currencyId], references: [id])
+  currencyId        String?          @unique
+  currency          Currency?        @relation("AccountCurrency", fields: [currencyId], references: [id])
 
   // Seller-specific relations
   cities           City[]           @relation("AccountCities")   // Sellers are associated with cities (multiple sellers can exist in a city)
@@ -257,6 +257,7 @@ model Order {
   buyerId         String
   status          OrderStatus   @default(PENDING)
   paymentStatus   PaymentStatus @default(PENDING)
+  paymentMethod   String
   shippingAddress String
   notes           String?
   totalPrice      Float
@@ -420,7 +421,7 @@ model Message {
   conversationId String
   conversation   Conversation @relation(fields: [conversationId], references: [id])
   senderId       String
-  sender         Account      @relation("SenderAccount", fields: [senderId], references: [id])
+  senderRole     Account      @relation("SenderAccount", fields: [senderId], references: [id])
   createdAt      DateTime     @default(now())
   accountId      String
   account        Account      @relation("AccountMessageOwner", fields: [accountId], references: [id])

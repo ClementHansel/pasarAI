@@ -116,12 +116,14 @@ const HeroSection = () => {
       <button
         className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/80 p-2 rounded-full hover:bg-white transition-colors"
         onClick={scrollPrev}
+        aria-label="Scroll Previous"
       >
         <ChevronLeft className="w-6 h-6" />
       </button>
       <button
         className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/80 p-2 rounded-full hover:bg-white transition-colors"
         onClick={scrollNext}
+        aria-label="Scroll Next"
       >
         <ChevronRight className="w-6 h-6" />
       </button>

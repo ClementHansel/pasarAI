@@ -2,7 +2,7 @@
 
 import { Notification } from "@/types/notification";
 
-type HistoryResponse = {
+export type HistoryResponse = {
   notifications: Notification[];
   pagination: {
     total: number;

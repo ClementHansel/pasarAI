@@ -3,9 +3,17 @@
 import { useState, useEffect, useRef } from "react";
 import AIChatHeader from "./AIChatHeader";
 import AIChatMessages, { Message as ChatMessage } from "./AIChatMessages";
-import MessageInput from "./MessageInput";
+import MessageInput from "./ChatInput";
 
-export default function AIChatPanel() {
+interface AIChatPanelProps {
+  fullPage?: boolean;
+  onClose: () => void;
+}
+
+export default function AIChatPanel({
+  fullPage = false,
+  onClose,
+}: AIChatPanelProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -31,8 +39,8 @@ export default function AIChatPanel() {
   }, [messages]);
 
   return (
-    <div className="flex flex-col h-full">
-      <AIChatHeader onClose={() => {}} />
+    <div className={`flex flex-col ${fullPage ? "h-screen" : "h-full"}`}>
+      <AIChatHeader onClose={onClose} />
 
       <div className="flex flex-col flex-1 overflow-y-auto p-4">
         {messages.length === 0 ? (

@@ -5,7 +5,7 @@ import { Check } from "lucide-react";
 
 export type MessageBubbleProps = {
   senderId: string;
-  sender: "admin" | "seller" | "buyer";
+  senderRole: "admin" | "seller" | "buyer";
   currentUserId: string;
   text: string;
   timestamp: string;
@@ -13,7 +13,7 @@ export type MessageBubbleProps = {
 
 export default function MessageBubble({
   senderId,
-  sender,
+  senderRole,
   currentUserId,
   text,
   timestamp,
@@ -23,9 +23,9 @@ export default function MessageBubble({
   const getBubbleStyles = () => {
     if (isSender) {
       return "bg-blue-600 text-white rounded-br-none";
-    } else if (sender === "admin") {
+    } else if (senderRole === "admin") {
       return "bg-purple-100 text-purple-800 rounded-bl-none";
-    } else if (sender === "seller") {
+    } else if (senderRole === "seller") {
       return "bg-green-100 text-green-800 rounded-bl-none";
     } else {
       return "bg-gray-200 text-gray-800 rounded-bl-none";

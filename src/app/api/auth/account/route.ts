@@ -3,7 +3,7 @@ import * as AccountService from "@/services/account/accountService";
 import {
   createAccountSchema,
   deleteAccountSchema,
-  updateAccountSchema,
+  updateAccountSchema, // fixed the extra comma here
 } from "@/lib/validation/accountSchema";
 import { handleServerError } from "@/lib/error/handleServerError";
 

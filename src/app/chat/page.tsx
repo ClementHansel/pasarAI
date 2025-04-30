@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import ChatSidebar from "@/components/chat/ChatSidebar";
 import ChatMessage, { Message } from "@/components/chat/AIChatMessages";
-import MessageInput from "@/components/chat/MessageInput";
+import MessageInput from "@/components/chat/ChatInput";
 
 const ChatPage = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -50,7 +50,7 @@ const ChatPage = () => {
         {/* Messages list: newest messages at bottom, flush above the input */}
         <div className="flex-1 flex flex-col-reverse overflow-y-auto p-4 pb-20">
           {messages.map((message) => (
-            <ChatMessage key={message.id} message={message} />
+            <ChatMessage key={message.id} messages={messages} />
           ))}
         </div>
 

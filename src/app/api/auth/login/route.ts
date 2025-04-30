@@ -36,9 +36,16 @@ export async function POST(req: Request) {
     // Find user
     const account = await findAccountByEmail(email);
 
-    if (!account || !(await comparePassword(password, account.password))) {
+    // Ensure account and account.email are valid
+    if (
+      !account ||
+      typeof account.email !== "string" ||
+      typeof account.password !== "string" || // ✅ add this check
+      !(await comparePassword(password, account.password))
+    ) {
+      // Explicitly cast email to string if it's null
       await logLoginAttempt({
-        email,
+        email: String(account?.email ?? "unknown"),
         success: false,
         ipAddress: ip,
         userAgent,
@@ -52,7 +59,7 @@ export async function POST(req: Request) {
 
     if (!account.isVerified) {
       await logLoginAttempt({
-        email,
+        email: (account?.email ?? "unknown") as string, // Ensure it's treated as a string
         success: false,
         ipAddress: ip,
         userAgent,
@@ -87,7 +94,7 @@ export async function POST(req: Request) {
     await updateLastLogin(account.id);
 
     await logLoginAttempt({
-      email,
+      email: account.email, // account.email is guaranteed to be a string here
       success: true,
       ipAddress: ip,
       userAgent,
