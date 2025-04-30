@@ -9,20 +9,54 @@ export type MessagesListProps = {
   conversations: Conversation[];
   onConversationSelect: (conversationId: number) => void;
   userRole: "admin" | "seller" | "buyer";
+  onDeleteConversation: (id: number) => Promise<void>;
+  onDeleteMultiple: (ids: number[]) => Promise<void>;
 };
 
 export default function MessagesList({
   conversations,
   onConversationSelect,
   userRole,
+  onDeleteConversation,
+  onDeleteMultiple,
 }: MessagesListProps) {
   const [selectedConversation, setSelectedConversation] = useState<
     number | null
   >(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedForDeletion, setSelectedForDeletion] = useState<number[]>([]);
 
   const handleConversationSelect = (conversationId: number) => {
-    setSelectedConversation(conversationId);
-    onConversationSelect(conversationId);
+    if (conversationId !== selectedConversation) {
+      setSelectedConversation(conversationId);
+      onConversationSelect(conversationId);
+    }
+  };
+
+  const toggleSelection = (id: number) => {
+    setSelectedForDeletion((prev) =>
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+    );
+  };
+
+  const handleDeleteSelected = async () => {
+    if (selectedForDeletion.length > 0) {
+      try {
+        await onDeleteMultiple(selectedForDeletion);
+        setSelectedForDeletion([]);
+      } catch (error) {
+        console.error("Error deleting selected conversations", error);
+      }
+    }
+  };
+
+  const handleDeleteSingle = async (e: React.MouseEvent, id: number) => {
+    e.stopPropagation();
+    try {
+      await onDeleteConversation(id);
+    } catch (error) {
+      console.error("Error deleting conversation", error);
+    }
   };
 
   const formatLastActive = (timestamp: string) => {
@@ -36,14 +70,20 @@ export default function MessagesList({
     }
   };
 
+  const filteredConversations = conversations.filter((conversation) =>
+    conversation.title?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
     <div className="bg-white">
-      {/* Search box */}
+      {/* Search Box */}
       <div className="p-3 border-b">
         <div className="relative">
           <input
             type="text"
             placeholder="Search messages..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full py-2 pl-9 pr-4 rounded-lg bg-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           <svg
@@ -63,24 +103,50 @@ export default function MessagesList({
         </div>
       </div>
 
-      {/* Conversations list */}
+      {/* Action bar for multi-delete */}
+      {selectedForDeletion.length > 0 && (
+        <div className="flex justify-between items-center px-4 py-2 bg-red-50 border-b">
+          <span className="text-sm text-red-700">
+            {selectedForDeletion.length} selected
+          </span>
+          <button
+            onClick={handleDeleteSelected}
+            className="text-sm text-red-600 hover:underline"
+          >
+            Delete Selected
+          </button>
+        </div>
+      )}
+
+      {/* Conversations List */}
       <div className="overflow-y-auto">
-        {conversations.map((conversation) => {
+        {filteredConversations.map((conversation) => {
           const showUnread =
             (userRole === "buyer" && conversation.senderRole === "seller") ||
             (userRole === "seller" && conversation.senderRole === "buyer") ||
             conversation.senderRole === "admin";
 
+          const isSelected = selectedForDeletion.includes(conversation.id);
+
           return (
             <div
               key={conversation.id}
               onClick={() => handleConversationSelect(conversation.id)}
-              className={`flex items-center p-3 cursor-pointer border-b hover:bg-gray-50 transition ${
+              className={`relative flex items-center p-3 cursor-pointer border-b hover:bg-gray-50 transition ${
                 selectedConversation === conversation.id ? "bg-blue-50" : ""
               }`}
             >
+              {/* Checkbox */}
+              <input
+                type="checkbox"
+                checked={isSelected}
+                onChange={() => toggleSelection(conversation.id)}
+                className="absolute left-3 top-5 z-10"
+                aria-label="checkbox"
+              />
+
               {/* Avatar */}
-              <div className="w-12 h-12 rounded-full bg-gray-300 flex-shrink-0 mr-3 overflow-hidden">
+              <div className="w-12 h-12 rounded-full bg-gray-300 flex-shrink-0 mr-3 ml-6 overflow-hidden">
                 <Image
                   width={40}
                   height={40}
@@ -94,7 +160,7 @@ export default function MessagesList({
               <div className="flex-1 min-w-0">
                 <div className="flex justify-between items-baseline">
                   <h3 className="font-medium text-gray-900 truncate">
-                    {conversation.title}
+                    {conversation.title ?? "Untitled"}
                   </h3>
                   <span className="text-xs text-gray-500">
                     {formatLastActive(conversation.lastActive)}
@@ -102,7 +168,7 @@ export default function MessagesList({
                 </div>
                 <div className="flex justify-between items-center mt-1">
                   <p className="text-sm text-gray-600 truncate pr-2">
-                    {conversation.lastMessage}
+                    {conversation.lastMessage ?? "No messages yet"}
                   </p>
                   {showUnread && conversation.unreadCount > 0 && (
                     <span className="bg-blue-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
@@ -111,7 +177,7 @@ export default function MessagesList({
                   )}
                 </div>
 
-                {/* Role-specific indicators */}
+                {/* Role labels */}
                 {userRole === "seller" &&
                   conversation.senderRole === "buyer" && (
                     <span className="inline-block mt-1 text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded">
@@ -130,6 +196,14 @@ export default function MessagesList({
                   </span>
                 )}
               </div>
+
+              {/* Delete button */}
+              <button
+                onClick={(e) => handleDeleteSingle(e, conversation.id)}
+                className="ml-2 text-red-500 text-xs hover:underline"
+              >
+                Delete
+              </button>
             </div>
           );
         })}

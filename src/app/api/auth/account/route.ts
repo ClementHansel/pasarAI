@@ -3,7 +3,7 @@ import * as AccountService from "@/services/account/accountService";
 import {
   createAccountSchema,
   deleteAccountSchema,
-  updateAccountSchema, // fixed the extra comma here
+,
 } from "@/lib/validation/accountSchema";
 import { handleServerError } from "@/lib/error/handleServerError";
 
@@ -58,7 +58,7 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    const updatedAccount = await AccountService.updateAccount(
+    const updateAccountSchema = await AccountService.updateAccountSchema(
       parsed.data.id,
       parsed.data
     );

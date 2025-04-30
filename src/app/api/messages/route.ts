@@ -1,3 +1,4 @@
+import { db } from "@/lib/db/db";
 import {
   GetMessagesSchema,
   MarkAsReadSchema,
@@ -85,6 +86,59 @@ export async function PATCH(req: NextRequest) {
     console.error("PATCH /api/messages error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}
+
+// DELETE /api/messages
+export async function DELETE(req: NextRequest) {
+  try {
+    // Retrieve the list of IDs from the request body
+    const { ids }: { ids: number[] } = await req.json();
+
+    // Validate the IDs
+    if (!Array.isArray(ids) || ids.some((id) => typeof id !== "number")) {
+      return NextResponse.json(
+        { error: "Invalid request: ids should be an array of numbers" },
+        { status: 400 }
+      );
+    }
+
+    // Convert the number array to a string array
+    const stringIds = ids.map((id) => id.toString());
+
+    // Example using Prisma to delete multiple records
+    const deletedConversations = await db.conversation.deleteMany({
+      where: {
+        id: {
+          in: stringIds, // Pass the string array
+        },
+      },
+    });
+
+    // Check if any conversation was deleted
+    if (deletedConversations.count === 0) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "No conversations found with the provided IDs",
+        },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      deletedCount: deletedConversations.count,
+    });
+  } catch (error) {
+    console.error("Error deleting conversations:", error);
+    return NextResponse.json(
+      {
+        success: false,
+        message: "An error occurred while deleting conversations",
+      },
       { status: 500 }
     );
   }

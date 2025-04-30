@@ -28,6 +28,7 @@ const PreviewItem: React.FC<PreviewItemProps> = ({ item, onRemove }) => {
             <button
               onClick={() => onRemove(item.id)}
               className="text-gray-400 hover:text-red-500"
+              aria-label="remove item from cart"
             >
               <Trash className="w-4 h-4" />
             </button>

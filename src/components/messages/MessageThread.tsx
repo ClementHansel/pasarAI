@@ -15,6 +15,7 @@ type MessageThreadProps = {
   conversationTitle: string;
   onSendMessage: (message: string) => void;
   onBack?: () => void;
+  loading?: boolean;
 };
 
 export default function MessageThread({

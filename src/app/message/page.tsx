@@ -1,98 +1,70 @@
-// src/app/message/page.tsx
-
-"use client";
-
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import MessagesList from "../../components/messages/MessagesList";
 import MessageThread from "../../components/messages/MessageThread";
 import NoConversationSelected from "../../components/messages/NoConversationSelected";
 import { Conversation, Message } from "../../types/message";
 import { useMediaQuery } from "../../hooks/useMediaQuery";
 
-// Sample data for conversations and messages
-const conversations: Conversation[] = [
-  {
-    id: 1,
-    title: "Conversation with John Doe",
-    lastMessage: "Looking forward to our deal!",
-    senderRole: "buyer",
-    avatar: "/api/placeholder/40/40", // Placeholder avatar
-    unreadCount: 2,
-    lastActive: new Date().toISOString(),
-  },
-  {
-    id: 2,
-    title: "Conversation with Jane Smith",
-    lastMessage: "Let me know if you have any questions.",
-    senderRole: "seller",
-    avatar: "/api/placeholder/40/40", // Placeholder avatar
-    unreadCount: 0,
-    lastActive: new Date().toISOString(),
-  },
-  {
-    id: 3,
-    title: "Marketplace Support",
-    lastMessage: "Your account has been approved!",
-    senderRole: "admin",
-    avatar: "/api/placeholder/40/40", // Placeholder avatar
-    unreadCount: 1,
-    lastActive: new Date().toISOString(),
-  },
-];
-
-const allMessages: Message[] = [
-  {
-    id: 1,
-    conversationId: 1,
-    senderRole: "buyer",
-    text: "Hello, I have some questions about the product.",
-    timestamp: new Date(Date.now() - 1000 * 60 * 60).toISOString(), // 1 hour ago
-  },
-  {
-    id: 2,
-    conversationId: 1,
-    senderRole: "seller",
-    text: "Sure! What would you like to know?",
-    timestamp: new Date(Date.now() - 1000 * 60 * 30).toISOString(), // 30 minutes ago
-  },
-  {
-    id: 3,
-    conversationId: 2,
-    senderRole: "buyer",
-    text: "I'm interested in your product, can you provide more details?",
-    timestamp: new Date(Date.now() - 1000 * 60 * 20).toISOString(), // 20 minutes ago
-  },
-  {
-    id: 4,
-    conversationId: 2,
-    senderRole: "seller",
-    text: "Of course! Here are the details: The product is brand new and comes with a 1-year warranty. It's available in 3 colors.",
-    timestamp: new Date(Date.now() - 1000 * 60 * 15).toISOString(), // 15 minutes ago
-  },
-  {
-    id: 5,
-    conversationId: 3,
-    senderRole: "admin",
-    text: "Your account has been approved! Welcome to our marketplace.",
-    timestamp: new Date(Date.now() - 1000 * 60 * 5).toISOString(), // 5 minutes ago
-  },
-];
+// Shared fetch utility
+const fetcher = async (url: string) => {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("Failed to fetch");
+  return res.json();
+};
 
 export default function MessagePage() {
-  // State management
   const [selectedConversationId, setSelectedConversationId] = useState<
     number | null
   >(null);
-  const [messages, setMessages] = useState<Message[]>(allMessages);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [userRole, setUserRole] = useState<"admin" | "seller" | "buyer">(
     "buyer"
   );
   const [showMessageList, setShowMessageList] = useState(true);
+  const [loadingMessages, setLoadingMessages] = useState(false);
 
-  // Check if it's a mobile view
   const isMobile = useMediaQuery("(max-width: 768px)");
 
-  // Handle conversation selection
+  // Fetch conversations on role change
+  useEffect(() => {
+    const loadConversations = async () => {
+      try {
+        const data = await fetcher(`/api/conversations?role=${userRole}`);
+        setConversations(data);
+      } catch (error) {
+        console.error("Error loading conversations:", error);
+      }
+    };
+    loadConversations();
+  }, [userRole]);
+
+  // Fetch messages when a conversation is selected
+  useEffect(() => {
+    if (!selectedConversationId) return;
+
+    const loadMessages = async () => {
+      try {
+        setLoadingMessages(true);
+        const data = await fetcher(
+          `/api/messages?conversationId=${selectedConversationId}`
+        );
+        setMessages(data);
+      } catch (error) {
+        console.error("Error loading messages:", error);
+      } finally {
+        setLoadingMessages(false);
+      }
+    };
+    loadMessages();
+  }, [selectedConversationId]);
+
+  // Role switcher
+  const toggleRole = () => {
+    setUserRole((prev) => (prev === "buyer" ? "seller" : "buyer"));
+  };
+
+  // Handle selecting a conversation (pass conversationId instead of full conversation)
   const handleConversationSelect = (conversationId: number) => {
     setSelectedConversationId(conversationId);
     if (isMobile) {
@@ -100,7 +72,7 @@ export default function MessagePage() {
     }
   };
 
-  // Handle back button for mobile
+  // Go back to message list on mobile
   const handleBack = () => {
     setShowMessageList(true);
     if (!isMobile) {
@@ -108,41 +80,67 @@ export default function MessagePage() {
     }
   };
 
-  // Handle role toggle (for demo purposes)
-  const toggleRole = () => {
-    setUserRole(userRole === "buyer" ? "seller" : "buyer");
-  };
+  // Send new message
+  const handleSendMessage = async (text: string) => {
+    if (!selectedConversationId || !text.trim()) return; // Prevent sending empty messages
 
-  // Handle sending a new message
-  const handleSendMessage = (text: string) => {
-    if (selectedConversationId) {
-      const newMessage: Message = {
-        id: Math.max(...messages.map((m) => m.id)) + 1,
-        conversationId: selectedConversationId,
-        senderRole: userRole,
-        text,
-        timestamp: new Date().toISOString(),
-      };
+    const newMessage: Omit<Message, "id"> = {
+      conversationId: selectedConversationId,
+      senderRole: userRole,
+      text,
+      timestamp: new Date().toISOString(),
+    };
 
-      setMessages((prev) => [...prev, newMessage]);
+    try {
+      const res = await fetch("/api/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newMessage),
+      });
+
+      if (!res.ok) throw new Error("Failed to send message");
+
+      const savedMessage = await res.json();
+      setMessages((prev) => [...prev, savedMessage]);
+    } catch (error) {
+      console.error("Error sending message:", error);
     }
   };
 
-  // Filter messages based on selected conversation
-  const filteredMessages = selectedConversationId
-    ? messages.filter(
-        (message) => message.conversationId === selectedConversationId
-      )
-    : [];
+  // Delete a single conversation
+  const handleDeleteConversation = async (id: number) => {
+    try {
+      await fetch(`/api/messages/${id}`, { method: "DELETE" });
+      setConversations((prev) => prev.filter((c) => c.id !== id));
+      setMessages((prev) => prev.filter((m) => m.conversationId !== id));
+    } catch (error) {
+      console.error("Error deleting conversation:", error);
+    }
+  };
 
-  // Get selected conversation details
+  // Delete multiple conversations
+  const handleDeleteMultiple = async (ids: number[]) => {
+    try {
+      await fetch(`/api/messages`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids }),
+      });
+      setConversations((prev) => prev.filter((c) => !ids.includes(c.id)));
+      setMessages((prev) =>
+        prev.filter((m) => !ids.includes(m.conversationId))
+      );
+    } catch (error) {
+      console.error("Error deleting multiple conversations:", error);
+    }
+  };
+
   const selectedConversation = conversations.find(
-    (conv) => conv.id === selectedConversationId
+    (c) => c.id === selectedConversationId
   );
 
   return (
     <div className="flex flex-col h-screen">
-      {/* Top bar with role toggle */}
       <div className="bg-gray-800 text-white p-4 flex justify-between items-center">
         <h1 className="text-xl font-bold">Messages</h1>
         <button
@@ -154,7 +152,7 @@ export default function MessagePage() {
       </div>
 
       <div className="flex flex-1 overflow-hidden">
-        {/* Messages List (hidden on mobile when conversation is selected) */}
+        {/* Left: Conversation List */}
         {(!isMobile || showMessageList) && (
           <div
             className={`${
@@ -169,14 +167,16 @@ export default function MessagePage() {
             <div className="flex-1 overflow-y-auto">
               <MessagesList
                 conversations={conversations}
-                onConversationSelect={handleConversationSelect}
+                onConversationSelect={handleConversationSelect} // Now passing conversationId (number)
                 userRole={userRole}
+                onDeleteConversation={handleDeleteConversation}
+                onDeleteMultiple={handleDeleteMultiple}
               />
             </div>
           </div>
         )}
 
-        {/* Message Thread (full width on mobile when conversation is selected) */}
+        {/* Right: Message Thread */}
         <div
           className={`flex-1 ${
             !isMobile || !showMessageList ? "block" : "hidden"
@@ -185,12 +185,13 @@ export default function MessagePage() {
           {selectedConversationId && selectedConversation ? (
             <MessageThread
               conversationId={selectedConversationId}
-              messages={filteredMessages}
+              messages={messages}
               currentUserId={userRole}
               userRole={userRole}
               conversationTitle={selectedConversation.title}
               onSendMessage={handleSendMessage}
               onBack={isMobile ? handleBack : undefined}
+              loading={loadingMessages}
             />
           ) : (
             <NoConversationSelected />

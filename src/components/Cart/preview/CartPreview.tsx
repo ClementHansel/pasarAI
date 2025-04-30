@@ -36,6 +36,7 @@ const CartPreview: React.FC<CartPreviewProps> = ({
         <button
           onClick={onClose}
           className="p-1 hover:bg-gray-100 rounded-full"
+          aria-label="close cart preview"
         >
           <X className="w-5 h-5" />
         </button>
