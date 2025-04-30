@@ -111,12 +111,13 @@ export const getAccountByEmail = async (email: string) => {
 
 // Create new account
 export const createAccount = async (
-  data: Prisma.AccountCreateInput & {
-    currency?: { name: string; description?: string };
+  data: Omit<Prisma.AccountCreateInput, "currency"> & {
+    currency?: Prisma.CurrencyCreateNestedOneWithoutAccountInput;
   },
   creatorRole: Role = "BUYER"
 ) => {
   try {
+    // Only ADMIN can assign roles other than BUYER
     if (creatorRole !== "ADMIN" && data.role && data.role !== "BUYER") {
       throw new PermissionError("Only admin can assign elevated roles.");
     }
@@ -128,15 +129,7 @@ export const createAccount = async (
       const accountData: Prisma.AccountCreateInput = {
         ...rest,
         role: roleToAssign,
-        currency: currency
-          ? {
-              create: {
-                name: currency.name,
-                description: currency.description ?? "",
-                accountId: rest.id ?? "", // Add accountId here to resolve the error
-              },
-            }
-          : undefined,
+        ...(currency ? { currency } : {}),
       };
 
       // Create the account

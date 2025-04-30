@@ -7,6 +7,7 @@ const prisma = new PrismaClient();
 export const categorizeProduct = async (productId: string) => {
   const product = await prisma.product.findUnique({
     where: { id: productId },
+    include: { categories: true },
   });
 
   // If the product doesn't exist, return early
@@ -66,5 +67,5 @@ export const categorizeProduct = async (productId: string) => {
   }
 
   // Return the category id of the product
-  return product.categoryId;
+  return product.categories.map((c) => c.id);
 };

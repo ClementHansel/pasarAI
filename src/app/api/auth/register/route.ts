@@ -89,7 +89,9 @@ export async function POST(req: Request) {
       province,
       city,
       profileImage,
-      currencyId,
+      currency: {
+        connect: { id: currencyId },
+      },
     });
 
     // Handle referral if a code was provided
