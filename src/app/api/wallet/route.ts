@@ -1,9 +1,9 @@
-import { PrismaClient } from "@prisma/client";
+import { PaymentStatus, PrismaClient } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 
 const prisma = new PrismaClient();
 
-// GET
+// GET: Fetch wallet and transactions
 export async function GET(req: NextRequest) {
   const accountId = req.nextUrl.searchParams.get("accountId");
 
@@ -17,6 +17,11 @@ export async function GET(req: NextRequest) {
   try {
     const wallet = await prisma.wallet.findUnique({
       where: { accountId },
+      include: {
+        transactions: {
+          orderBy: { createdAt: "desc" },
+        },
+      },
     });
 
     if (!wallet) {
@@ -24,63 +29,83 @@ export async function GET(req: NextRequest) {
     }
 
     return NextResponse.json(wallet);
-  } catch (error: unknown) {
+  } catch (error) {
     console.error("GET Wallet Error:", error);
     return NextResponse.json(
-      { error: "Internal Server Error" },
+      { error: "Internal server error" },
       { status: 500 }
     );
   }
 }
 
-// POST
+// POST: Create transaction and update wallet
 export async function POST(req: NextRequest) {
-  const { accountId, balance, currency } = await req.json();
+  const body = await req.json();
+  const { accountId, amount, type, method } = body;
 
-  if (!accountId || balance === undefined || !currency) {
+  if (!accountId || !amount || !type || !method) {
     return NextResponse.json(
-      { error: "accountId, balance, and currency are required" },
+      { error: "Missing required fields" },
       { status: 400 }
     );
   }
 
-  try {
-    const existing = await prisma.wallet.findUnique({ where: { accountId } });
+  const numericAmount = Number(amount);
+  if (isNaN(numericAmount) || numericAmount <= 0) {
+    return NextResponse.json({ error: "Invalid amount" }, { status: 400 });
+  }
 
-    if (existing) {
-      return NextResponse.json(
-        { error: "Wallet already exists" },
-        { status: 409 }
-      );
+  try {
+    const wallet = await prisma.wallet.findUnique({ where: { accountId } });
+
+    if (!wallet) {
+      return NextResponse.json({ error: "Wallet not found" }, { status: 404 });
     }
 
-    const wallet = await prisma.$transaction(async (tx) => {
-      const created = await tx.wallet.create({
-        data: { accountId, balance, currency },
-      });
+    let newBalance = wallet.balance;
 
-      await tx.walletTransactionLog.create({
-        data: {
-          walletId: created.id,
-          action: "CREATE",
-          newValue: created,
-        },
-      });
+    if (type === "withdraw" || type === "bills") {
+      if (numericAmount > wallet.balance) {
+        return NextResponse.json(
+          { error: "Insufficient balance" },
+          { status: 400 }
+        );
+      }
+      newBalance -= numericAmount;
+    } else {
+      newBalance += numericAmount;
+    }
 
-      return created;
+    // Create the transaction, including the account field explicitly
+    const transaction = await prisma.transaction.create({
+      data: {
+        accountId,
+        amount: numericAmount,
+        type,
+        status: PaymentStatus.COMPLETED,
+        method, // Include the method field (e.g., 'card', 'bank', etc.)
+        wallet: { connect: { accountId } }, // Link to the wallet
+        account: { connect: { id: accountId } }, // Connect the account explicitly
+      },
     });
 
-    return NextResponse.json(wallet, { status: 201 });
-  } catch (error: unknown) {
+    // Update the wallet balance
+    await prisma.wallet.update({
+      where: { accountId },
+      data: { balance: newBalance },
+    });
+
+    return NextResponse.json({ transaction, balance: newBalance });
+  } catch (error) {
     console.error("POST Wallet Error:", error);
     return NextResponse.json(
-      { error: "Failed to create wallet" },
+      { error: "Internal server error" },
       { status: 500 }
     );
   }
 }
 
-// PUT
+// PUT: Update wallet info
 export async function PUT(req: NextRequest) {
   const { id, balance, currency } = await req.json();
 
@@ -126,7 +151,7 @@ export async function PUT(req: NextRequest) {
   }
 }
 
-// DELETE
+// DELETE: Remove wallet
 export async function DELETE(req: NextRequest) {
   const { id } = await req.json();
 

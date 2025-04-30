@@ -330,7 +330,7 @@ model Transaction {
   accountId     String
   walletId      Int
   wallet        Wallet        @relation(fields: [walletId], references: [id])
-  Type          String // top-up, withdraw, payment
+  type          String // top-up, withdraw, payment
   order         Order?        @relation("OrderTransaction", fields: [orderId], references: [id])
   orderId       String?       @unique
   amount        Float
