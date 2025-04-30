@@ -1,9 +1,7 @@
-// src/components/wishlist/WishlistList.tsx
 "use client";
 
-import { useState, useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Currency } from "@/types/market";
-import { domesticProducts, globalProducts } from "@/lib/data/products";
 import WishlistCard from "./WishlistCard";
 import WishlistEmpty from "./WishlistEmpty";
 import Button from "../common/Button";
@@ -23,74 +21,89 @@ type WishlistItem = {
   };
 };
 
-// Mock data generator
-const generateMockWishlist = (): WishlistItem[] => {
-  const domesticItems = domesticProducts.flatMap((region) =>
-    region.subregions.flatMap((subregion) =>
-      subregion.cities.flatMap((city) =>
-        city.products.map((product) => ({
-          id: `domestic-${product.id}`,
-          productId: product.id.toString(),
-          marketId: `market-${city.id}`,
-          product: {
-            name: product.name,
-            image: product.imageUrls[0],
-            price: product.price,
-          },
-          market: {
-            name: city.name,
-            currency: Currency.IDR,
-          },
-        }))
-      )
-    )
-  );
+type WishlistResponse = {
+  items: WishlistItem[];
+};
 
-  const globalItems = globalProducts.flatMap((region) =>
-    region.subregions.flatMap((subregion) =>
-      subregion.cities.flatMap((city) =>
-        city.products.map((product) => ({
-          id: `global-${product.id}`,
-          productId: product.id.toString(),
-          marketId: `market-${city.id}`,
-          product: {
-            name: product.name,
-            image: product.imageUrls[0],
-            price: product.price,
-          },
-          market: {
-            name: city.name,
-            currency: Currency.USD,
-          },
-        }))
-      )
-    )
-  );
-
-  return [...domesticItems.slice(0, 3), ...globalItems.slice(0, 3)];
+type WishlistRemoveResponse = {
+  removed: boolean;
 };
 
 export default function WishlistList({ accountId }: { accountId: string }) {
-  const [wishlist, setWishlist] = useState<WishlistItem[]>(
-    generateMockWishlist()
-  );
+  const [wishlist, setWishlist] = useState<WishlistItem[]>([]);
   const [filter, setFilter] = useState<"all" | "domestic" | "global">("all");
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleRemove = useCallback((productId: string, marketId: string) => {
-    setWishlist((prev) =>
-      prev.filter(
-        (item) => !(item.productId === productId && item.marketId === marketId)
-      )
-    );
-  }, []);
+  const fetchWishlist = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/wishlist?accountId=${accountId}`);
+      if (!res.ok) {
+        throw new Error("Failed to fetch wishlist");
+      }
+      const data: WishlistResponse = await res.json();
+      setWishlist(data.items);
+    } catch (err) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("Error loading wishlist");
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  }, [accountId]);
+
+  useEffect(() => {
+    fetchWishlist();
+  }, [fetchWishlist]);
+
+  const handleRemove = useCallback(
+    async (productId: string, marketId: string) => {
+      try {
+        const res = await fetch("/api/wishlist", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ accountId, productId, marketId }),
+        });
+
+        const result: WishlistRemoveResponse = await res.json();
+        if (result.removed) {
+          setWishlist((prev) =>
+            prev.filter(
+              (item) =>
+                !(item.productId === productId && item.marketId === marketId)
+            )
+          );
+        }
+      } catch (err) {
+        console.error("Remove wishlist error:", err);
+      }
+    },
+    [accountId]
+  );
 
   const filteredItems = wishlist.filter((item) =>
     filter === "all"
       ? true
       : filter === "domestic"
       ? item.market.currency === Currency.IDR
-      : item.market.currency === Currency.USD
+      : item.market.currency !== Currency.IDR
   );
+
+  if (isLoading) {
+    return <div className="text-center text-gray-600">Loading wishlist...</div>;
+  }
+
+  if (error) {
+    return (
+      <div className="text-center text-red-500">
+        Failed to load wishlist: {error}
+      </div>
+    );
+  }
 
   if (!wishlist.length) {
     return <WishlistEmpty />;
@@ -98,7 +111,8 @@ export default function WishlistList({ accountId }: { accountId: string }) {
 
   return (
     <div>
-      <div className="flex flex-wrap gap-4">
+      {/* Filter buttons */}
+      <div className="flex flex-wrap gap-4 mb-4">
         <Button
           variant={filter === "all" ? "default" : "outline"}
           onClick={() => setFilter("all")}
@@ -134,6 +148,7 @@ export default function WishlistList({ accountId }: { accountId: string }) {
         </Button>
       </div>
 
+      {/* Wishlist cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredItems.map((item) => (
           <WishlistCard
