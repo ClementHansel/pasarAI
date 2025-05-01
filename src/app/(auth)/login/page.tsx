@@ -1,7 +1,7 @@
 // app/login/page.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import LoginForm from "@/components/auth/LoginForm";
@@ -13,34 +13,19 @@ export default function LoginPage() {
 
   const handleLogin = async (email: string, password: string) => {
     setIsLoading(true);
-
     try {
       const response = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
-
-      const data = await response.json();
-
+      const result = await response.json();
       if (!response.ok) {
-        throw new Error(data.message || "Authentication failed");
+        toast.error(result.error || "Login failed");
+        return;
       }
-
-      // Save authentication data
-      localStorage.setItem("accessToken", data.accessToken);
-      localStorage.setItem("refreshToken", data.refreshToken);
-      localStorage.setItem("user", JSON.stringify(data.user));
-
       toast.success("Login successful!");
-      router.push("/dashboard");
-    } catch (error) {
-      // Corrected error handling
-      if (error instanceof Error) {
-        toast.error(error.message);
-      } else {
-        toast.error("An unexpected error occurred");
-      }
+      router.push(result.redirectTo || "/market");
     } finally {
       setIsLoading(false);
     }
@@ -55,10 +40,9 @@ export default function LoginPage() {
             Welcome back! Please sign in to your account
           </p>
         </div>
-
-        {/* Login Form Component */}
-        <LoginForm onSubmit={handleLogin} isLoading={isLoading} />
-
+        <Suspense fallback={<div>Loading...</div>}>
+          <LoginForm isLoading={isLoading} onSubmit={handleLogin} />
+        </Suspense>
         <div className="flex items-center justify-between">
           <Link
             href="/forgot-password"

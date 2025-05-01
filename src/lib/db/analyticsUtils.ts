@@ -10,22 +10,23 @@ import {
   SalesFilters,
   TrendAnalysis,
 } from "@/types/agent/analytics";
-import { BuyerActivity } from "@/types/agent/analytics"; // Assuming BuyerActivity is defined similarly to SalesData
+import { BuyerActivity } from "@/types/agent/analytics";
 
 // Type for the sales response from the database
 type SaleFromDB = {
   amount: number;
   date: Date;
-  productId: number;
-  accountId: number;
+  productId: string; // Changed from number to string to match DB
+  accountId: string; // Changed from number to string to match DB
 };
 
 // Type for the buyer activity response from the database
 type ActivityFromDB = {
-  productId: number;
-  activityType: string; // e.g., 'view', 'purchase', etc.
+  productId: string;
+  accountId: string;
+  id: number;
+  activityType: string;
   date: Date;
-  accountId: number;
 };
 
 /**
@@ -48,8 +49,8 @@ export async function getSalesData(
         gte: new Date(dateFrom),
         lte: new Date(dateTo),
       },
-      ...(accountId !== "all" ? { accountId: Number(accountId) } : {}),
-      ...(productId ? { productId: Number(productId) } : {}),
+      ...(accountId !== "all" ? { accountId: accountId } : {}), // Remove Number() conversion
+      ...(productId ? { productId: productId } : {}), // Remove Number() conversion
       ...(category ? { category: category } : {}),
     };
 
@@ -66,7 +67,7 @@ export async function getSalesData(
     return salesData.map((sale) => ({
       startDate: filters.dateFrom,
       endDate: filters.dateTo,
-      productId: sale.productId.toString(),
+      productId: sale.productId, // No need for toString() since it's already a string
       quantity: sale.amount,
       totalRevenue: sale.amount,
       date: sale.date.toISOString(),
@@ -96,13 +97,14 @@ export async function getBuyerActivity(
         gte: new Date(dateFrom),
         lte: new Date(dateTo),
       },
-      accountId: Number(accountId),
-      ...(productId ? { productId: Number(productId) } : {}),
+      accountId: accountId, // Keep as string to match DB
+      ...(productId ? { productId: productId } : {}), // Keep as string to match DB
     };
 
     const activityData: ActivityFromDB[] = await db.activity.findMany({
       where: conditions,
       select: {
+        id: true,
         productId: true,
         activityType: true,
         date: true,
@@ -111,9 +113,9 @@ export async function getBuyerActivity(
     });
 
     return activityData.map((activity) => ({
-      productId: activity.productId.toString(),
+      productId: activity.productId,
       activityType: activity.activityType,
-      timestamp: activity.date.toISOString(), // Added timestamp field
+      timestamp: activity.date.toISOString(),
       date: activity.date.toISOString(),
     }));
   } catch (error) {

@@ -1,42 +1,33 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { toast } from "react-hot-toast";
-import { RegisterFormValues } from "@/lib/utils/validation/registerSchema";
+import { RegisterFormValues } from "@/lib/validation/registerSchema";
 import { useState } from "react";
 import { RegisterForm } from "@/components/auth/RegisterForm";
+import { toast } from "react-hot-toast";
+import { useRouter } from "next/navigation";
 
 export default function RegisterPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleRegister = async (data: RegisterFormValues) => {
+  const handleRegister = async (values: RegisterFormValues) => {
     setIsLoading(true);
     try {
       const response = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...data,
-          // Map frontend role names to backend if needed
-          role: data.role === "BUYER" ? "BUYER" : "SELLER",
-        }),
+        body: JSON.stringify(values),
       });
-
+      const result = await response.json();
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Registration failed");
+        toast.error(result.error || "Registration failed");
+        return;
       }
-
-      toast.success("Account created successfully!");
-      router.push("/login");
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        toast.error(err.message);
-      } else {
-        toast.error("An error occurred during registration");
-      }
+      toast.success(
+        `Account created for ${values.email || values.name}! Please log in.`
+      );
+      router.push(`/login?email=${encodeURIComponent(values.email)}`);
     } finally {
       setIsLoading(false);
     }
@@ -53,9 +44,7 @@ export default function RegisterPage() {
             Join our marketplace and start shopping or selling
           </p>
         </div>
-
-        <RegisterForm onSubmit={handleRegister} isLoading={isLoading} />
-
+        <RegisterForm isLoading={isLoading} onSubmit={handleRegister} />
         <p className="mt-4 text-center text-sm text-gray-600">
           Already have an account?{" "}
           <Link

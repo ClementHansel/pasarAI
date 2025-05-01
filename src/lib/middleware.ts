@@ -7,7 +7,7 @@ export interface AuthenticatedRequest extends NextRequest {
   user?: {
     id: string;
     email: string;
-    role: "user" | "seller"; // Specific role, either 'user' or 'seller'
+    role: "BUYER" | "SELLER";
   };
 }
 
@@ -18,7 +18,7 @@ export function verifyAccessToken(token: string) {
     const decoded = jwt.verify(token, JWT_SECRET) as {
       id: string;
       email: string;
-      role: "user" | "seller"; // Support both roles
+      role: "BUYER" | "SELLER";
     };
     return decoded;
   } catch (err) {
@@ -27,38 +27,80 @@ export function verifyAccessToken(token: string) {
   }
 }
 
-// Middleware to protect API routes and differentiate between user and seller
+// Enhanced middleware with public access support
 export function withAuth(
-  handler: (req: AuthenticatedRequest) => Promise<Response>
+  handler: (req: AuthenticatedRequest) => Promise<Response>,
+  options: {
+    allowedRoles?: ("BUYER" | "SELLER")[];
+    allowPublic?: boolean;
+  } = {}
 ) {
   return async (req: NextRequest) => {
     const authHeader = req.headers.get("authorization");
     const token = authHeader?.split(" ")[1];
 
+    // If no token is provided
     if (!token) {
-      return NextResponse.json({ error: "Missing token" }, { status: 401 });
+      // Allow public access if configured
+      if (options.allowPublic) {
+        return handler(req as AuthenticatedRequest);
+      }
+      return NextResponse.json(
+        { error: "Please login to access this resource" },
+        { status: 401 }
+      );
     }
 
     const user = verifyAccessToken(token);
 
     if (!user) {
+      // Allow public access if configured
+      if (options.allowPublic) {
+        return handler(req as AuthenticatedRequest);
+      }
       return NextResponse.json(
-        { error: "Invalid or expired token" },
+        { error: "Your session has expired. Please login again" },
         { status: 401 }
       );
     }
 
-    // Attach user info to the request object
-    (req as AuthenticatedRequest).user = user;
-
-    // You can now differentiate based on role if needed
-    if (user.role === "user") {
-      console.log("User is authenticated as a regular user");
-    } else if (user.role === "seller") {
-      console.log("User is authenticated as a seller");
+    // Role-based access control (only if roles are specified)
+    if (options.allowedRoles && !options.allowedRoles.includes(user.role)) {
+      return NextResponse.json(
+        {
+          error:
+            "Access denied. You don't have permission to access this resource",
+          requiredRole: options.allowedRoles,
+          currentRole: user.role,
+        },
+        { status: 403 }
+      );
     }
 
-    // Call the handler with the authenticated request
+    // Attach user info to request
+    (req as AuthenticatedRequest).user = user;
+
     return handler(req as AuthenticatedRequest);
   };
+}
+
+// Helper middleware for seller-only routes
+export function withSellerAuth(
+  handler: (req: AuthenticatedRequest) => Promise<Response>
+) {
+  return withAuth(handler, { allowedRoles: ["SELLER"] });
+}
+
+// Helper middleware for buyer-only routes
+export function withBuyerAuth(
+  handler: (req: AuthenticatedRequest) => Promise<Response>
+) {
+  return withAuth(handler, { allowedRoles: ["BUYER"] });
+}
+
+// Helper middleware for any authenticated user
+export function withAnyAuth(
+  handler: (req: AuthenticatedRequest) => Promise<Response>
+) {
+  return withAuth(handler, { allowedRoles: ["BUYER", "SELLER"] });
 }

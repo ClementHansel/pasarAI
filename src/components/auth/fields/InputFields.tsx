@@ -1,6 +1,5 @@
 // src/components/auth/fields/InputField.tsx
 import React from "react";
-// import { IconType } from "react-icons"; // Error here IconTypeNeverUsed
 
 interface InputFieldProps {
   icon: React.ReactElement;

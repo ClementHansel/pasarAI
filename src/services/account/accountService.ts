@@ -109,8 +109,10 @@ export const getAccountByEmail = async (email: string) => {
   }
 };
 
-// Create new account
+const isDevelopment = process.env.NODE_ENV === "development";
+
 export const createAccount = async (
+<<<<<<< Updated upstream
   data: Omit<Prisma.AccountCreateInput, "currency"> & {
     currency?: Prisma.CurrencyCreateNestedOneWithoutAccountInput;
   },
@@ -122,6 +124,13 @@ export const createAccount = async (
       throw new PermissionError("Only admin can assign elevated roles.");
     }
 
+=======
+  data: Prisma.AccountCreateInput & {
+    currency?: { name: string; description?: string };
+  }
+) => {
+  try {
+>>>>>>> Stashed changes
     const roleToAssign: Role = data.role ?? "BUYER";
     const { currency, ...rest } = data;
 
@@ -129,7 +138,21 @@ export const createAccount = async (
       const accountData: Prisma.AccountCreateInput = {
         ...rest,
         role: roleToAssign,
+<<<<<<< Updated upstream
         ...(currency ? { currency } : {}),
+=======
+        isVerified: isDevelopment ? true : false, // Auto-verify in development
+        emailVerifiedAt: isDevelopment ? new Date() : null, // Set verification date in development
+        currency: currency
+          ? {
+              create: {
+                name: currency.name,
+                description: currency.description ?? "",
+                accountId: rest.id ?? "",
+              },
+            }
+          : undefined,
+>>>>>>> Stashed changes
       };
 
       // Create the account
@@ -142,7 +165,9 @@ export const createAccount = async (
         data: {
           action: "CREATE_ACCOUNT",
           accountId: account.id,
-          reason: "Account created",
+          reason: isDevelopment
+            ? "Account created and auto-verified (development)"
+            : "Account created",
         },
       });
 

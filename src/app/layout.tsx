@@ -1,9 +1,11 @@
-import type { Metadata } from "next";
+"use client";
+
 import { Geist, Geist_Mono } from "next/font/google";
 import "@/styles/globals.css";
 import Header from "@/components/layout/homepage/header/Header";
 import Footer from "@/components/layout/homepage/Footer";
 import { WalletProvider } from "@/context/WalletContext";
+import { SessionProvider } from "next-auth/react";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -15,11 +17,6 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  title: "PasarAI",
-  description: "Marketplace for exporting local produce",
-};
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -30,11 +27,13 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-white text-black min-h-screen flex flex-col`}
       >
-        <Header />
-        <main className="flex-grow">
-          <WalletProvider>{children}</WalletProvider>
-        </main>
-        <Footer />
+        <SessionProvider>
+          <Header />
+          <main className="flex-grow">
+            <WalletProvider>{children}</WalletProvider>
+          </main>
+          <Footer />
+        </SessionProvider>
       </body>
     </html>
   );

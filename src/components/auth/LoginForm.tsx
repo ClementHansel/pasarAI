@@ -1,15 +1,17 @@
 import React, { useState } from "react";
 import { Eye, EyeOff, Mail, Lock } from "lucide-react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { toast } from "react-hot-toast";
 
 interface LoginFormProps {
-  onSubmit: (email: string, password: string) => void;
   isLoading: boolean;
+  onSubmit: (email: string, password: string) => void;
 }
 
-const LoginForm: React.FC<LoginFormProps> = ({ onSubmit, isLoading }) => {
-  const [email, setEmail] = useState("");
+const LoginForm: React.FC<LoginFormProps> = ({ isLoading, onSubmit }) => {
+  const params = useSearchParams();
+  const [email, setEmail] = useState(params.get("email") || "");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
@@ -17,6 +19,10 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSubmit, isLoading }) => {
     e.preventDefault();
     if (!email || !password) {
       toast.error("Please fill in all fields");
+      return;
+    }
+    if (!email.includes("@")) {
+      toast.error("Please enter a valid email address");
       return;
     }
     onSubmit(email, password);

@@ -4,21 +4,23 @@ import { FormContainer } from "./forms/FormContainer";
 import { PasswordField } from "./fields/PasswordField";
 import { RoleSelector } from "./fields/RoleSelector"; // Added missing import
 import { useRegisterForm } from "@/hooks/useRegisterForm";
-import { User, Mail, Phone, Home, MapPin, Image } from "lucide-react";
-import { RegisterFormValues } from "@/lib/utils/validation/registerSchema";
+import { User, Mail, Phone, Home, MapPin, ImageIcon } from "lucide-react";
 import { InputField } from "./fields/InputFields";
+import { RegisterFormValues } from "@/lib/validation/registerSchema";
+import { UserAvatar } from "@/components/common/UserAvatar";
 
 interface RegisterFormProps {
-  onSubmit: (values: RegisterFormValues) => void;
   isLoading: boolean;
+  onSubmit: (values: RegisterFormValues) => void;
 }
 
 export const RegisterForm: React.FC<RegisterFormProps> = ({
-  onSubmit,
   isLoading,
+  onSubmit,
 }) => {
   const {
     formData,
+    setFormData,
     errors,
     showPassword,
     handleChange,
@@ -26,6 +28,11 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
     setShowPassword,
     setRole,
   } = useRegisterForm({ onSubmit });
+
+  // Handler for currency dropdown
+  const handleCurrencyChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setFormData((prev) => ({ ...prev, currency: e.target.value }));
+  };
 
   return (
     <FormContainer onSubmit={handleSubmit}>
@@ -123,14 +130,24 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
 
       <InputField
         name="profileImage"
-        icon={<Image className="h-5 w-5 text-gray-400" aria-hidden="true" />}
-        label="Profile Image URL"
+        icon={
+          <ImageIcon className="h-5 w-5 text-gray-400" aria-hidden="true" />
+        }
+        label="Profile Image URL (optional)"
         type="url"
-        placeholder="Enter image URL (optional)"
+        placeholder="Leave empty for default avatar with your initials"
         value={formData.profileImage || ""}
         onChange={handleChange}
         error={errors.profileImage}
       />
+      {/* Avatar preview */}
+      <div className="flex justify-center my-4">
+        <UserAvatar
+          name={formData.name || "?"}
+          imageUrl={formData.profileImage}
+          size={48}
+        />
+      </div>
 
       <RoleSelector role={formData.role} setRole={setRole} />
 
@@ -143,6 +160,17 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
         value={formData.referralCode || ""}
         onChange={handleChange}
       />
+
+      <select
+        name="currency"
+        value={formData.currency || ""}
+        onChange={handleCurrencyChange}
+        className="block w-full mt-4 border rounded-lg"
+      >
+        <option value="">Select currency</option>
+        <option value="IDR">IDR (Indonesian Rupiah)</option>
+        <option value="USD">USD (US Dollar)</option>
+      </select>
 
       <button
         type="submit"

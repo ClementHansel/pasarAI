@@ -1,4 +1,3 @@
-import { Role } from "@prisma/client"; // Import the Role enum
 import { hashPassword } from "@/lib/auth/authUtils";
 import { generateReferralCode } from "@/lib/referral/referralUtils";
 import { validateEmail, validatePassword } from "@/lib/validation/utils";
@@ -8,10 +7,15 @@ import {
   getAccountByEmail,
   getAccountByReferralCode,
 } from "@/services/account/accountService";
+import { Role } from "@prisma/client"; // Import the Role enum
 import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
   try {
+    const body = await req.json();
+
+    console.log("Register API received body:", body);
+
     const {
       name,
       email,
@@ -24,11 +28,12 @@ export async function POST(req: Request) {
       province,
       city,
       profileImage,
-      currencyId,
-    } = await req.json();
+      // currencyId, // Only include this when backend is ready
+    } = body;
 
     // Basic validations
     if (!name || !email || !password) {
+      console.error("Missing required fields:", { name, email, password });
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 }
@@ -37,6 +42,7 @@ export async function POST(req: Request) {
 
     // Validate email and password
     if (!validateEmail(email)) {
+      console.error("Invalid email format:", email);
       return NextResponse.json(
         { error: "Invalid email format" },
         { status: 400 }
@@ -44,6 +50,7 @@ export async function POST(req: Request) {
     }
 
     if (!validatePassword(password)) {
+      console.error("Invalid password format");
       return NextResponse.json(
         {
           error:
@@ -53,19 +60,23 @@ export async function POST(req: Request) {
       );
     }
 
-    // Adjusted to use "BUYER" instead of "CONSUMER" in the role mapping.
+    // Map role string to Prisma Role enum
     let accountRole: Role = Role.BUYER; // Default to BUYER
     if (role === "SELLER") {
       accountRole = Role.SELLER;
     } else {
-      accountRole = Role.BUYER; // Default to BUYER for all other cases
+      accountRole = Role.BUYER;
     }
 
     // Check if the account already exists
     const existingAccount = await getAccountByEmail(email);
     if (existingAccount) {
+      // Return a clear error for the frontend
       return NextResponse.json(
-        { error: "Account already exists" },
+        {
+          error:
+            "An account with this email already exists. Please log in or use a different email.",
+        },
         { status: 409 }
       );
     }
@@ -99,25 +110,26 @@ export async function POST(req: Request) {
       const referrer = await getAccountByReferralCode(usedCode);
 
       if (referrer) {
-        // Create referral entry
+        // Create referral entry and generate vouchers
         await createReferralVouchers(referrer.id, newAccount.id);
-
-        // Generate referral vouchers for both referrer and referred
         await createReferralVouchers(referrer.id, newAccount.id);
       }
     }
 
     // Return successful response with minimal account info
-    return NextResponse.json({
-      message: "Account registered successfully",
-      account: {
-        id: newAccount.id,
-        email: newAccount.email,
-        name: newAccount.name,
-        role: newAccount.role,
-        referralCode: newReferralCode,
+    return NextResponse.json(
+      {
+        message: "Account registered successfully",
+        account: {
+          id: newAccount.id,
+          email: newAccount.email,
+          name: newAccount.name,
+          role: newAccount.role,
+          referralCode: newReferralCode,
+        },
       },
-    });
+      { status: 201 }
+    );
   } catch (error: unknown) {
     console.error("Register Error:", error);
 
