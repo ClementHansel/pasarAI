@@ -23,16 +23,16 @@ const ProductCard = ({
   viewMode = "grid",
   labels,
   brand,
+  seller,
 }: ProductCardProps) => {
   const discountedPrice = price * (1 - discount / 100);
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
-    // Add to cart logic here (e.g., dispatching to a cart context or local storage)
-    toast.success("Added to cart!");
+    toast.success(`${name} added to cart`);
+    // Add actual cart logic here
   };
 
-  // List View
   if (viewMode === "list") {
     return (
       <div className="group flex items-center gap-6 bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-300 border border-gray-100 hover:border-blue-300">
@@ -173,6 +173,16 @@ const ProductCard = ({
             >
               {stock > 0 ? `${stock} in stock` : "Out of stock"}
             </span>
+          </div>
+
+          <div className="mt-2">
+            <Link
+              href={`/seller/${sellerId}`}
+              onClick={(e) => e.stopPropagation()}
+              className="text-sm text-gray-500 hover:text-blue-600 hover:underline"
+            >
+              Sold by {sellerName}
+            </Link>
           </div>
         </div>
       </div>

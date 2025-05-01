@@ -2,7 +2,7 @@
 "use client";
 
 import React from "react";
-import { SellerProfileView } from "@/components/profile/SellerProfileView";
+import { SellerProfileView } from "@/components/seller/SellerProfileView";
 import { mockSellerProfile } from "@/lib/data/profile";
 
 export default function SellerProfilePage() {

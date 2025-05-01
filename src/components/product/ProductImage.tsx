@@ -3,78 +3,112 @@
 
 import Image from "next/image";
 import { useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, ZoomIn } from "lucide-react";
+import Dialog from "../ui/Dialog";
 
-export default function ProductImages({ images }: { images: string[] }) {
+export default function ProductImages({
+  images,
+  name,
+}: {
+  images: string[];
+  name: string;
+}) {
   const [selectedImage, setSelectedImage] = useState(0);
+  const [isZoomed, setIsZoomed] = useState(false);
+  const [startIndex, setStartIndex] = useState(0);
+
+  const visibleImages = images.slice(startIndex, startIndex + 3);
+
+  const handleNext = () => {
+    if (startIndex + 3 < images.length) {
+      setStartIndex((prev) => prev + 1);
+    }
+  };
+
+  const handlePrev = () => {
+    if (startIndex > 0) {
+      setStartIndex((prev) => prev - 1);
+    }
+  };
 
   return (
-    <div className="grid gap-4 lg:grid-cols-5">
-      {/* Main Image */}
-      <div className="lg:order-2 lg:col-span-4 relative group">
-        <div className="aspect-square overflow-hidden rounded-2xl bg-gray-100 relative">
+    <>
+      <div className="grid gap-4 group">
+        {/* Main Image */}
+        <div className="relative aspect-square overflow-hidden rounded-xl bg-gray-100 cursor-zoom-in">
           <Image
             src={images[selectedImage]}
-            alt={`Product image ${selectedImage + 1}`}
+            alt={`${name} - Main product image`}
             fill
-            className="object-cover"
+            className="object-cover transition-transform duration-300 hover:scale-105"
             priority
+            onClick={() => setIsZoomed(true)}
           />
 
-          {/* Navigation Arrows */}
-          {images.length > 1 && (
+          <button
+            className="absolute bottom-2 right-2 bg-white/90 p-2 rounded-full shadow-md hover:bg-white transition-opacity opacity-0 group-hover:opacity-100"
+            onClick={() => setIsZoomed(true)}
+          >
+            <ZoomIn className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Thumbnail Grid */}
+        <div className="relative grid grid-cols-3 gap-4">
+          {images.length > 3 && (
             <>
               <button
-                onClick={() =>
-                  setSelectedImage((prev) =>
-                    prev > 0 ? prev - 1 : images.length - 1
-                  )
-                }
-                className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/80 p-2 rounded-full shadow-md hover:bg-white transition-all opacity-0 group-hover:opacity-100"
-                aria-label="Previous Image"
+                onClick={handlePrev}
+                disabled={startIndex === 0}
+                className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/80 p-1 rounded-full shadow-md hover:bg-white z-10 disabled:opacity-50"
               >
-                <ChevronLeft className="w-6 h-6" />
+                <ChevronLeft className="w-5 h-5" />
               </button>
               <button
-                onClick={() =>
-                  setSelectedImage((prev) =>
-                    prev < images.length - 1 ? prev + 1 : 0
-                  )
-                }
-                className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/80 p-2 rounded-full shadow-md hover:bg-white transition-all opacity-0 group-hover:opacity-100"
-                aria-label="Next Image"
+                onClick={handleNext}
+                disabled={startIndex + 3 >= images.length}
+                className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/80 p-1 rounded-full shadow-md hover:bg-white z-10 disabled:opacity-50"
               >
-                <ChevronRight className="w-6 h-6" />
+                <ChevronRight className="w-5 h-5" />
               </button>
             </>
           )}
+
+          {visibleImages.map((image, index) => {
+            const actualIndex = startIndex + index;
+            return (
+              <button
+                key={actualIndex}
+                onClick={() => setSelectedImage(actualIndex)}
+                className={`relative aspect-square rounded-lg border-2 overflow-hidden transition-all ${
+                  selectedImage === actualIndex
+                    ? "border-primary ring-2 ring-primary"
+                    : "border-gray-200 hover:border-primary/50"
+                }`}
+              >
+                <Image
+                  src={image}
+                  alt={`${name} - Thumbnail ${actualIndex + 1}`}
+                  fill
+                  className="object-cover"
+                />
+              </button>
+            );
+          })}
         </div>
       </div>
 
-      {/* Thumbnails */}
-      {images.length > 1 && (
-        <div className="flex gap-4 lg:flex-col lg:col-span-1 overflow-x-auto pb-2">
-          {images.map((image, index) => (
-            <button
-              key={index}
-              onClick={() => setSelectedImage(index)}
-              className={`relative h-20 w-20 min-w-[5rem] rounded-lg border-2 overflow-hidden transition-all ${
-                selectedImage === index
-                  ? "border-blue-500"
-                  : "border-gray-200 hover:border-blue-300"
-              }`}
-              aria-label="Select Image"
-            >
-              <Image
-                src={image}
-                alt={`Thumbnail ${index + 1}`}
-                fill
-                className="object-cover"
-              />
-            </button>
-          ))}
+      {/* Zoom Modal */}
+      <Dialog open={isZoomed} onOpenChange={setIsZoomed}>
+        <div className="relative w-full max-w-4xl aspect-square">
+          <Image
+            src={images[selectedImage]}
+            alt={`${name} - Zoomed view`}
+            fill
+            className="object-contain"
+          />
         </div>
-      )}
-    </div>
+      </Dialog>
+    </>
   );
 }

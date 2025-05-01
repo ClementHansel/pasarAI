@@ -1,59 +1,55 @@
-// src\components\product\ProductFilter.tsx
 "use client";
 
 import { ChevronDown, LayoutList, LayoutGrid } from "lucide-react";
 import { useState, useRef, useCallback } from "react";
 
-export type ProductFilterProps = {
-  onSearchChange: (value: string) => void;
-  onCategoryChange: (value: string) => void;
-  onViewChange: (value: "list" | "grid") => void;
-  currentViewMode: "list" | "grid";
-};
+interface ProductFilterProps {
+  onSearch: (search: string) => void;
+  onCategoryChange: (category: string) => void;
+  onPriceChange: (min: number, max: number) => void;
+  onStockChange: (inStock: boolean) => void;
+  onSortChange: (sortBy: string) => void;
+}
 
 const ProductFilter = ({
-  onSearchChange,
+  onSearch,
   onCategoryChange,
-  onViewChange,
-  currentViewMode,
+  onPriceChange,
+  onStockChange,
+  onSortChange,
 }: ProductFilterProps) => {
   const [localSearch, setLocalSearch] = useState("");
   const [category, setCategory] = useState("");
+  const [minPrice, setMinPrice] = useState("");
+  const [maxPrice, setMaxPrice] = useState("");
+  const [inStock, setInStock] = useState(false);
+  const [sortBy, setSortBy] = useState("");
 
-  // Debounce setup
-  const searchTimeout = useRef<NodeJS.Timeout | null>(null);
+  // Maintain existing search debounce logic
+  useEffect(() => {
+    const timeout = setTimeout(() => onSearch(localSearch), 300);
+    return () => clearTimeout(timeout);
+  }, [localSearch, onSearch]);
 
-  const debouncedSearch = useCallback(
-    (value: string) => {
-      if (searchTimeout.current) {
-        clearTimeout(searchTimeout.current);
-      }
-      searchTimeout.current = setTimeout(() => {
-        onSearchChange(value);
-      }, 300); // Debounce delay
-    },
-    [onSearchChange]
-  );
+  // Handle price range changes
+  useEffect(() => {
+    onPriceChange(Number(minPrice), Number(maxPrice));
+  }, [minPrice, maxPrice, onPriceChange]);
 
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setLocalSearch(e.target.value);
-    debouncedSearch(e.target.value);
-  };
+  // Handle stock filter changes
+  useEffect(() => {
+    onStockChange(inStock);
+  }, [inStock, onStockChange]);
 
-  const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const selectedCategory = e.target.value;
-    setCategory(selectedCategory);
-    onCategoryChange(selectedCategory);
-  };
-
-  const handleViewChange = () => {
-    onViewChange(currentViewMode === "list" ? "grid" : "list");
-  };
+  // Handle sorting changes
+  useEffect(() => {
+    onSortChange(sortBy);
+  }, [sortBy, onSortChange]);
 
   return (
-    <div className="flex items-center gap-4 w-full">
+    <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 w-full">
       {/* Search Input */}
-      <div className="relative flex-1">
+      <div className="relative">
         <input
           type="text"
           placeholder="Search products..."
@@ -64,13 +60,15 @@ const ProductFilter = ({
         <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
       </div>
 
-      {/* Category Dropdown */}
+      {/* Category Filter */}
       <div className="relative">
         <select
           value={category}
-          onChange={handleCategoryChange}
-          aria-label="Product category"
-          className="appearance-none pl-4 pr-8 py-2 border border-gray-300 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          onChange={(e) => {
+            setCategory(e.target.value);
+            onCategoryChange(e.target.value);
+          }}
+          className="w-full appearance-none pl-4 pr-8 py-2 border border-gray-300 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
         >
           <option value="">All Categories</option>
           <option value="Vegetables">Vegetables</option>
@@ -80,18 +78,52 @@ const ProductFilter = ({
         <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
       </div>
 
-      {/* View Mode Toggle */}
+      {/* Price Range Filter */}
+      <div className="flex gap-2">
+        <input
+          type="number"
+          placeholder="Min price"
+          value={minPrice}
+          onChange={(e) => setMinPrice(e.target.value)}
+          className="w-1/2 pl-4 pr-2 py-2 border border-gray-300 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        />
+        <input
+          type="number"
+          placeholder="Max price"
+          value={maxPrice}
+          onChange={(e) => setMaxPrice(e.target.value)}
+          className="w-1/2 pl-4 pr-2 py-2 border border-gray-300 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        />
+      </div>
+
+      {/* Stock Filter */}
+      <div className="flex items-center gap-2 pl-4">
+        <input
+          type="checkbox"
+          id="stockFilter"
+          checked={inStock}
+          onChange={(e) => setInStock(e.target.checked)}
+          className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+        />
+        <label htmlFor="stockFilter" className="text-sm text-gray-700">
+          In Stock Only
+        </label>
+      </div>
+
+      {/* Sort Filter */}
       <div className="relative">
-        <button
-          onClick={handleViewChange}
-          className="py-2 px-4 border border-gray-300 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        <select
+          value={sortBy}
+          onChange={(e) => setSortBy(e.target.value)}
+          className="w-full appearance-none pl-4 pr-8 py-2 border border-gray-300 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
         >
-          {currentViewMode === "list" ? (
-            <LayoutGrid className="w-5 h-5" />
-          ) : (
-            <LayoutList className="w-5 h-5" />
-          )}
-        </button>
+          <option value="">Sort By</option>
+          <option value="price_asc">Price: Low to High</option>
+          <option value="price_desc">Price: High to Low</option>
+          <option value="name_asc">Name: A-Z</option>
+          <option value="name_desc">Name: Z-A</option>
+        </select>
+        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
       </div>
     </div>
   );
