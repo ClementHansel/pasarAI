@@ -8,9 +8,6 @@ export const categorizeProduct = async (productId: string) => {
   const product = await prisma.product.findUnique({
     where: { id: productId },
     include: { categories: true },
-    include: {
-      categories: true,
-    },
   });
 
   // If the product doesn't exist, return early

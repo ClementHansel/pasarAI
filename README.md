@@ -1,36 +1,79 @@
-Tdhis is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Sustainable Community Market Platform
+
+## Overview
+
+This platform is designed to foster sustainable community commerce by connecting buyers and sellers in local and global markets. It offers features such as authentication, market discovery, transactions, promotions, referrals, wishlists, and checkout/payment flows.
+
+## Features Status
+
+| Feature                        | Status           | Description                                                                                |
+| ------------------------------ | ---------------- | ------------------------------------------------------------------------------------------ |
+| Authentication & Authorization | In Progress      | Role-based signup, session & login flows implemented. Middleware and route guards pending. |
+| Market Discovery & Details     | Done (Minor Fix) | Landing page and product filters functional. Minor CSS/UX tweaks needed.                   |
+| Transactions & Promotions      | Needs Review     | Cart and voucher types defined. UI and logic need full integration.                        |
+| Unique: Local/Global Toggle    | Done             | Currency switch and advanced filters fully functional.                                     |
+| Referral System (Optional)     | In Progress      | Referral code generation and lookup implemented. UI integration pending.                   |
+| Wishlist (Optional)            | In Progress      | UI components available. Service and API endpoints under development.                      |
+| Checkout & Payment Flow        | UI Done          | Page layout and form UI complete. Payment gateway integration and validation pending.      |
+| Demo & Polish                  | Planned          | Seed data, SEO meta tags, confirmation dialogs, and responsive design to be finalized.     |
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- Node.js (version X.X.X or higher)
+- npm or yarn
+- Database setup (see Prisma schema and migrations)
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Installation
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. Clone the repository:
+   ```
+   git clone <repository-url>
+   ```
+2. Install dependencies:
+   ```
+   npm install
+   ```
+3. Set up environment variables as per `.env.example`.
+4. Run database migrations:
+   ```
+   npx prisma migrate deploy
+   ```
+5. Seed the database (optional):
+   ```
+   npx prisma db seed
+   ```
+6. Start the development server:
+   ```
+   npm run dev
+   ```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Project Structure
 
-## Learn More
+- `src/app/` - Main application pages and layouts.
+- `src/components/` - Reusable React components.
+- `src/services/` - Business logic and API service layers.
+- `src/lib/` - Utility functions, hooks, and context providers.
+- `src/types/` - TypeScript type definitions.
+- `prisma/` - Database schema and migration files.
+- `public/` - Static assets and images.
 
-To learn more about Next.js, take a look at the following resources:
+## Development Notes
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- Authentication uses role-based access control; middleware guards are in progress.
+- Market discovery includes product filtering and local/global toggling.
+- Transactions and promotions require further integration for end-to-end flow.
+- Referral system backend logic is implemented; UI integration is pending.
+- Wishlist UI components exist; backend services are under construction.
+- Checkout UI is complete; payment gateway integration is pending.
+- Demo and polish tasks include adding seed data, SEO improvements, and responsive design.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Contributing
 
-## Deploy on Vercel
+Please follow the standard Git workflow:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Fork the repository
+- Create a feature branch
+- Commit your changes with clear messages
+- Open a pull request for review
