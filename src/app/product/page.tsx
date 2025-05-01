@@ -66,10 +66,9 @@ const ProductPage = () => {
       setSearchInput(newFilters.search);
   }, []);
 
-  //
-  // const handleViewChange = useCallback((value: "list" | "grid") => {
-  //   setViewMode(value);
-  // }, []);
+  const handleViewChange = useCallback((value: "list" | "grid") => {
+    setViewMode(value);
+  }, []);
 
   const toggleProductType = useCallback((type: ProductType) => {
     setFilters((prev) => ({ ...prev, marketType: type }));
@@ -213,9 +212,7 @@ const ProductPage = () => {
             />
             <LocationFilter
               marketType={filters.marketType || "domestic"}
-              markets={
-                filters.marketType === "domestic" ? [] : [] // Replace with actual data
-              }
+              markets={filters.marketType === "domestic" ? [] : []}
               selectedFilters={{
                 region: filters.region || "",
                 subRegion: filters.subregion || "",
@@ -254,6 +251,29 @@ const ProductPage = () => {
           <div className="flex items-center gap-3 text-sm text-gray-500">
             <Sliders size={18} />
             <span>{viewMode === "grid" ? "Grid" : "List"} View</span>
+            <div className="flex items-center gap-3 text-sm text-gray-500">
+              <button
+                onClick={() => handleViewChange("grid")}
+                className={`flex items-center gap-1 px-2 py-1 rounded hover:text-black transition ${
+                  viewMode === "grid" ? "text-black font-semibold" : ""
+                }`}
+              >
+                <Grid size={18} />
+                <span>Grid</span>
+              </button>
+
+              <span className="text-gray-300">|</span>
+
+              <button
+                onClick={() => handleViewChange("list")}
+                className={`flex items-center gap-1 px-2 py-1 rounded hover:text-black transition ${
+                  viewMode === "list" ? "text-black font-semibold" : ""
+                }`}
+              >
+                <List size={18} />
+                <span>List</span>
+              </button>
+            </div>
           </div>
         </div>
 

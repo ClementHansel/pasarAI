@@ -8,7 +8,7 @@ import type { CartState } from "@/lib/cartStore";
 import type { Product } from "@/types/product";
 import ProductImages from "@/components/product/ProductImage";
 import ProductDetails from "@/components/product/ProductDetails";
-import { ProductDetailSkeleton } from "@/components/product/ProductDetailSkleton";
+import { ProductDetailSkeleton } from "@/components/product/ProductDetailSkeleton";
 import { Currency } from "@/types/market";
 
 export default function ProductDetailPage() {
@@ -52,8 +52,10 @@ export default function ProductDetailPage() {
   }, [params, router]);
 
   const handleAddToCart = (p: Product) => {
+    const id = `${p.id}-${p.marketId}`;
     addItem({
-      id: p.id.toString(),
+      id,
+      productId: p.id.toString(),
       name: p.name,
       price: p.price,
       discountedPrice: p.originalPrice ?? 0,

@@ -44,6 +44,7 @@ const ProductFilter = ({ value, onFilterChange }: ProductFilterProps) => {
             setLocal((l) => ({ ...l, categoryId: e.target.value }))
           }
           className="w-full appearance-none pl-4 pr-8 py-2 border border-gray-300 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          aria-label="Select Category"
         >
           <option value="">All Categories</option>
           <option value="Vegetables">Vegetables</option>
@@ -105,6 +106,7 @@ const ProductFilter = ({ value, onFilterChange }: ProductFilterProps) => {
             }))
           }
           className="w-full appearance-none pl-4 pr-8 py-2 border border-gray-300 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          aria-label="Sort By"
         >
           <option value="">Sort By</option>
           <option value="price_asc">Price: Low to High</option>
