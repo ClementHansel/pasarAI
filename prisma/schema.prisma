@@ -330,7 +330,7 @@ model Transaction {
   accountId     String
   walletId      Int
   wallet        Wallet        @relation(fields: [walletId], references: [id])
-  type          String // top-up, withdraw, payment
+  type          WalletTransactionType
   order         Order?        @relation("OrderTransaction", fields: [orderId], references: [id])
   orderId       String?       @unique
   amount        Float
@@ -541,6 +541,15 @@ enum OrderStatus {
   CANCELLED
   SHIPPED
   DELIVERED
+}
+
+enum WalletTransactionType {
+TOPUP
+INITIAL
+WITHDRAW
+REFUND
+BILLS
+REVENUE
 }
 
 enum PaymentStatus {

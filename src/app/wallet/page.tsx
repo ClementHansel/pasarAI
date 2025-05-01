@@ -1,6 +1,5 @@
-// src/app/wallet/page.tsx
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Tabs,
   TabsList,
@@ -16,71 +15,39 @@ import { Transaction } from "@/types/wallet";
 import { v4 as uuidv4 } from "uuid";
 
 const WalletPage = () => {
-  const [balance, setBalance] = useState(1500000);
+  const [balance, setBalance] = useState<number>(0);
   const [activeTab, setActiveTab] = useState("topup");
   const [amount, setAmount] = useState("");
   const [error, setError] = useState("");
   const [filter, setFilter] = useState<string>("all");
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
 
   // Mock user role - replace with actual auth implementation
   const userRole: "user" | "seller" = "seller";
 
-  const initialTransactions: Transaction[] = [
-    {
-      id: uuidv4(),
-      accountId: "demo-account",
-      amount: 1500000,
-      type: "initial",
-      status: "completed",
-      createdAt: new Date("2024-03-01T09:00:00"),
-      updatedAt: new Date("2024-03-01T09:00:00"),
-    },
-    {
-      id: uuidv4(),
-      accountId: "demo-account",
-      amount: 500000,
-      type: "topup",
-      status: "completed",
-      createdAt: new Date("2024-03-02T14:30:00"),
-      updatedAt: new Date("2024-03-02T14:30:00"),
-    },
-    {
-      id: uuidv4(),
-      accountId: "demo-account",
-      amount: 200000,
-      type: "withdraw",
-      status: "completed",
-      createdAt: new Date("2024-03-03T10:15:00"),
-      updatedAt: new Date("2024-03-03T10:15:00"),
-    },
-    {
-      id: uuidv4(),
-      accountId: "demo-account",
-      amount: 150000,
-      type: "bills",
-      status: "completed",
-      createdAt: new Date("2024-03-04T16:45:00"),
-      updatedAt: new Date("2024-03-04T16:45:00"),
-    },
-    ...(userRole === "seller"
-      ? [
-          {
-            id: uuidv4(),
-            accountId: "demo-account",
-            amount: 2500000,
-            type: "revenue",
-            status: "completed",
-            createdAt: new Date("2024-03-05T09:30:00"),
-            updatedAt: new Date("2024-03-05T09:30:00"),
-          } as const,
-        ]
-      : []),
-  ];
+  const accountId = "demo-account"; // This should be dynamically fetched via user authentication
 
-  const [transactions, setTransactions] =
-    useState<Transaction[]>(initialTransactions);
+  // Fetch wallet and transactions on component mount
+  useEffect(() => {
+    const fetchWalletData = async () => {
+      try {
+        const response = await fetch(`/api/wallet?accountId=${accountId}`);
+        const data = await response.json();
+        if (response.ok) {
+          setBalance(data.balance);
+          setTransactions(data.transactions);
+        } else {
+          setError(data.error || "Failed to fetch wallet data");
+        }
+      } catch {
+        setError("Error fetching wallet data");
+      }
+    };
 
-  const handleTransaction = (type: Transaction["type"]) => {
+    fetchWalletData();
+  }, []);
+
+  const handleTransaction = async (type: Transaction["type"]) => {
     const numericAmount = Number(amount);
     if (isNaN(numericAmount)) {
       setError("Please enter a valid amount");
@@ -92,28 +59,43 @@ const WalletPage = () => {
       return;
     }
 
-    const newBalance =
-      type === "topup" ? balance + numericAmount : balance - numericAmount;
+    try {
+      const response = await fetch("/api/wallet", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          accountId,
+          amount: numericAmount,
+          type,
+          method: "BANK_TRANSFER", // Placeholder for actual payment method
+        }),
+      });
 
-    setBalance(newBalance);
-
-    const now = new Date();
-
-    setTransactions([
-      ...transactions,
-      {
-        id: uuidv4(),
-        accountId: "demo-account",
-        amount: numericAmount,
-        type,
-        status: "completed",
-        createdAt: now,
-        updatedAt: now,
-      },
-    ]);
-
-    setAmount("");
-    setError("");
+      const data = await response.json();
+      if (response.ok) {
+        setBalance(data.balance);
+        setTransactions([
+          ...transactions,
+          {
+            id: uuidv4(),
+            accountId: accountId,
+            amount: numericAmount,
+            type,
+            status: "completed",
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+        ]);
+        setAmount("");
+        setError("");
+      } else {
+        setError(data.error || "Transaction failed");
+      }
+    } catch {
+      setError("Error processing transaction");
+    }
   };
 
   return (
@@ -272,24 +254,23 @@ const BillsPayment = () => {
         <p className="text-gray-500 text-sm">Select bill type and provider</p>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="space-y-4">
         {billTypes.map((bill) => (
           <Button
             key={bill.id}
-            variant={selectedBill === bill.id ? "default" : "outline"}
+            variant={selectedBill === bill.id ? "solid" : "outline"}
+            className="w-full"
             onClick={() => setSelectedBill(bill.id)}
-            className="h-24 flex flex-col gap-2"
           >
-            <span className="text-2xl">{bill.icon}</span>
-            {bill.name}
+            {bill.icon} {bill.name}
           </Button>
         ))}
       </div>
 
-      <Input placeholder="Customer ID / Account Number" />
-      <Input placeholder="Amount (Rp)" type="number" />
-
-      <Button className="w-full bg-blue-600 hover:bg-blue-700">
+      <Button
+        className="w-full bg-blue-600 hover:bg-blue-700"
+        onClick={() => alert("Bill Payment Success")}
+      >
         Pay Bill Now
       </Button>
     </div>

@@ -3,7 +3,7 @@ export interface WalletTransactionPayload {
   amount: number;
 }
 
-type TransactionType =
+export type TransactionType =
   | "topup"
   | "initial"
   | "withdraw"

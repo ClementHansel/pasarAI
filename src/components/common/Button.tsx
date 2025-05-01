@@ -13,7 +13,9 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
     | "global"
     | "default"
     | "outline"
-    | "destructive";
+    | "destructive"
+    | "solid"
+    | "outline";
   size?: "sm" | "md" | "lg";
   className?: string;
 }
