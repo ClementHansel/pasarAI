@@ -1,13 +1,13 @@
-// src/app/checkout/page.tsx
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useWallet } from "@/context/WalletContext";
 import Button from "@/components/common/Button";
 import ShippingForm from "@/components/checkout/ShippingForm";
 import DeliverySelector from "@/components/checkout/DeliverySelector";
 import OrderSummary from "@/components/common/OrderSummary";
+import axios from "axios";
 
 export default function CheckoutPage() {
   const { balance } = useWallet();
@@ -23,18 +23,32 @@ export default function CheckoutPage() {
     "standard"
   );
   const [error, setError] = useState<string | null>(null);
+  const [cartItems, setCartItems] = useState<
+    { id: string; name: string; price: number }[]
+  >([]);
+  const [loading, setLoading] = useState<boolean>(true);
 
-  // TODO: Replace with real cart data
-  const cartItems = [
-    { id: "1", name: "Product 1", price: 10.0 },
-    { id: "2", name: "Product 2", price: 15.0 },
-  ];
+  useEffect(() => {
+    // Fetch cart data from the API
+    const fetchCartData = async () => {
+      try {
+        const response = await axios.get("/api/cart"); // Replace with actual API endpoint
+        setCartItems(response.data.items); // Assuming response contains the items
+      } catch {
+        setError("Failed to load cart data.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCartData();
+  }, []);
 
   const totalPrice =
     cartItems.reduce((sum, item) => sum + item.price, 0) +
     (deliveryMethod === "express" ? 5.99 : 0);
 
-  const handleProceed = () => {
+  const handleProceed = async () => {
     const { fullName, address, city, postalCode } = shippingData;
     if (!fullName || !address || !city || !postalCode) {
       setError("Please complete all required shipping fields.");
@@ -45,9 +59,25 @@ export default function CheckoutPage() {
       return;
     }
     setError(null);
-    // Persist shippingData and deliveryMethod here
-    router.push("/payment");
+
+    try {
+      // Send shipping data and delivery method to the backend
+      await axios.post("/api/checkout", {
+        shippingData,
+        deliveryMethod,
+        totalPrice,
+      });
+
+      // Proceed to the payment page
+      router.push("/payment");
+    } catch {
+      setError("Failed to proceed to payment.");
+    }
   };
+
+  if (loading) {
+    return <p>Loading cart...</p>;
+  }
 
   return (
     <div className="flex flex-col lg:flex-row max-w-6xl mx-auto px-6 py-10 gap-8">
