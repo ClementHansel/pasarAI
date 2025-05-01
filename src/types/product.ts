@@ -142,3 +142,5 @@ export type ProductRegion = {
   subregions: ProductSubregion[];
   sellers: Seller[];
 };
+
+export type Currency = "USD" | "IDR" | string;
