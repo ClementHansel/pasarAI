@@ -28,7 +28,7 @@ export async function POST(req: Request) {
       province,
       city,
       profileImage,
-      // currencyId, // Only include this when backend is ready
+      currencyId,
     } = body;
 
     // Basic validations

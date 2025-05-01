@@ -1,3 +1,4 @@
+//src\components\product\ProductCategory.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -5,7 +6,7 @@ import { ProductType, Product } from "@/types/product";
 import ProductCard from "./ProductCard";
 import { cn } from "@/lib/utils";
 
-interface ProductCategoryProps {
+export interface ProductCategoryProps {
   type: ProductType;
   searchTerm?: string;
   categoryFilter?: string;
@@ -17,7 +18,7 @@ interface ProductCategoryProps {
   };
   products: Product[];
   onCategoryChange?: (category: string) => void;
-  onAddToCart?: (product: Product) => void; // Added onAddToCart prop
+  onAddToCart?: (product: Product) => void;
 }
 
 const ProductCategory = ({

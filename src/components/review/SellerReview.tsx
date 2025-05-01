@@ -7,7 +7,8 @@ import type { Review } from "@/types/review";
 interface SellerReviewProps {
   sellerId: string;
   currentUserId?: string;
-  currentUserRole?: "admin" | "seller" | "buyer";
+  currentUserRole?: "ADMIN" | "SELLER" | "BUYER";
+  reviews: Review[];
 }
 
 // Mock fetch — replace with real API call
@@ -59,8 +60,8 @@ export default function SellerReview({
   }, [sellerId]);
 
   const canManage =
-    currentUserRole === "admin" ||
-    (currentUserRole === "seller" && currentUserId === sellerId);
+    currentUserRole === "ADMIN" ||
+    (currentUserRole === "SELLER" && currentUserId === sellerId);
 
   return (
     <div className="w-full max-w-3xl mx-auto p-4">

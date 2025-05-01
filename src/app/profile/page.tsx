@@ -1,83 +1,105 @@
 // src/app/profile/page.tsx
-"use client";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { notFound, redirect } from "next/navigation";
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import ProductView from "@/components/product/ProductView";
+import SellerReview from "@/components/review/SellerReview";
+import { Account } from "@/types/account";
+import { Product } from "@/types/product";
+import { Review } from "@/types/review";
 
-export default function ProfileIndexPage() {
-  const router = useRouter();
+async function getAccountData(): Promise<Account | null> {
+  const res = await fetch(
+    `${process.env.NEXT_PUBLIC_SITE_URL}/api/account/me`,
+    {
+      cache: "no-cache",
+      credentials: "include",
+    }
+  );
+  if (!res.ok) return null;
+  return res.json();
+}
 
-  useEffect(() => {
-    // In a real app, you would check if the user is logged in
-    // and redirect to the appropriate profile page based on user type
-    // For demo purposes, we'll provide options to view either profile
-    // In a production app, you'd redirect directly to the correct profile
-  }, [router]);
+async function getSellerData(id: string): Promise<{
+  products: Product[];
+  reviews: Review[];
+}> {
+  const [productsRes, reviewsRes] = await Promise.all([
+    fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/products?sellerId=${id}`),
+    fetch(
+      `${process.env.NEXT_PUBLIC_SITE_URL}/api/reviews/seller?sellerId=${id}`
+    ),
+  ]);
+  const products = await productsRes.json();
+  const reviews = await reviewsRes.json();
+  return { products, reviews };
+}
+
+export default async function ProfilePage() {
+  const session = await getServerSession(authOptions);
+
+  if (!session) {
+    redirect("/auth/login");
+  }
+
+  const account = await getAccountData();
+
+  if (!account) {
+    notFound();
+  }
+
+  const isSeller = account.role.toUpperCase() === "SELLER";
+
+  let products: Product[] = [];
+  let reviews: Review[] = [];
+
+  if (isSeller) {
+    const sellerData = await getSellerData(account.id);
+    products = sellerData.products;
+    reviews = sellerData.reviews;
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <div className="bg-white p-8 rounded-xl shadow-md max-w-md w-full">
-        <h1 className="text-2xl font-bold text-center mb-6">
-          Profile Selection
-        </h1>
-        <p className="text-gray-600 mb-6 text-center">
-          Please select which profile type you&apos;d like to view:
+    <div className="p-4 space-y-4 max-w-6xl mx-auto">
+      {/* Section 1: Account Info */}
+      <div className="bg-white shadow p-6 rounded">
+        <h1 className="text-2xl font-bold text-gray-800">{account.name}</h1>
+        <p className="text-sm text-gray-500">
+          Logged in as a {account.role.toLowerCase()}
         </p>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div
-            onClick={() => router.push("/profile/user")}
-            className="border rounded-lg p-6 cursor-pointer hover:border-blue-500 hover:shadow-md transition-all text-center"
-          >
-            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-8 w-8 text-blue-600"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                />
-              </svg>
-            </div>
-            <h2 className="font-medium text-lg mb-1">User Profile</h2>
-            <p className="text-sm text-gray-500">
-              View customer profile with orders and wishlist
-            </p>
-          </div>
-
-          <div
-            onClick={() => router.push("/profile/seller")}
-            className="border rounded-lg p-6 cursor-pointer hover:border-green-500 hover:shadow-md transition-all text-center"
-          >
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-8 w-8 text-green-600"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
-                />
-              </svg>
-            </div>
-            <h2 className="font-medium text-lg mb-1">Seller Profile</h2>
-            <p className="text-sm text-gray-500">
-              View seller dashboard with analytics and products
-            </p>
-          </div>
-        </div>
       </div>
+
+      {/* Section 2: Products (Seller Only) */}
+      {isSeller && (
+        <div className="bg-white shadow p-6 rounded space-y-4">
+          <h2 className="text-xl font-semibold">Your Products</h2>
+          {products?.length > 0 ? (
+            <ProductView products={products} viewMode="grid" />
+          ) : (
+            <p className="text-gray-500">
+              You have not added any products yet.
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Section 3: Reviews (Seller Only) */}
+      {isSeller && (
+        <div className="bg-white shadow p-6 rounded space-y-4">
+          <h2 className="text-xl font-semibold">Customer Reviews</h2>
+          {reviews?.length > 0 ? (
+            <SellerReview
+              sellerId={account.id}
+              reviews={reviews}
+              currentUserId={account.id}
+              currentUserRole={account.role}
+            />
+          ) : (
+            <p className="text-gray-500">No reviews yet.</p>
+          )}
+        </div>
+      )}
     </div>
   );
 }

@@ -4,6 +4,7 @@ import ProductCard from "./ProductCard";
 
 interface ProductViewProps {
   products: Product[];
+  viewMode: "grid" | "list";
 }
 
 const ProductView = ({ products }: ProductViewProps) => {
