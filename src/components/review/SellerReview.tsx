@@ -1,8 +1,8 @@
 // src/components/review/SellerReview.tsx
 "use client";
 
-import { Review } from "@/types/reviews";
 import React, { useEffect, useState } from "react";
+import type { Review } from "@/types/review";
 
 interface SellerReviewProps {
   sellerId: string;
