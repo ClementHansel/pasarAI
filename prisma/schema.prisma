@@ -8,23 +8,23 @@ datasource db {
 }
 
 model Session {
-  id          String   @id @default(uuid())
-  accountId   String
+  id           String   @id @default(uuid())
+  accountId    String
   refreshToken String
-  userAgent   String?
-  ipAddress   String?
-  createdAt   DateTime @default(now())
-  expiresAt   DateTime
-  account     Account  @relation(fields: [accountId], references: [id])
+  userAgent    String?
+  ipAddress    String?
+  createdAt    DateTime @default(now())
+  expiresAt    DateTime
+  account      Account  @relation(fields: [accountId], references: [id])
 }
 
 model SessionActivity {
-  id         String   @id @default(uuid())
-  accountId  String
-  activity   String
-  ipAddress  String?
-  userAgent  String?
-  timestamp  DateTime @default(now())
+  id        String   @id @default(uuid())
+  accountId String
+  activity  String
+  ipAddress String?
+  userAgent String?
+  timestamp DateTime @default(now())
 }
 
 model AccountAction {
@@ -43,79 +43,137 @@ model ErrorLog {
 }
 
 model LoginAttempt {
-  id         String   @id @default(uuid())
-  email      String
-  success    Boolean
-  ipAddress  String?
-  userAgent  String?
-  createdAt  DateTime @default(now())
-  accountId  String?
-  account    Account? @relation(fields: [accountId], references: [id])
-  timestamp  DateTime @default(now())
+  id        String   @id @default(uuid())
+  email     String
+  success   Boolean
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  accountId String?
+  account   Account? @relation(fields: [accountId], references: [id])
+  timestamp DateTime @default(now())
 }
 
 model Account {
-  id              String    @id @default(cuid())
+  id              String            @id @default(cuid())
   name            String
-  email           String    @unique
-  password        String
+  email           String?           @unique
+  password        String?
   avatar          String?
-  role            Role      @default(BUYER)
+  role            Role              @default(BUYER)
   phone           String?
   address         String?
+  country         String?
+  province        String?
+  city            String?
   profileImage    String?
   ewallet         String?
-  isVerified      Boolean   @default(false)
+  isVerified      Boolean           @default(false)
   emailVerifiedAt DateTime?
-  tokenVersion    Int       @default(0)
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  referralCode    String    @unique @default("")
+  tokenVersion    Int               @default(0)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  referralCode    String?           @unique @default("")
   lastLoginAt     DateTime?
 
   // Self-referencing relation
-  referredById String?
-  referredBy   Account?          @relation("AccountReferrals", fields: [referredById], references: [id])
-  referrals    Account[]         @relation("AccountReferrals")
+  referredById   String?
+  referredBy     Account?           @relation("AccountReferrals", fields: [referredById], references: [id])
+  referrals      Account[]          @relation("AccountReferrals")
 
   // Other relations
-  referralsMade     Referral[]   @relation("Referrer")
-  referralsReceived Referral[]   @relation("Referred")
-  reviewsGiven    Review[]       @relation("AccountReviews")
-  reviewsReceived Review[]       @relation("SellerReviews")
-  eventLogs       EventLog[]     @relation("AccountLogs")
-  orders          Order[]        @relation("AccountOrders")
-  products        Product[]      @relation("AccountProducts")
-  brands          Brand[]        @relation("AccountBrands")
-  markets         Market[]       @relation("AccountMarkets")
-  wallets         Wallet[]
-  wallet_balance  Float          @default(0)
-  messagesSent    Message[]      @relation("SenderAccount")
-  messagesOwned   Message[]      @relation("AccountMessageOwner")
-  conversations   Conversation[] @relation("ConversationParticipants")
-  wishlists       Wishlist[]
-  activityType    ActivityType?
-  voucherType     VoucherType?
-  sales           Sales[]
-  activities      Activity[]
-  transaction     Transaction[]
-  cartItems       CartItem[]
-  auditLogs       AuditLog[]
-  sessions        Session[]
-  loginAttempts   LoginAttempt[]
+  referralsMade     Referral[]      @relation("Referrer")
+  referralsReceived Referral[]      @relation("Referred")
+  reviewsGiven      Review[]        @relation("AccountReviews")
+  reviewsReceived   Review[]        @relation("SellerReviews")
+  eventLogs         EventLog[]      @relation("AccountLogs")
+  orders            Order[]         @relation("AccountOrders")
+  products          Product[]       @relation("AccountProducts")
+  brands            Brand[]         @relation("AccountBrands")
+  markets           Market[]        @relation("AccountMarkets")
+  wallets           Wallet[]
+  wallet_balance    Float           @default(0)
+  messagesSent      Message[]       @relation("SenderAccount")
+  messagesOwned     Message[]        @relation("AccountMessageOwner")
+  conversations     Conversation[]  @relation("ConversationParticipants")
+  wishlists         Wishlist[]
+  activityType      ActivityType?
+  voucherType       VoucherType?
+  sales             Sales[]
+  activities        Activity[]
+  transaction       Transaction[]
+  cartItems         CartItem[]
+  auditLogs         AuditLog[]
+  sessions          Session[]
+  loginAttempts     LoginAttempt[]
+  currencyId        String?          @unique
+  currency          Currency?        @relation("AccountCurrency", fields: [currencyId], references: [id])
+
+  // Seller-specific relations
+  cities           City[]           @relation("AccountCities")   // Sellers are associated with cities (multiple sellers can exist in a city)
 }
 
 model Market {
   id          String     @id @default(cuid())
   name        String     @unique
   description String?
+  currencyId  String?
+  currency    Currency?  @relation(fields: [currencyId], references: [id])
   location    String     @default("Unknown")
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
   sellers     Account[]  @relation("AccountMarkets")
-  products    Product[] // Many-to-one relationship with products
+  products    Product[]  // Many-to-one relationship with products
+  marketType  String?
+  regionId    Int?    // Foreign key to Region
+  subRegionId Int?    // Foreign key to Subregion
+  cityId      Int?    // Foreign key to City
+  region      Region?    @relation(fields: [regionId], references: [id])
+  subRegion   SubRegion? @relation(fields: [subRegionId], references: [id])
+  city        City?      @relation(fields: [cityId], references: [id])
   revenue     Float      @default(0.0)
   wishlists   Wishlist[]
+  rating      Int?
+  productCount Int?
+  joinDate    String?
+  verified    Boolean?
+}
+
+model Region {
+  id          Int           @id @default(autoincrement())
+  name        String        @unique
+  description String?
+  subRegions  SubRegion[]
+  markets     Market[]
+}
+
+model SubRegion {
+  id         Int       @id @default(autoincrement())
+  name       String
+  description String?
+  region     Region    @relation(fields: [regionId], references: [id])
+  regionId   Int
+  cities     City[]
+  markets    Market[]
+}
+
+model City {
+  id            Int         @id @default(autoincrement())
+  name          String
+  description   String?
+  subRegion     SubRegion   @relation(fields: [subRegionId], references: [id])
+  subRegionId   Int
+  markets       Market[]
+  account       Account[]   @relation("AccountCities")
+}
+
+model Currency {
+  id          String    @id @default(cuid())
+  name        String
+  markets     Market[]
+  description String?
+  accountId   String
+  account     Account?  @relation("AccountCurrency")
 }
 
 model Product {
@@ -129,8 +187,7 @@ model Product {
   soldCount         Int         @default(0)
   unit              String?
   tags              Tag[]       @relation("ProductTags")
-  category          Category?   @relation(fields: [categoryId], references: [id])
-  categoryId        String?
+  categories        Category[] @relation("ProductCategories")
   brand             Brand?      @relation(fields: [brandId], references: [id])
   brandId           String?
   account           Account     @relation("AccountProducts", fields: [accountId], references: [id])
@@ -161,7 +218,7 @@ model Product {
 model Category {
   id        String    @id @default(cuid())
   name      String    @unique
-  product   Product[] // Products in this category
+  product   Product[] @relation("ProductCategories") // Products in this category
   label     String? // Optional: "Best Seller", "New Arrival", etc.
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -210,7 +267,7 @@ model Order {
   discountApplied Float         @default(0)
   shippedAt       DateTime?
   createdAt       DateTime      @default(now())
-  updatedAt       DateTime @updatedAt
+  updatedAt       DateTime      @updatedAt
   transaction     Transaction?  @relation("OrderTransaction")
   transactionId   String?
   eventLogs       EventLog[]
@@ -228,7 +285,6 @@ model OrderItem {
   quantity  Int
   price     Float
   createdAt DateTime @default(now())
- 
 }
 
 model Voucher {
@@ -274,18 +330,18 @@ model Transaction {
   accountId     String
   walletId      Int
   wallet        Wallet        @relation(fields: [walletId], references: [id])
-  Type          String        // top-up, withdraw, payment
+  type          String // top-up, withdraw, payment
   order         Order?        @relation("OrderTransaction", fields: [orderId], references: [id])
   orderId       String?       @unique
   amount        Float
-  method        String   // wallet, credit_card, etc.
+  method        String // wallet, credit_card, etc.
   paymentDate   DateTime      @default(now())
-  transactionId String?  // Optional: only for payments
+  transactionId String? // Optional: only for payments
   description   String?
   status        PaymentStatus @default(PENDING)
   createdAt     DateTime      @default(now())
-  updatedAt   DateTime @updatedAt
-  account       Account  @relation(fields: [accountId], references: [id])
+  updatedAt     DateTime      @updatedAt
+  account       Account       @relation(fields: [accountId], references: [id])
 }
 
 model EventLog {
@@ -365,7 +421,7 @@ model Message {
   conversationId String
   conversation   Conversation @relation(fields: [conversationId], references: [id])
   senderId       String
-  sender         Account      @relation("SenderAccount", fields: [senderId], references: [id])
+  senderRole     Account      @relation("SenderAccount", fields: [senderId], references: [id])
   createdAt      DateTime     @default(now())
   accountId      String
   account        Account      @relation("AccountMessageOwner", fields: [accountId], references: [id])
@@ -398,7 +454,7 @@ model Wishlist {
 model VoucherRedemptionLog {
   id         String   @id @default(cuid())
   voucherId  String
-  accountId     String?
+  accountId  String?
   redeemedAt DateTime @default(now())
   status     String // success, failed, duplicate, expired, etc.
   reason     String?
@@ -408,36 +464,36 @@ model VoucherRedemptionLog {
 
 model Notification {
   id        Int      @id @default(autoincrement())
-  accountId String   // User who the notification belongs to
+  accountId String // User who the notification belongs to
   title     String?
-  message   String   // The notification message
-  type      String   // The type of action (e.g., refund, cancel, reverse)
-  status    String   // Status of the notification (e.g., 'PENDING', 'SENT')
+  message   String // The notification message
+  type      String // The type of action (e.g., refund, cancel, reverse)
+  status    String // Status of the notification (e.g., 'PENDING', 'SENT')
   reason    String
   createdAt DateTime @default(now()) // Timestamp of creation
   updatedAt DateTime @updatedAt
 }
 
 model Payment {
-  id        Int      @id @default(autoincrement())
+  id        Int          @id @default(autoincrement())
   status    String
-  accountId    String
+  accountId String
   version   Int
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
   logs      PaymentLog[]
 }
 
 model PaymentLog {
-  id        Int      @id @default(autoincrement())
-  paymentId Int
-  action    String
-  reason    String
-  status    String
+  id          Int      @id @default(autoincrement())
+  paymentId   Int
+  action      String
+  reason      String
+  status      String
   description String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  payment   Payment  @relation(fields: [paymentId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  payment     Payment  @relation(fields: [paymentId], references: [id])
 }
 
 model AuditLog {
@@ -457,9 +513,10 @@ model CartItem {
   quantity  Int
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
-  account   Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  product   Product  @relation(fields: [productId], references: [id])
+
+  account Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+
   @@unique([accountId, productId]) // ensures each user has one entry per product
 }
 

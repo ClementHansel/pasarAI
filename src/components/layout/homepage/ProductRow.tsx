@@ -1,21 +1,24 @@
-// src/components/layout/homepage/ProductRow.tsx
-
 "use client";
 
 import React from "react";
-import ProductCard from "@/components/market/ProductCard";
+import ProductCard from "./ProductCard";
+import { Label } from "@prisma/client";
 
 interface ProductRowProps {
   title: string;
   products: Array<{
-    id: number; // Keep id as number here
+    id: string;
     name: string;
     price: number;
     description: string;
     imageUrls: string[];
-    labels?: { name: string; id: string }[];
+    rating?: number;
+    discount?: number;
+    labels?: Label[];
   }>;
 }
+
+const pictureNotFound = "/placeholder.png"; // fallback image path
 
 const ProductRow: React.FC<ProductRowProps> = ({ title, products }) => {
   return (
@@ -23,18 +26,35 @@ const ProductRow: React.FC<ProductRowProps> = ({ title, products }) => {
       <h2 className="text-2xl font-bold mb-4">{title}</h2>
       <div className="flex overflow-x-auto gap-4">
         {products.map((product) => {
-          const imageUrl = product.imageUrls?.[0] || "/placeholder.png";
-          const label = product.labels?.[0]; // Optional
+          const {
+            id,
+            name,
+            price,
+            description,
+            imageUrls,
+            rating = 0,
+            discount = 0,
+            labels = [
+              {
+                id: "bestseller",
+                name: "Bestseller",
+                createdAt: new Date(),
+                updatedAt: new Date(),
+              },
+            ],
+          } = product;
 
           return (
             <ProductCard
-              key={product.id}
-              id={product.id.toString()}
-              name={product.name}
-              price={product.price}
-              description={product.description}
-              imageUrl={imageUrl}
-              labels={label}
+              key={id}
+              id={id}
+              name={name}
+              description={description}
+              price={price}
+              imageUrl={imageUrls?.[0] || pictureNotFound}
+              rating={rating}
+              discount={discount}
+              labels={labels}
             />
           );
         })}

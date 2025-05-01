@@ -1,53 +1,190 @@
-import nodemailer from "nodemailer";
-import SMTPTransport from "nodemailer/lib/smtp-transport";
-import { getAccountById } from "../account/accountService";
+// src/services/notification/notificationService.ts
 
-// Create a transporter for Nodemailer
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    account: process.env.EMAIL_ACCOUNT,
-    pass: process.env.EMAIL_PASS,
-  },
-} as SMTPTransport.Options);
+import { Notification } from "@/types/notification";
 
-// Function to send email
+export type HistoryResponse = {
+  notifications: Notification[];
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+};
+
+// Async Email Queue
+export async function queueEmail(
+  subject: string,
+  recipient: string,
+  text: string
+): Promise<{ success: boolean; message?: string }> {
+  const res = await fetch("/api/notification/queueEmail", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ subject, recipient, text }),
+  });
+
+  if (!res.ok) {
+    const errMsg = await extractError(res);
+    logNotificationActivity("email-queue-failed", {
+      subject,
+      recipient,
+      error: errMsg,
+    });
+    throw new Error(errMsg);
+  }
+
+  const result = await res.json();
+  logNotificationActivity("email-queued", { subject, recipient });
+  return result;
+}
+
+// Used by admin dashboard or CRON process
+export async function processQueuedEmails(): Promise<{ processed: number }> {
+  const res = await fetch("/api/notification/processQueue", {
+    method: "POST",
+  });
+
+  if (!res.ok) {
+    const errMsg = await extractError(res);
+    logNotificationActivity("queue-process-failed", { error: errMsg });
+    throw new Error(errMsg);
+  }
+
+  const result = await res.json();
+  logNotificationActivity("queue-processed", { ...result });
+  return result;
+}
+
+// Core Email Sender
 export async function sendEmail(
   subject: string,
   recipient: string,
   text: string
-) {
-  const mailOptions = {
-    from: process.env.EMAIL_ACCOUNT,
-    to: recipient,
-    subject: subject,
-    text: text,
-  };
+): Promise<void> {
+  const res = await fetch("/api/notification/sendEmail", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ subject, recipient, text }),
+  });
 
-  try {
-    await transporter.sendMail(mailOptions);
-    console.log("Email sent successfully");
-  } catch (error) {
-    console.error("Error sending email:", error);
-    throw new Error("Email sending failed");
+  if (!res.ok) {
+    const errMsg = await extractError(res);
+    logNotificationActivity("email-failed", {
+      subject,
+      recipient,
+      error: errMsg,
+    });
+    throw new Error(errMsg);
   }
+
+  logNotificationActivity("email-sent", { subject, recipient });
 }
 
-// Function to simulate sending push, or email notifications
+// Create Notification
 export async function sendNotification(
   type: "email" | "push",
   accountId: string,
   title: string,
   message: string
-) {
-  if (type === "email") {
-    // Send email notification using Nodemailer
-    const account = await getAccountById(accountId);
-    if (account?.email) {
-      await sendEmail(title, account.email, message);
-    }
-  } else if (type === "push") {
-    // Handle push notification (you can integrate a push notification service here)
-    console.log("Push notification sent:", title, message);
+): Promise<Notification> {
+  const res = await fetch("/api/notification", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ accountId, type, title, message }),
+  });
+
+  if (!res.ok) {
+    const errMsg = await extractError(res);
+    logNotificationActivity("notification-send-failed", {
+      type,
+      accountId,
+      title,
+      error: errMsg,
+    });
+    throw new Error(errMsg);
+  }
+
+  const { notification } = (await res.json()) as { notification: Notification };
+  logNotificationActivity("notification-sent", { type, accountId, title });
+  return notification;
+}
+
+// Fetch Notifications
+export async function fetchNotifications(
+  accountId: string,
+  page = 1,
+  limit = 20
+): Promise<HistoryResponse> {
+  const url = `/api/notification/history?accountId=${encodeURIComponent(
+    accountId
+  )}&page=${page}&limit=${limit}`;
+  const res = await fetch(url);
+
+  if (!res.ok) {
+    const errMsg = await extractError(res);
+    throw new Error(errMsg);
+  }
+
+  return (await res.json()) as HistoryResponse;
+}
+
+// Mark Notification as Read
+export async function markNotificationAsRead(
+  notificationId: string
+): Promise<Notification> {
+  const res = await fetch(`/api/notification/${notificationId}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ read: true }),
+  });
+
+  if (!res.ok) {
+    const errMsg = await extractError(res);
+    throw new Error(errMsg);
+  }
+
+  const { notification } = (await res.json()) as { notification: Notification };
+  return notification;
+}
+
+// Update Notification Read Status
+export async function updateNotificationStatus(
+  notificationId: string,
+  read: boolean
+): Promise<Notification> {
+  const res = await fetch(`/api/notification/${notificationId}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ read }),
+  });
+
+  if (!res.ok) {
+    const errMsg = await extractError(res);
+    throw new Error(errMsg);
+  }
+
+  const { notification } = (await res.json()) as { notification: Notification };
+  return notification;
+}
+
+function logNotificationActivity(event: string, data: Record<string, unknown>) {
+  console.log(`[NotificationLog] ${event}:`, data);
+
+  // send to backend log service:
+  fetch("/api/log", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ event, data, timestamp: new Date().toISOString() }),
+  });
+}
+
+// Helper: Extract readable error
+async function extractError(res: Response): Promise<string> {
+  try {
+    const payload = await res.json();
+    return payload.error ?? res.statusText;
+  } catch {
+    return res.statusText;
   }
 }

@@ -1,33 +1,49 @@
 "use client";
-
 import { useState, useEffect } from "react";
 import { Notification } from "@/types/notification";
+import { useNotifications } from "@/hooks/useNotifications";
+import NotificationList from "@/components/notifications/NotificationList";
+import NotificationDetail from "@/components/notifications/NotificationDetail";
 import {
   fetchNotifications,
   markNotificationAsRead,
-} from "@/services/notification/notificationService";
-import NotificationList from "@/components/notifications/NotificationList";
-import NotificationDetail from "@/components/notifications/NotificationDetail";
+} from "@/services/notification/notificationService"; // Import the API service
 
 export default function NotificationPage() {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const accountId = "user123"; // Replace with actual account ID
+
+  const { notifications, loading, error, setNotifications } =
+    useNotifications(accountId); // Using the hook
+
   const [selectedNotification, setSelectedNotification] =
     useState<Notification | null>(null);
 
-  // Fetch notifications when the component mounts
+  // Fetch notifications when component mounts
   useEffect(() => {
-    const notificationsData = fetchNotifications();
-    setNotifications(notificationsData);
-  }, []);
+    const loadNotifications = async () => {
+      try {
+        const data = await fetchNotifications(accountId); // Fetch from backend API
+        setNotifications(data.notifications); // Update notifications in the state
+      } catch (err) {
+        console.error("Error loading notifications:", err);
+      }
+    };
+
+    loadNotifications();
+  }, [accountId, setNotifications]); // Dependencies to trigger the effect
 
   // Handle marking a notification as read
-  const handleMarkAsRead = (id: number) => {
-    markNotificationAsRead(id);
-    setNotifications((prevNotifications) =>
-      prevNotifications.map((notif) =>
+  const handleMarkAsRead = async (id: string) => {
+    try {
+      await markNotificationAsRead(id); // Mark the notification as read in the backend
+      // Directly update notifications to mark the notification as read
+      const updatedNotifications = notifications.map((notif) =>
         notif.id === id ? { ...notif, read: true } : notif
-      )
-    );
+      );
+      setNotifications(updatedNotifications); // Set the updated notifications
+    } catch (err) {
+      console.error("Error marking notification as read:", err);
+    }
   };
 
   // Handle selecting a notification to view its detail
@@ -46,7 +62,12 @@ export default function NotificationPage() {
       {/* Notification List on the left */}
       <div className="flex-1 max-w-sm">
         <h1 className="text-2xl font-semibold mb-4">Notifications</h1>
+        {loading && <div className="text-blue-500">Loading...</div>}{" "}
+        {/* Show loading spinner */}
+        {error && <div className="text-red-500">{error}</div>}{" "}
+        {/* Display error if exists */}
         <NotificationList
+          accountId={accountId} // Pass accountId here
           notifications={notifications}
           onNotificationClick={handleNotificationClick}
         />

@@ -1,25 +1,29 @@
 // src/types/next-auth.d.ts
-import NextAuth from "next-auth";
+import "next-auth";
+import "next-auth/jwt";
 
 declare module "next-auth" {
   interface Session {
-    account?: {
-      id: string;
-      
-      // Add other custom properties to the session here (Andreas)
-    };
-
     user: {
-      /** The user's postal address. */
-      address: string
-      } & DefaultSession["user"]
+      id: string;
+      email: string;
+      role: string;
+    };
+  }
+
+  interface User {
+    id: string;
+    email: string;
+    role: string;
   }
 }
 
 declare module "next-auth/jwt" {
-  /** Returned by the `jwt` callback and `getToken`, when using JWT sessions */
   interface JWT {
-      /** OpenID ID Token */
-      idToken?: string
+    id: string;
+    email: string;
+    role: string;
   }
-  }
+}
+
+export {};

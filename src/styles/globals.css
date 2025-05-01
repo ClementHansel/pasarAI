@@ -3,6 +3,44 @@
 
 @custom-variant dark (&:is(.dark *));
 
+.underline-hover-effect {
+  position: relative;
+  display: inline-block; /* Ensure the pseudo-element is contained */
+}
+
+.underline-hover-effect::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  height: 2px; /* Adjust thickness as needed */
+  background-color: black; /* Replace with your theme's primary color */
+  transition: width 0.3s ease-in-out;
+}
+
+.underline-hover-effect:hover::after {
+  width: 100%;
+}
+
+.embla {
+  overflow: hidden;
+}
+
+.embla__container {
+  display: flex;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -khtml-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.embla__slide {
+  position: relative;
+  flex: 0 0 100%;
+  min-width: 0;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);

@@ -1,24 +1,39 @@
-import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
 import { hashPassword } from "@/lib/auth/authUtils";
 import { generateReferralCode } from "@/lib/referral/referralUtils";
-import { createReferralVouchers } from "@/lib/voucher/generateVoucherCode";
 import { validateEmail, validatePassword } from "@/lib/validation/utils";
-
-const prisma = new PrismaClient();
+import { createReferralVouchers } from "@/lib/voucher/generateVoucherCode";
+import {
+  createAccount,
+  getAccountByEmail,
+  getAccountByReferralCode,
+} from "@/services/account/accountService";
+import { Role } from "@prisma/client"; // Import the Role enum
+import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
   try {
+    const body = await req.json();
+
+    console.log("Register API received body:", body);
+
     const {
       name,
       email,
       password,
       role,
       referralCode: usedCode,
-    } = await req.json();
+      phone,
+      address,
+      country,
+      province,
+      city,
+      profileImage,
+      // currencyId, // Only include this when backend is ready
+    } = body;
 
     // Basic validations
     if (!name || !email || !password) {
+      console.error("Missing required fields:", { name, email, password });
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 }
@@ -27,6 +42,7 @@ export async function POST(req: Request) {
 
     // Validate email and password
     if (!validateEmail(email)) {
+      console.error("Invalid email format:", email);
       return NextResponse.json(
         { error: "Invalid email format" },
         { status: 400 }
@@ -34,6 +50,7 @@ export async function POST(req: Request) {
     }
 
     if (!validatePassword(password)) {
+      console.error("Invalid password format");
       return NextResponse.json(
         {
           error:
@@ -43,17 +60,23 @@ export async function POST(req: Request) {
       );
     }
 
-    // Determine the account role with fallback
-    const accountRole =
-      role && (role === "SELLER" || role === "ACCOUNT") ? role : "ACCOUNT";
+    // Map role string to Prisma Role enum
+    let accountRole: Role = Role.BUYER; // Default to BUYER
+    if (role === "SELLER") {
+      accountRole = Role.SELLER;
+    } else {
+      accountRole = Role.BUYER;
+    }
 
     // Check if the account already exists
-    const existingAccount = await prisma.account.findUnique({
-      where: { email },
-    });
+    const existingAccount = await getAccountByEmail(email);
     if (existingAccount) {
+      // Return a clear error for the frontend
       return NextResponse.json(
-        { error: "Account already exists" },
+        {
+          error:
+            "An account with this email already exists. Please log in or use a different email.",
+        },
         { status: 409 }
       );
     }
@@ -64,57 +87,52 @@ export async function POST(req: Request) {
     // Generate a new referral code
     const newReferralCode = generateReferralCode();
 
-    // Create a new account in a transaction to ensure atomicity
-    const newAccount = await prisma.$transaction(async (prisma) => {
-      // Create account first
-      const account = await prisma.account.create({
-        data: {
-          name,
-          email,
-          password: hashedPassword,
-          role: accountRole,
-          referralCode: newReferralCode,
-        },
-      });
-
-      // Handle referral if a code was provided
-      if (usedCode) {
-        const referrer = await prisma.account.findUnique({
-          where: { referralCode: usedCode },
-        });
-
-        if (referrer) {
-          // Create referral entry
-          await prisma.referral.create({
-            data: {
-              referrerId: referrer.id,
-              referredId: account.id,
-            },
-          });
-
-          // Generate referral vouchers for both referrer and referred
-          await createReferralVouchers(referrer.id, account.id);
-        }
-      }
-
-      return account;
-    });
-
-    // Return successful response with minimal account info
-    return NextResponse.json({
-      message: "Account registered successfully",
-      account: {
-        id: newAccount.id,
-        email: newAccount.email,
-        name: newAccount.name,
-        role: newAccount.role,
-        referralCode: newReferralCode,
+    // Create a new account using service layer
+    const newAccount = await createAccount({
+      name,
+      email,
+      password: hashedPassword,
+      role: accountRole,
+      referralCode: newReferralCode,
+      phone,
+      address,
+      country,
+      province,
+      city,
+      profileImage,
+      currency: {
+        connect: { id: currencyId },
       },
     });
+
+    // Handle referral if a code was provided
+    if (usedCode) {
+      const referrer = await getAccountByReferralCode(usedCode);
+
+      if (referrer) {
+        // Create referral entry and generate vouchers
+        await createReferralVouchers(referrer.id, newAccount.id);
+        await createReferralVouchers(referrer.id, newAccount.id);
+      }
+    }
+
+    // Return successful response with minimal account info
+    return NextResponse.json(
+      {
+        message: "Account registered successfully",
+        account: {
+          id: newAccount.id,
+          email: newAccount.email,
+          name: newAccount.name,
+          role: newAccount.role,
+          referralCode: newReferralCode,
+        },
+      },
+      { status: 201 }
+    );
   } catch (error: unknown) {
     console.error("Register Error:", error);
 
-    // Check if the error is an instance of Error
     if (error instanceof Error) {
       return NextResponse.json(
         { error: "Internal server error", details: error.message },
@@ -122,7 +140,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // Fallback if the error is not an instance of Error
     return NextResponse.json(
       { error: "Internal server error", details: "Unknown error occurred" },
       { status: 500 }

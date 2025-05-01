@@ -1,8 +1,9 @@
+import { authOptions } from "@/lib/auth";
 import { NextRequest, NextResponse } from "next/server";
 
 import { emitAnalyticsEvent } from "@/lib/utils/analytics";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+
 import { analyticsEventSchema } from "@/lib/validation/analyticsSchema";
 
 export async function POST(req: NextRequest) {

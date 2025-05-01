@@ -4,10 +4,11 @@ import { NextResponse } from "next/server";
 
 export async function PATCH(req: Request) {
   try {
+    // Destructure request body
     const {
       orderIdToUpdate,
       status,
-      user,
+      user, // The user passed in the request (assuming user is an ID or username)
       cancelReason,
     }: {
       orderIdToUpdate: string;
@@ -16,6 +17,7 @@ export async function PATCH(req: Request) {
       cancelReason?: string;
     } = await req.json();
 
+    // Check for missing data
     if (!orderIdToUpdate || !status || !user) {
       return NextResponse.json(
         { message: "Missing required data to update order status" },
@@ -23,6 +25,19 @@ export async function PATCH(req: Request) {
       );
     }
 
+    // Fetch the account details from the database
+    const account = await db.account.findUnique({
+      where: { id: user }, // Assuming 'user' is the account ID
+    });
+
+    if (!account) {
+      return NextResponse.json(
+        { message: "Account not found" },
+        { status: 404 }
+      );
+    }
+
+    // Execute transaction to update order and create audit log
     const updatedOrder = await db.$transaction(async (tx) => {
       const existingOrder = await tx.order.findUnique({
         where: { id: orderIdToUpdate },
@@ -32,6 +47,7 @@ export async function PATCH(req: Request) {
         throw new Error("Order not found");
       }
 
+      // Check if order can be canceled (only pending orders)
       if (
         status === OrderStatus.CANCELLED &&
         existingOrder.status !== OrderStatus.PENDING
@@ -39,6 +55,7 @@ export async function PATCH(req: Request) {
         throw new Error("Only pending orders can be canceled");
       }
 
+      // Update the order status
       const orderUpdate = await tx.order.update({
         where: { id: orderIdToUpdate },
         data: {
@@ -50,6 +67,7 @@ export async function PATCH(req: Request) {
         },
       });
 
+      // Create an audit log with the account details
       await tx.auditLog.create({
         data: {
           action:
@@ -57,7 +75,9 @@ export async function PATCH(req: Request) {
               ? "CANCEL_ORDER"
               : "UPDATE_ORDER_STATUS",
           orderId: orderIdToUpdate,
-          user,
+          account: {
+            connect: { id: account.id }, // Connect the account via the ID
+          },
           reason: cancelReason,
         },
       });
@@ -65,6 +85,7 @@ export async function PATCH(req: Request) {
       return orderUpdate;
     });
 
+    // Return the updated order in the response
     return NextResponse.json(updatedOrder);
   } catch (error: unknown) {
     const message =

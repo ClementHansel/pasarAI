@@ -1,104 +1,60 @@
 "use client";
 
+import Link from "next/link";
+import { RegisterFormValues } from "@/lib/validation/registerSchema";
 import { useState } from "react";
+import { RegisterForm } from "@/components/auth/RegisterForm";
+import { toast } from "react-hot-toast";
 import { useRouter } from "next/navigation";
-
-import Button from "@/components/common/Button";
-import Input from "@/components/common/Input";
 
 export default function RegisterPage() {
   const router = useRouter();
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
-
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setError(null);
-    setSuccess(null);
-    setLoading(true);
-
+  const handleRegister = async (values: RegisterFormValues) => {
+    setIsLoading(true);
     try {
-      const res = await fetch("/api/auth/register", {
+      const response = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify(values),
       });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || "Something went wrong");
+      const result = await response.json();
+      if (!response.ok) {
+        toast.error(result.error || "Registration failed");
+        return;
       }
-
-      setSuccess("Registration successful! Redirecting...");
-      setTimeout(() => {
-        router.push("/login");
-      }, 2000);
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError("Unknown error occurred");
-      }
+      toast.success(
+        `Account created for ${values.email || values.name}! Please log in.`
+      );
+      router.push(`/login?email=${encodeURIComponent(values.email)}`);
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
   return (
-    <main className="max-w-md mx-auto mt-20 p-6 bg-white rounded-lg shadow-md">
-      <h1 className="text-2xl font-semibold text-center mb-6">Register</h1>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <Input
-          label="Name"
-          type="text"
-          value={name}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-            setName(e.target.value)
-          }
-          required
-        />
-        <Input
-          label="Email"
-          type="email"
-          value={email}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-            setEmail(e.target.value)
-          }
-          required
-        />
-        <Input
-          label="Password"
-          type="password"
-          value={password}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-            setPassword(e.target.value)
-          }
-          required
-        />
-
-        {error && <p className="text-sm text-red-500">{error}</p>}
-        {success && <p className="text-sm text-green-500">{success}</p>}
-
-        <Button type="submit" disabled={loading}>
-          {loading ? "Registering..." : "Register"}
-        </Button>
-      </form>
-      <p className="text-sm text-center mt-4">
-        Already have an account?{" "}
-        <button
-          type="button"
-          onClick={() => router.push("/login")}
-          className="text-blue-600 hover:underline"
-        >
-          Login
-        </button>
-      </p>
-    </main>
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-2xl shadow-lg">
+        <div className="text-center">
+          <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
+            Create your account
+          </h2>
+          <p className="mt-2 text-sm text-gray-600">
+            Join our marketplace and start shopping or selling
+          </p>
+        </div>
+        <RegisterForm isLoading={isLoading} onSubmit={handleRegister} />
+        <p className="mt-4 text-center text-sm text-gray-600">
+          Already have an account?{" "}
+          <Link
+            href="/login"
+            className="font-medium text-blue-600 hover:text-blue-500"
+          >
+            Sign in
+          </Link>
+        </p>
+      </div>
+    </div>
   );
 }

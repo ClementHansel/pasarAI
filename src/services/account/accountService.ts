@@ -109,28 +109,65 @@ export const getAccountByEmail = async (email: string) => {
   }
 };
 
-// Create new account
+const isDevelopment = process.env.NODE_ENV === "development";
+
 export const createAccount = async (
-  data: Prisma.AccountCreateInput,
+<<<<<<< Updated upstream
+  data: Omit<Prisma.AccountCreateInput, "currency"> & {
+    currency?: Prisma.CurrencyCreateNestedOneWithoutAccountInput;
+  },
   creatorRole: Role = "BUYER"
 ) => {
   try {
+    // Only ADMIN can assign roles other than BUYER
     if (creatorRole !== "ADMIN" && data.role && data.role !== "BUYER") {
       throw new PermissionError("Only admin can assign elevated roles.");
     }
 
+=======
+  data: Prisma.AccountCreateInput & {
+    currency?: { name: string; description?: string };
+  }
+) => {
+  try {
+>>>>>>> Stashed changes
     const roleToAssign: Role = data.role ?? "BUYER";
+    const { currency, ...rest } = data;
 
     return await db.$transaction(async (tx) => {
+      const accountData: Prisma.AccountCreateInput = {
+        ...rest,
+        role: roleToAssign,
+<<<<<<< Updated upstream
+        ...(currency ? { currency } : {}),
+=======
+        isVerified: isDevelopment ? true : false, // Auto-verify in development
+        emailVerifiedAt: isDevelopment ? new Date() : null, // Set verification date in development
+        currency: currency
+          ? {
+              create: {
+                name: currency.name,
+                description: currency.description ?? "",
+                accountId: rest.id ?? "",
+              },
+            }
+          : undefined,
+>>>>>>> Stashed changes
+      };
+
+      // Create the account
       const account = await tx.account.create({
-        data: { ...data, role: roleToAssign },
+        data: accountData,
       });
 
+      // Create the audit log entry
       await tx.auditLog.create({
         data: {
           action: "CREATE_ACCOUNT",
           accountId: account.id,
-          reason: "Account created",
+          reason: isDevelopment
+            ? "Account created and auto-verified (development)"
+            : "Account created",
         },
       });
 
@@ -143,40 +180,40 @@ export const createAccount = async (
   }
 };
 
-// Update account
+// update Account
 export const updateAccount = async (
   id: string,
-  data: Prisma.AccountUpdateInput,
-  updaterRole: Role = "BUYER"
+  data: Prisma.AccountUpdateInput
 ) => {
   try {
-    const existing = await db.account.findUnique({ where: { id } });
-    if (!existing) throw new NotFoundError(`Account (${id}) not found.`);
+    // Find the existing account first to ensure it exists
+    const existingAccount = await db.account.findUnique({
+      where: { id },
+    });
 
-    if (updaterRole !== "ADMIN" && "role" in data) {
-      throw new PermissionError("Only admin can modify account roles.");
+    if (!existingAccount) {
+      throw new NotFoundError(`Account with ID ${id} not found.`);
     }
 
-    return await db.$transaction(async (tx) => {
-      const updated = await tx.account.update({
-        where: { id },
-        data,
-      });
-
-      await tx.auditLog.create({
-        data: {
-          action: "UPDATE_ACCOUNT",
-          accountId: id,
-          reason: "Account updated",
-        },
-      });
-
-      return updated;
+    // Update the account in the database
+    const updatedAccount = await db.account.update({
+      where: { id },
+      data,
     });
+
+    // Optionally, create an audit log entry for the update
+    await db.auditLog.create({
+      data: {
+        action: "UPDATE_ACCOUNT",
+        accountId: id,
+        reason: "Account updated",
+      },
+    });
+
+    return updatedAccount;
   } catch (error) {
     console.error(`[AccountService] Failed to update account (${id}):`, error);
-    if (error instanceof NotFoundError || error instanceof PermissionError)
-      throw error;
+    if (error instanceof NotFoundError) throw error;
     throw new DatabaseError("Failed to update account.");
   }
 };
@@ -222,9 +259,12 @@ export const logLoginAttempt = async ({
   userAgent?: string;
 }): Promise<LoginAttempt> => {
   try {
+    // Ensure email is always a string
+    const validEmail = email ?? "unknown";
+
     return await db.loginAttempt.create({
       data: {
-        email,
+        email: validEmail,
         success,
         ipAddress,
         userAgent,
@@ -306,5 +346,41 @@ export const getRecentFailedAttempts = async ({
   } catch (error) {
     console.error("[AccountService] Failed to get failed attempts:", error);
     throw new DatabaseError("Failed to get recent failed login attempts.");
+  }
+};
+
+// Fetch account by referral code
+export const getAccountByReferralCode = async (referralCode: string) => {
+  try {
+    return await db.account.findUnique({
+      where: { referralCode },
+    });
+  } catch (error) {
+    console.error(
+      `[AccountService] Failed to fetch account by referralCode (${referralCode}):`,
+      error
+    );
+    throw new DatabaseError("Failed to fetch account by referral code.");
+  }
+};
+
+// Create referral entry
+export const createReferral = async (
+  referrerId: string,
+  referredId: string
+) => {
+  try {
+    return await db.referral.create({
+      data: {
+        referrerId,
+        referredId,
+      },
+    });
+  } catch (error) {
+    console.error(
+      `[AccountService] Failed to create referral from ${referrerId} to ${referredId}:`,
+      error
+    );
+    throw new DatabaseError("Failed to create referral.");
   }
 };

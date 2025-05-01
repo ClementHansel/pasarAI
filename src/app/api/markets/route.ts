@@ -1,121 +1,211 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
+import { z } from "zod";
 import {
   MarketCreateSchema,
   MarketUpdateSchema,
   MarketDeleteSchema,
 } from "@/lib/validation/marketSchemas";
+import {
+  Currency,
+  MarketRegion,
+  MarketWithRelations,
+  Seller,
+} from "@/types/market";
+import { db } from "@/lib/db/db";
+import { Role } from "@prisma/client";
 
-const prisma = new PrismaClient();
+// Helper function to handle errors and generate responses
+function handleApiError(err: unknown, message: string) {
+  console.error(message, err);
+  return NextResponse.json({ success: false, message }, { status: 500 });
+}
 
-// GET: Fetch all markets
-export async function GET() {
+// Group markets into regions, subregions, and cities
+function groupMarkets(raws: MarketWithRelations[]): MarketRegion[] {
+  const regions = new Map<string, MarketRegion>();
+
+  raws.forEach((market) => {
+    const regionKey = market.region?.name ?? "Unknown";
+    if (!regions.has(regionKey)) {
+      regions.set(regionKey, {
+        id: market.region?.id ?? regionKey,
+        name: regionKey,
+        region: regionKey,
+        subRegions: [],
+        sellers: [],
+      });
+    }
+    const region = regions.get(regionKey)!;
+
+    const subRegionKey = market.subRegion?.name ?? "Unknown";
+    let subRegion = region.subRegions.find((sub) => sub.name === subRegionKey);
+    if (!subRegion) {
+      subRegion = {
+        id: market.subRegion?.id ?? subRegionKey,
+        name: subRegionKey,
+        cities: [],
+        sellers: [],
+      };
+      region.subRegions.push(subRegion);
+    }
+
+    const cityKey = market.city?.name ?? "Unknown";
+    let city = subRegion.cities.find((c) => c.name === cityKey);
+    if (!city) {
+      city = { id: market.city?.id ?? cityKey, name: cityKey, sellers: [] };
+      subRegion.cities.push(city);
+    }
+
+    market.sellers.forEach((acct) => {
+      const seller: Seller = {
+        id: acct.id,
+        name: acct.name,
+        role: acct.role,
+        currency: acct.currency ? (acct.currency as Currency) : Currency.IDR,
+        rating: market.rating ?? undefined,
+        location: market.location,
+        productCount: market.productCount ?? undefined,
+        joinDate: market.joinDate ?? undefined,
+        verified: market.verified ?? undefined,
+      };
+      city.sellers.push(seller);
+      subRegion.sellers.push(seller);
+      region.sellers.push(seller);
+    });
+  });
+
+  return Array.from(regions.values());
+}
+
+// GET: fetch and group markets
+export async function GET(request: NextRequest) {
   try {
-    const markets = await prisma.market.findMany();
-    return NextResponse.json({ success: true, data: markets }, { status: 200 });
-  } catch (error) {
-    console.error("GET /api/markets:", error);
+    const { searchParams } = new URL(request.url);
+    const type = (searchParams.get("type") as string) || "domestic";
+
+    // 1. Fetch raw flat markets
+    const rawMarkets = await db.market.findMany({
+      where: { marketType: type },
+      orderBy: { region: { name: "asc" } },
+      include: {
+        currency: true,
+        region: true,
+        subRegion: true,
+        city: true,
+        sellers: {
+          where: { role: Role.SELLER },
+          include: { currency: true },
+        },
+      },
+    });
+
+    // 2. Clean and fix seller currency
+    const markets = rawMarkets.map((market) => ({
+      ...market,
+      sellers: market.sellers.map((seller) => ({
+        ...seller,
+        currency: seller.currency?.name ?? null,
+      })),
+    })) as MarketWithRelations[];
+
+    // 3. Group markets into region -> subRegion -> city -> sellers
+    const groupedMarkets = groupMarkets(markets);
+
+    // 4. Return grouped result
     return NextResponse.json(
-      { success: false, message: "Failed to fetch markets." },
-      { status: 500 }
+      { success: true, data: groupedMarkets },
+      { status: 200 }
     );
+  } catch (err) {
+    return handleApiError(err, "[GET] /api/markets");
   }
 }
 
-// POST: Create a new market
+// POST: create a new market
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const validated = MarketCreateSchema.parse(body);
 
-    const newMarket = await prisma.$transaction(async (tx) => {
-      return await tx.market.create({
-        data: validated,
-      });
+    const createdMarket = await db.market.create({
+      data: {
+        ...validated,
+        regionId: validated.regionId ? Number(validated.regionId) : undefined,
+        subRegionId: validated.subRegionId
+          ? Number(validated.subRegionId)
+          : undefined,
+        cityId: validated.cityId ? Number(validated.cityId) : undefined,
+      },
     });
 
     return NextResponse.json(
-      { success: true, data: newMarket },
+      { success: true, data: createdMarket },
       { status: 201 }
     );
-  } catch (error) {
-    console.error("POST /api/markets:", error);
-    if (error instanceof Error && "issues" in error) {
+  } catch (err) {
+    if (err instanceof z.ZodError) {
       return NextResponse.json(
-        { success: false, message: "Validation error", issues: error.issues },
+        { success: false, message: "Validation error", issues: err.issues },
         { status: 400 }
       );
     }
-    return NextResponse.json(
-      { success: false, message: "Failed to create market." },
-      { status: 500 }
-    );
+    return handleApiError(err, "[POST] /api/markets");
   }
 }
 
-// PUT: Update an existing market
+// PUT: update an existing market
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
     const validated = MarketUpdateSchema.parse(body);
 
-    const updatedMarket = await prisma.$transaction(async (tx) => {
-      return await tx.market.update({
-        where: { id: validated.id },
-        data: {
-          name: validated.name,
-          location: validated.location,
-          revenue: validated.revenue,
-        },
-      });
+    const updatedMarket = await db.market.update({
+      where: { id: validated.id },
+      data: {
+        ...validated,
+        regionId: validated.regionId ? Number(validated.regionId) : undefined,
+        subRegionId: validated.subRegionId
+          ? Number(validated.subRegionId)
+          : undefined,
+        cityId: validated.cityId ? Number(validated.cityId) : undefined,
+      },
     });
 
     return NextResponse.json(
       { success: true, data: updatedMarket },
       { status: 200 }
     );
-  } catch (error) {
-    console.error("PUT /api/markets:", error);
-    if (error instanceof Error && "issues" in error) {
+  } catch (err) {
+    if (err instanceof z.ZodError) {
       return NextResponse.json(
-        { success: false, message: "Validation error", issues: error.issues },
+        { success: false, message: "Validation error", issues: err.issues },
         { status: 400 }
       );
     }
-    return NextResponse.json(
-      { success: false, message: "Failed to update market." },
-      { status: 500 }
-    );
+    return handleApiError(err, "[PUT] /api/markets");
   }
 }
 
-// DELETE: Delete a market
+// DELETE: delete a market
 export async function DELETE(request: NextRequest) {
   try {
     const body = await request.json();
     const validated = MarketDeleteSchema.parse(body);
-
-    const deletedMarket = await prisma.$transaction(async (tx) => {
-      return await tx.market.delete({
-        where: { id: validated.id },
-      });
+    const deletedMarket = await db.market.delete({
+      where: { id: validated.id },
     });
 
     return NextResponse.json(
       { success: true, data: deletedMarket },
       { status: 200 }
     );
-  } catch (error) {
-    console.error("DELETE /api/markets:", error);
-    if (error instanceof Error && "issues" in error) {
+  } catch (err) {
+    if (err instanceof z.ZodError) {
       return NextResponse.json(
-        { success: false, message: "Validation error", issues: error.issues },
+        { success: false, message: "Validation error", issues: err.issues },
         { status: 400 }
       );
     }
-    return NextResponse.json(
-      { success: false, message: "Failed to delete market." },
-      { status: 500 }
-    );
+    return handleApiError(err, "[DELETE] /api/markets");
   }
 }
