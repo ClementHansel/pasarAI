@@ -3,5 +3,5 @@ export interface Review {
   rating: number;
   comment: string;
   reviewerName: string;
-  timestamp?: string;
+  timestamp: string;
 }

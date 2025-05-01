@@ -68,6 +68,23 @@ export type UpdateProductInput = {
   imageUrls?: string[];
 };
 
+// Product filter input type for advanced filtering
+export type ProductFilterInput = {
+  search?: string;
+  categoryId?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  inStock?: boolean;
+  sortBy?: "price_asc" | "price_desc" | "rating" | "newest";
+  region?: string;
+  subregion?: string;
+  city?: string;
+  marketType?: ProductType;
+  brandId?: number;
+  labels?: string[];
+  discountOnly?: boolean;
+};
+
 // Product with seller info
 export type ProductWithUser = Product & {
   accountId: number; // ID of the seller who owns the product
@@ -142,3 +159,5 @@ export type ProductRegion = {
   subregions: ProductSubregion[];
   sellers: Seller[];
 };
+
+export type Currency = "USD" | "IDR" | string;

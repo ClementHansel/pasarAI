@@ -9,6 +9,8 @@ import type { Product } from "@/types/product";
 
 interface ProductCardProps extends Product {
   viewMode?: "grid" | "list";
+  accountName?: string; // Seller name (optional, for ProductWithUser)
+  accountRating?: number; // Seller rating (optional, for ProductWithUser)
 }
 
 const ProductCard = ({
@@ -24,16 +26,17 @@ const ProductCard = ({
   viewMode = "grid",
   labels,
   brand,
+  accountId,
+  accountName,
 }: ProductCardProps) => {
   const discountedPrice = price * (1 - discount / 100);
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
-    // Add to cart logic here (e.g., dispatching to a cart context or local storage)
-    toast.success("Added to cart!");
+    toast.success(`${name} added to cart`);
+    // Add actual cart logic here
   };
 
-  // List View
   if (viewMode === "list") {
     return (
       <div className="group flex items-center gap-6 bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-300 border border-gray-100 hover:border-blue-300">
@@ -93,6 +96,18 @@ const ProductCard = ({
               <div className="flex items-center gap-2 text-sm">
                 <MapPin className="w-4 h-4" />
                 <span>{labels?.[0]?.name || "Global"}</span>
+                {accountName && (
+                  <>
+                    <span className="mx-1">·</span>
+                    <Link
+                      href={`/seller/${accountId}`}
+                      onClick={(e) => e.stopPropagation()}
+                      className="text-gray-500 hover:text-blue-600 hover:underline"
+                    >
+                      Sold by {accountName}
+                    </Link>
+                  </>
+                )}
               </div>
             </div>
 
@@ -174,6 +189,18 @@ const ProductCard = ({
             >
               {stock > 0 ? `${stock} in stock` : "Out of stock"}
             </span>
+          </div>
+
+          <div className="mt-2">
+            {accountName && (
+              <Link
+                href={`/seller/${accountId}`}
+                onClick={(e) => e.stopPropagation()}
+                className="text-sm text-gray-500 hover:text-blue-600 hover:underline"
+              >
+                Sold by {accountName}
+              </Link>
+            )}
           </div>
         </div>
       </div>

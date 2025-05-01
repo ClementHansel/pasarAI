@@ -109,40 +109,42 @@ export const getAccountByEmail = async (email: string) => {
   }
 };
 
-const isDevelopment = process.env.NODE_ENV === "development";
+// isDevelopment is used to determine if the app is running in development mode.
+// In development, we may want to auto-verify emails, skip certain production checks, or use mock services (e.g., skip Redis/email verification).
+// In the future, use this flag to conditionally enable/disable dev-only features or integrations.
+// Example: if (isDevelopment) { /* skip Redis or use mock */ }
+// const isDevelopment = process.env.NODE_ENV === "development";
 
-export const createAccount = async (
-  data: Prisma.AccountCreateInput & {
-    currency?: { name: string; description?: string };
-  }
-) => {
+export const createAccount = async (data: {
+  email: string;
+  name: string;
+  password: string;
+  role?: Role;
+  avatar?: string;
+  currency?: { name: string };
+}) => {
   try {
-    const roleToAssign: Role = data.role ?? "BUYER";
-    const { currency, ...rest } = data;
-
     return await db.$transaction(async (tx) => {
-      const accountData: Prisma.AccountCreateInput = {
-        ...rest,
-        role: roleToAssign,
-        isVerified: isDevelopment ? true : false, // Auto-verify in development
-        emailVerifiedAt: isDevelopment ? new Date() : null, // Set verification date in development
-        currency: currency
-          ? {
-              create: {
-                name: currency.name,
-                description: currency.description ?? "",
-                accountId: rest.id ?? "",
-              },
-            }
-          : undefined,
-      };
-
-      // Create the account
+      const { email, name, password, role, avatar, currency } = data;
+      const isDevelopment = process.env.NODE_ENV === "development";
       const account = await tx.account.create({
-        data: accountData,
+        data: {
+          email,
+          name,
+          password,
+          role: role || Role.BUYER,
+          avatar,
+          emailVerifiedAt: isDevelopment ? new Date() : null,
+        },
       });
-
-      // Create the audit log entry
+      if (currency) {
+        await tx.currency.create({
+          data: {
+            name: currency.name,
+            accountId: account.id,
+          },
+        });
+      }
       await tx.auditLog.create({
         data: {
           action: "CREATE_ACCOUNT",
@@ -152,7 +154,6 @@ export const createAccount = async (
             : "Account created",
         },
       });
-
       return account;
     });
   } catch (error) {
