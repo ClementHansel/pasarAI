@@ -10,7 +10,7 @@ export default function OrdersList() {
     // Fetch the orders on component mount
     const fetchOrders = async () => {
       try {
-        const res = await fetch("/api/seller-orders"); // Adjust with your API route
+        const res = await fetch("/api/seller-orders");
         if (!res.ok) {
           throw new Error("Failed to fetch orders");
         }

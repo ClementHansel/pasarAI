@@ -1,10 +1,10 @@
 // src/lib/dashboard/orders/orders.ts
 import { Order } from "@/types/order";
-import { withSellerAuth } from "@/lib/middleware"; // Import middleware for seller authentication
-import { Product } from "@/types/product"; // Assuming you have a Product type
-import { NextResponse } from "next/server"; // Import NextResponse for returning response
+import { withSellerAuth } from "@/lib/middleware";
+import { Product } from "@/types/product";
+import { NextResponse } from "next/server";
 
-// Mock function to fetch product details (replace with actual API call)
+// fetch product details
 async function getProductById(productId: string): Promise<Product | null> {
   try {
     const res = await fetch(`/api/products/${productId}`);
