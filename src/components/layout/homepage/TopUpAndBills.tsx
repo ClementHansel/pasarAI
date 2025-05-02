@@ -14,6 +14,7 @@ import { Wifi, Zap, CreditCard, Wallet, FileText, PlugZap } from "lucide-react";
 const TopUpAndBills = () => {
   const [topUpAmount, setTopUpAmount] = useState("");
   const [selectedBillType, setSelectedBillType] = useState("electricity");
+  const [action, setAction] = useState("top-up");
 
   const billTypes = [
     {
@@ -96,6 +97,25 @@ const TopUpAndBills = () => {
             <form onSubmit={handleTopUpSubmit} className="space-y-6">
               <div>
                 <label
+                  htmlFor="transaction"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Transaction Type
+                </label>
+                <select
+                  id="transaction"
+                  value={action}
+                  onChange={(e) => setAction(e.target.value)}
+                  className="w-full border-gray-300 rounded-md shadow-sm focus:border-blue-400 focus:ring-blue-300"
+                >
+                  <option value="top-up">Top-Up</option>
+                  <option value="withdraw">Withdraw</option>
+                  <option value="payment">Bills Payment</option>
+                </select>
+              </div>
+
+              <div>
+                <label
                   htmlFor="amount"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
@@ -132,7 +152,7 @@ const TopUpAndBills = () => {
                 disabled={!topUpAmount}
                 className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700"
               >
-                Top Up Now
+                {action === "withdraw" ? "Withdraw Now" : "Top Up Now"}
               </Button>
             </form>
           </TabsContent>

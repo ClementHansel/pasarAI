@@ -13,6 +13,7 @@ export const registerSchema = z
       ),
     confirmPassword: z.string(),
     role: z.enum(["BUYER", "SELLER"]),
+    currency: z.string().min(1, "Currency is required"),
     phone: z.string().optional(),
     address: z.string().optional(),
     city: z.string().optional(),

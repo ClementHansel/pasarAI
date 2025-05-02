@@ -9,6 +9,7 @@ import {
 } from "@/services/account/accountService";
 import { Role } from "@prisma/client"; // Import the Role enum
 import { NextResponse } from "next/server";
+import { db } from "@/lib/db/db";
 
 export async function POST(req: Request) {
   try {
@@ -28,7 +29,7 @@ export async function POST(req: Request) {
       province,
       city,
       profileImage,
-      currencyId,
+      currency,
     } = body;
 
     // Basic validations
@@ -87,6 +88,14 @@ export async function POST(req: Request) {
     // Generate a new referral code
     const newReferralCode = generateReferralCode();
 
+    // Look up currency by name (since name is not unique, use findFirst)
+    const currencyRecord = await db.currency.findFirst({
+      where: { name: currency }, // <-- use the destructured currency variable
+    });
+    if (!currencyRecord) {
+      return NextResponse.json({ error: "Invalid currency" }, { status: 400 });
+    }
+
     // Create a new account using service layer
     const newAccount = await createAccount({
       name,
@@ -100,9 +109,7 @@ export async function POST(req: Request) {
       province,
       city,
       profileImage,
-      currency: {
-        connect: { id: currencyId },
-      },
+      currencyId: currencyRecord.id, // <-- pass currencyId directly
     });
 
     // Handle referral if a code was provided

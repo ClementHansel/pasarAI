@@ -8,10 +8,19 @@ import {
   fetchNotifications,
   markNotificationAsRead,
 } from "@/services/notification/notificationService"; // Import the API service
+import { NotificationProvider } from "@/context/NotificationContext";
 
 export default function NotificationPage() {
   const accountId = "user123"; // Replace with actual account ID
 
+  return (
+    <NotificationProvider accountId={accountId}>
+      <NotificationPageContent accountId={accountId} />
+    </NotificationProvider>
+  );
+}
+
+function NotificationPageContent({ accountId }: { accountId: string }) {
   const { notifications, loading, error, setNotifications } =
     useNotifications(accountId); // Using the hook
 

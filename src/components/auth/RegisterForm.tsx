@@ -12,15 +12,17 @@ import { UserAvatar } from "@/components/common/UserAvatar";
 interface RegisterFormProps {
   isLoading: boolean;
   onSubmit: (values: RegisterFormValues) => void;
+  hidePasswordField?: boolean; // For social profile completion
+  initialValues?: Partial<RegisterFormValues>; // For pre-filling
 }
 
 export const RegisterForm: React.FC<RegisterFormProps> = ({
   isLoading,
   onSubmit,
+  hidePasswordField = false,
 }) => {
   const {
     formData,
-    setFormData,
     errors,
     showPassword,
     handleChange,
@@ -28,11 +30,6 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
     setShowPassword,
     setRole,
   } = useRegisterForm({ onSubmit });
-
-  // Handler for currency dropdown
-  const handleCurrencyChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setFormData((prev) => ({ ...prev, currency: e.target.value }));
-  };
 
   return (
     <FormContainer onSubmit={handleSubmit}>
@@ -60,23 +57,54 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
         error={errors.email}
       />
 
-      <PasswordField
-        name="password"
-        value={formData.password}
-        onChange={handleChange}
-        showPassword={showPassword}
-        togglePassword={setShowPassword}
-        error={errors.password}
-      />
+      {/* Currency select */}
+      <div className="mb-4">
+        <label
+          htmlFor="currency"
+          className="block text-sm font-medium text-gray-700"
+        >
+          Currency <span className="text-red-500">*</span>
+        </label>
+        <select
+          id="currency"
+          name="currency"
+          value={formData.currency || ""}
+          onChange={handleChange}
+          required
+          className="mt-1 block w-full rounded-lg border border-gray-300 bg-white py-2 px-3 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+        >
+          <option value="">Select currency</option>
+          <option value="IDR">IDR - Indonesian Rupiah</option>
+          <option value="USD">USD - US Dollar</option>
+        </select>
+        {errors.currency && (
+          <p className="mt-1 text-sm text-red-600" role="alert">
+            {errors.currency}
+          </p>
+        )}
+      </div>
 
-      <PasswordField
-        name="confirmPassword"
-        value={formData.confirmPassword}
-        onChange={handleChange}
-        showPassword={showPassword}
-        togglePassword={setShowPassword}
-        error={errors.confirmPassword}
-      />
+      {!hidePasswordField && (
+        <PasswordField
+          name="password"
+          value={formData.password || ""}
+          onChange={handleChange}
+          error={errors.password}
+          showPassword={showPassword}
+          togglePassword={setShowPassword}
+        />
+      )}
+
+      {!hidePasswordField && (
+        <PasswordField
+          name="confirmPassword"
+          value={formData.confirmPassword}
+          onChange={handleChange}
+          showPassword={showPassword}
+          togglePassword={setShowPassword}
+          error={errors.confirmPassword}
+        />
+      )}
 
       <InputField
         name="phone"
@@ -160,17 +188,6 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
         value={formData.referralCode || ""}
         onChange={handleChange}
       />
-
-      <select
-        name="currency"
-        value={formData.currency || ""}
-        onChange={handleCurrencyChange}
-        className="block w-full mt-4 border rounded-lg"
-      >
-        <option value="">Select currency</option>
-        <option value="IDR">IDR (Indonesian Rupiah)</option>
-        <option value="USD">USD (US Dollar)</option>
-      </select>
 
       <button
         type="submit"

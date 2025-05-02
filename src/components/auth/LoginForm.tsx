@@ -3,6 +3,7 @@ import { Eye, EyeOff, Mail, Lock } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { toast } from "react-hot-toast";
+import { signIn } from "next-auth/react";
 
 interface LoginFormProps {
   isLoading: boolean;
@@ -14,6 +15,10 @@ const LoginForm: React.FC<LoginFormProps> = ({ isLoading, onSubmit }) => {
   const [email, setEmail] = useState(params.get("email") || "");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+
+  const handleSocialLogin = async (provider: "google" | "github") => {
+    await signIn(provider);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -123,15 +128,17 @@ const LoginForm: React.FC<LoginFormProps> = ({ isLoading, onSubmit }) => {
       <div className="grid grid-cols-2 gap-3">
         <button
           type="button"
+          onClick={() => handleSocialLogin("google")}
           className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-lg shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
         >
           Google
         </button>
         <button
           type="button"
+          onClick={() => handleSocialLogin("github")}
           className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-lg shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
         >
-          Facebook
+          GitHub
         </button>
       </div>
     </form>

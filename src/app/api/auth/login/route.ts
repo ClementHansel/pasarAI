@@ -13,6 +13,10 @@ import {
 } from "@/lib/auth/accountService";
 import { logLoginAttempt } from "@/services/account/accountService";
 
+// NOTE: This custom login route is now unused since NextAuth handles credentials login.
+// It is kept here for reference and possible future use, but should not be used in production.
+// All login logic should go through NextAuth's /api/auth/[...nextauth] endpoint.
+
 export async function POST(req: Request) {
   const ip = req.headers.get("x-forwarded-for") || "unknown";
   const userAgent = req.headers.get("user-agent") || "unknown";

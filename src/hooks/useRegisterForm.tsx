@@ -75,7 +75,9 @@ export const useRegisterForm = ({ onSubmit }: UseRegisterFormProps) => {
     }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
     validateField(name as keyof RegisterFormValues, value);

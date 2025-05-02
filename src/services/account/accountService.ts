@@ -121,11 +121,32 @@ export const createAccount = async (data: {
   password: string;
   role?: Role;
   avatar?: string;
-  currency?: { name: string };
+  currencyId?: string;
+  referralCode?: string;
+  phone?: string;
+  address?: string;
+  country?: string;
+  province?: string;
+  city?: string;
+  profileImage?: string;
 }) => {
   try {
     return await db.$transaction(async (tx) => {
-      const { email, name, password, role, avatar, currency } = data;
+      const {
+        email,
+        name,
+        password,
+        role,
+        avatar,
+        currencyId,
+        referralCode,
+        phone,
+        address,
+        country,
+        province,
+        city,
+        profileImage,
+      } = data;
       const isDevelopment = process.env.NODE_ENV === "development";
       const account = await tx.account.create({
         data: {
@@ -134,17 +155,17 @@ export const createAccount = async (data: {
           password,
           role: role || Role.BUYER,
           avatar,
+          referralCode,
+          phone,
+          address,
+          country,
+          province,
+          city,
+          profileImage,
+          currencyId,
           emailVerifiedAt: isDevelopment ? new Date() : null,
         },
       });
-      if (currency) {
-        await tx.currency.create({
-          data: {
-            name: currency.name,
-            accountId: account.id,
-          },
-        });
-      }
       await tx.auditLog.create({
         data: {
           action: "CREATE_ACCOUNT",

@@ -39,6 +39,13 @@ export function AuthGuard({
       allowedRoles.includes(session.user.role as "BUYER" | "SELLER")
     ) {
       setIsAuthorized(true);
+      // Redirect to /market if on /login after successful login
+      if (
+        typeof window !== "undefined" &&
+        window.location.pathname === "/login"
+      ) {
+        router.push("/market");
+      }
     } else {
       // Redirect based on role
       if (session.user.role === "SELLER") {

@@ -148,6 +148,9 @@ export function toPublicSellerProfile(
       phone: seller.phone,
       address: seller.address,
     },
+    verificationStatus: "verified", // or logic to determine status
+    sellerSince: new Date(seller.joinDate),
+    markets: [], // Fill with actual market data if available
     products: seller.products.map((p) => ({
       id: p.id,
       name: p.name,
@@ -155,7 +158,9 @@ export function toPublicSellerProfile(
       image: p.image,
       stock: p.stock,
       sold: p.sold,
+      rating: 0, // Default to 0, since Product has no rating
     })),
+    reviews: [], // Fill with actual reviews if available
   };
 }
 
