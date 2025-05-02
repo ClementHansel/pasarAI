@@ -1,3 +1,4 @@
+// src/lib/auth/index.ts
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
@@ -19,7 +20,6 @@ export const authOptions: NextAuthOptions = {
         if (!credentials?.email || !credentials.password) {
           throw new Error("Email and password required");
         }
-
         const account = await findAccountByEmail(credentials.email);
         if (
           !account ||
@@ -29,7 +29,6 @@ export const authOptions: NextAuthOptions = {
         ) {
           throw new Error("Invalid account data");
         }
-
         const isValid = await verifyPassword(
           credentials.password,
           account.password
@@ -37,12 +36,11 @@ export const authOptions: NextAuthOptions = {
         if (!isValid) {
           throw new Error("Invalid credentials");
         }
-
-        // Only these three get passed into the JWT callback
         return {
           id: account.id,
           email: account.email,
           role: account.role as Role,
+          hasProfile: true,
         };
       },
     }),
@@ -59,16 +57,19 @@ export const authOptions: NextAuthOptions = {
   session: { strategy: "jwt" },
 
   callbacks: {
-    // Called whenever a JWT is created or updated
+    // ensure signIn never rejects you
+    async signIn() {
+      return true;
+    },
+
+    // Called when a JWT is created or updated
     async jwt({ token, user, account, profile }) {
       if (user) {
-        // Credentials or first‐time social sign-in
         token.id = user.id;
         token.email = user.email;
         token.role = user.role;
-        token.hasProfile = true; // credentials always complete
+        token.hasProfile = user.hasProfile ?? false;
       }
-
       if (
         (account?.provider === "google" || account?.provider === "github") &&
         profile?.email
@@ -76,40 +77,35 @@ export const authOptions: NextAuthOptions = {
         const dbUser = await db.account.findUnique({
           where: { email: profile.email },
         });
-
         if (dbUser) {
           token.id = dbUser.id;
           token.email = dbUser.email || "";
           token.role = dbUser.role;
-          // mark complete only if all required fields exist
           token.hasProfile = Boolean(
             dbUser.address && dbUser.phone && dbUser.country
           );
         } else {
-          // new social‐only user → needs to complete profile
           token.id = "";
           token.email = profile.email;
           token.role = "";
           token.hasProfile = false;
         }
       }
-
       return token;
     },
 
-    // Called whenever session is checked (getSession, useSession, etc.)
+    // Called when session is checked (getSession, useSession, etc.)
     async session({ session, token }) {
-      session.user.id = token.id;
-      session.user.email = token.email;
-      session.user.role = token.role;
+      session.user.id = token.id as string;
+      session.user.email = token.email as string;
+      session.user.role = token.role as string;
       session.user.hasProfile = token.hasProfile === true;
       return session;
     },
 
-    // redirect no longer gets token
-    async redirect({ url, baseUrl }) {
-      // if you need to guard incomplete profiles, do it in middleware
-      return url.startsWith(baseUrl) ? url : baseUrl;
+    // Force every redirect after login to /market
+    async redirect({ baseUrl }) {
+      return `${baseUrl}/market`;
     },
   },
 
