@@ -1,3 +1,4 @@
+"use client";
 import { Order } from "@/types/order";
 import OrderCard from "./OrderCard";
 import { useEffect, useState } from "react";
