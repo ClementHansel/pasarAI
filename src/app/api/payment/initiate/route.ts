@@ -37,7 +37,7 @@ function isRateLimited(ip: string): boolean {
 async function createTransactionLog(
   tx: Prisma.TransactionClient,
   accountId: string,
-  Type: "top-up" | "withdraw" | "payment",
+  type: "TOPUP" | "WITHDRAW" | "BILLS",
   amount: number,
   method: string,
   status: "SUCCESS" | "FAILED" | "PENDING" = "SUCCESS",
@@ -47,7 +47,7 @@ async function createTransactionLog(
   return await tx.transaction.create({
     data: {
       accountId,
-      Type,
+      type,
       amount,
       method,
       transactionId,
@@ -72,7 +72,7 @@ async function isSuspiciousWithdrawal(
   const recent = await db.transaction.findMany({
     where: {
       accountId,
-      Type: "withdraw",
+      type: "WITHDRAW",
       createdAt: {
         gte: new Date(Date.now() - 60 * 60 * 1000), // Last hour
       },
@@ -132,7 +132,7 @@ export async function POST(req: Request) {
           await createTransactionLog(
             tx,
             accountId,
-            "top-up",
+            "TOPUP",
             amount,
             method,
             "SUCCESS",
@@ -146,7 +146,7 @@ export async function POST(req: Request) {
             await createTransactionLog(
               tx,
               accountId,
-              "withdraw",
+              "WITHDRAW",
               amount,
               method,
               "FAILED",
@@ -172,7 +172,7 @@ export async function POST(req: Request) {
           await createTransactionLog(
             tx,
             accountId,
-            "withdraw",
+            "WITHDRAW",
             amount,
             method,
             "SUCCESS",
@@ -186,7 +186,7 @@ export async function POST(req: Request) {
             await createTransactionLog(
               tx,
               accountId,
-              "payment",
+              "BILLS",
               amount,
               method,
               "FAILED",
@@ -204,7 +204,7 @@ export async function POST(req: Request) {
           await createTransactionLog(
             tx,
             accountId,
-            "payment",
+            "BILLS",
             amount,
             method,
             "SUCCESS",

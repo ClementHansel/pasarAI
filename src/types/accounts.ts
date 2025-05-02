@@ -2,8 +2,31 @@
 
 import { Role } from "@prisma/client"; // Import Prisma enum Role
 
+export type SocialProvider = "google" | "github" | "credentials";
+
+// Use Account as the main model for backend, but keep User for frontend types if needed
+export type Account = {
+  id: string;
+  email: string;
+  name: string | null;
+  password?: string;
+  avatar?: string;
+  role: "SELLER" | "BUYER" | "ADMIN";
+  phone?: string | null;
+  address?: string | null;
+  country?: string | null;
+  province?: string | null;
+  city?: string | null;
+  profileImage?: string | null;
+  referralCode?: string | null;
+  isVerified?: boolean;
+  createdAt?: Date;
+  updatedAt?: Date;
+  lastLoginAt?: Date | null;
+};
+
 export type User = {
-  id: number;
+  id: number | string;
   email: string;
   name: string | null;
   createdAt: Date;
@@ -11,6 +34,10 @@ export type User = {
   lastLoginAt?: Date | null;
   profileImageUrl?: string | null;
   role: Role; // Use Prisma Role enum
+  provider?: SocialProvider;
+  address?: string | null;
+  phone?: string | null;
+  // Add any other fields that may be missing for social users
 };
 
 export type CreateUserInput = {

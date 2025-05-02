@@ -1,7 +1,11 @@
 {
   "compilerOptions": {
     "target": "ES2017",
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
@@ -13,25 +17,33 @@
     "isolatedModules": true,
     "jsx": "preserve",
     "incremental": true,
-    "types": ["react", "react-dom"],
+    "baseUrl": ".",
+    "paths": {
+      "@/*": [
+        "./src/*"
+      ]
+    },
+    "types": [
+      "react",
+      "react-dom",
+      "next-auth" /* ensure next-auth module augmentations are loaded */
+    ],
     "forceConsistentCasingInFileNames": true,
     "plugins": [
       {
         "name": "next"
       }
-    ],
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["./src/*"]
-    }
+    ]
   },
   "include": [
-    "**/*.ts",
-    "**/*.tsx",
-    ".next/types/**/*.ts, ",
     "next-env.d.ts",
-    "src",
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "src/types/**/*.d.ts" /* pick up your next-auth.d.ts */,
     ".next/types/**/*.ts"
   ],
-  "exclude": [".next", "node_modules"]
+  "exclude": [
+    ".next",
+    "node_modules"
+  ]
 }

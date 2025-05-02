@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import LoginForm from "@/components/auth/LoginForm";
 import { toast } from "react-hot-toast";
+import { signIn } from "next-auth/react";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -14,18 +15,18 @@ export default function LoginPage() {
   const handleLogin = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      const response = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+      // Use NextAuth credentials provider
+      const result = await signIn("credentials", {
+        redirect: false,
+        email,
+        password,
       });
-      const result = await response.json();
-      if (!response.ok) {
-        toast.error(result.error || "Login failed");
+      if (result?.error) {
+        toast.error(result.error);
         return;
       }
       toast.success("Login successful!");
-      router.push(result.redirectTo || "/market");
+      router.push("/market");
     } finally {
       setIsLoading(false);
     }

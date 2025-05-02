@@ -74,7 +74,7 @@ export default function ProductDetailPage() {
     <div className="container mx-auto py-10 px-4 lg:px-8">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-start">
         {/* Product Images */}
-        <ProductImages images={product.imageUrls} />
+        <ProductImages images={product.imageUrls} name={product.name} />
 
         {/* Product Details */}
         <ProductDetails
