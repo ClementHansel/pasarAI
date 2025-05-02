@@ -1,0 +1,28 @@
+import { z } from "zod";
+
+export const productSchema = z.object({
+  name: z.string().min(3),
+  description: z.string().optional(),
+  price: z.number().positive(),
+  originalPrice: z.number().optional(),
+  image: z.string().url().optional(),
+  stock: z.number().int().min(0).optional(),
+  soldCount: z.number().int().optional(),
+  unit: z.string().optional(),
+  tags: z.array(z.string()).optional(),
+  categoryId: z.string().optional(),
+  ecoCertifications: z.string().optional(),
+  origin: z.string().optional(),
+  sku: z.string().optional(),
+  isActive: z.boolean().optional(),
+  accountId: z.string(),
+  marketId: z.string(),
+  label: z.string().optional(),
+  discount: z.number().optional(),
+  isNewArrival: z.boolean().optional(),
+  isBestSeller: z.boolean().optional(),
+  isOnSale: z.boolean().optional(),
+  isFeatured: z.boolean().optional(),
+  createdAt: z.string().optional(),
+  featured: z.boolean().optional(),
+});

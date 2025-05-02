@@ -35,7 +35,7 @@ export type Product = {
 };
 
 export type Brand = {
-  id: number;
+  id: string;
   name: string;
   description?: string;
   createdAt: Date;

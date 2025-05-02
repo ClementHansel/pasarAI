@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { Prisma, PrismaClient } from "@prisma/client";
-import { z } from "zod";
 import { db } from "@/lib/db/db";
 import { categorizeProduct } from "@/lib/db/productCategorization";
+import { productSchema } from "@/lib/validation/productSchema";
 
 const prisma = new PrismaClient();
 
@@ -10,32 +10,6 @@ function isNewArrival(createdAt: Date): boolean {
   const oneDay = 24 * 60 * 60 * 1000;
   return Date.now() - createdAt.getTime() <= oneDay;
 }
-
-const productSchema = z.object({
-  name: z.string().min(3),
-  description: z.string().optional(),
-  price: z.number().positive().min(0.01),
-  image: z.string().url().optional(),
-  stock: z.number().int().positive().optional(),
-  soldCount: z.number().int().optional(),
-  unit: z.string().optional(),
-  tags: z.array(z.string()).optional(),
-  categoryId: z.string().optional(),
-  ecoCertifications: z.string().optional(),
-  origin: z.string().optional(),
-  sku: z.string().optional(),
-  isActive: z.boolean().optional(),
-  accountId: z.string(),
-  marketId: z.string(),
-  label: z.string(),
-  createdAt: z.string().optional(),
-  discount: z.number().optional(),
-  featured: z.boolean().optional(),
-  isNewArrival: z.boolean().optional(),
-  isBestSeller: z.boolean().optional(),
-  isOnSale: z.boolean().optional(),
-  isFeatured: z.boolean().optional(),
-});
 
 function formatTagsForCreateOrUpdate(tags?: string[]) {
   if (!tags || tags.length === 0) return undefined;
@@ -209,7 +183,6 @@ export async function POST(req: Request) {
       featured,
     } = parsed.data;
 
-    // Transaction to ensure atomic operations
     const transaction = await prisma.$transaction(async (prisma) => {
       // Check for existing SKU
       if (sku) {
@@ -235,20 +208,29 @@ export async function POST(req: Request) {
         }
       }
 
-      // Ensure label exists or create it
-      const labelObj = await prisma.label.upsert({
-        where: { name: label },
-        update: {},
-        create: { name: label },
-      });
+      // Conditionally upsert the manual label (if provided)
+      let manualLabel = null;
+      if (label) {
+        manualLabel = await prisma.label.upsert({
+          where: { name: label },
+          update: {},
+          create: { name: label },
+        });
+      }
 
-      // Auto-labels
+      // Generate auto-labels
       const autoLabels: string[] = [];
-      if (createdAt && isNewArrival(new Date(createdAt)))
+      if (createdAt && isNewArrival(new Date(createdAt))) {
         autoLabels.push("New Arrival");
-      if (discount && discount > 0) autoLabels.push("On Sale");
-      if (featured) autoLabels.push("Featured");
+      }
+      if (discount && discount > 0) {
+        autoLabels.push("On Sale");
+      }
+      if (featured) {
+        autoLabels.push("Featured");
+      }
 
+      // Upsert auto-labels
       const autoLabelConnections = await Promise.all(
         autoLabels.map(async (labelName) => {
           return prisma.label.upsert({
@@ -258,6 +240,14 @@ export async function POST(req: Request) {
           });
         })
       );
+
+      // Combine all label connections
+      const allLabelConnections = [
+        ...autoLabelConnections.map((l) => ({ id: l.id })),
+      ];
+      if (manualLabel) {
+        allLabelConnections.push({ id: manualLabel.id });
+      }
 
       // Create product
       const newProduct = await prisma.product.create({
@@ -277,10 +267,7 @@ export async function POST(req: Request) {
           marketId,
           tags: formatTagsForCreateOrUpdate(tags),
           labels: {
-            connect: [
-              { id: labelObj.id },
-              ...autoLabelConnections.map((l) => ({ id: l.id })),
-            ],
+            connect: allLabelConnections,
           },
           categories: {
             connect: [{ id: finalCategoryId }],
