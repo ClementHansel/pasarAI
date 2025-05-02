@@ -59,20 +59,24 @@ const InventoryPage = () => {
     setShowForm(true);
   };
 
-  const handleDeleteProduct = async (id: string) => {
+  const handleDeleteProduct = async (ids: string[]) => {
     try {
       const token = localStorage.getItem("accessToken");
 
-      await fetch(`/api/products/${id}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      await Promise.all(
+        ids.map((id) =>
+          fetch(`/api/products/${id}`, {
+            method: "DELETE",
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          })
+        )
+      );
 
       fetchProducts();
     } catch {
-      setError("Failed to delete product");
+      setError("Failed to delete product(s)");
     }
   };
 
