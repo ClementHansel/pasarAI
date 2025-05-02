@@ -3,7 +3,8 @@ import { CartItem } from "./cart";
 
 export interface Order {
   id: string;
-  userId: string;
+  accountId: string;
+  accountName: string;
   cart: CartItem[];
   shippingAddress: string;
   totalAmount: number;

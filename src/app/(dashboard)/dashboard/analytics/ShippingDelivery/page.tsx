@@ -1,12 +1,12 @@
-import DelayedShipments from "@/components/dashboard/ShippingDelivery/DelayedShipments";
-import DeliveryTimes from "@/components/dashboard/ShippingDelivery/DeliveryTimes";
-import OrderTracking from "@/components/dashboard/ShippingDelivery/OrderTracking";
-import PackageDamageRate from "@/components/dashboard/ShippingDelivery/PackageDamageRate";
-import ShippingCostPerItem from "@/components/dashboard/ShippingDelivery/ShippingCostPerItem";
-import ShippingCosts from "@/components/dashboard/ShippingDelivery/ShippingCosts";
-import ShippingMethodComparison from "@/components/dashboard/ShippingDelivery/ShippingMethodComparison";
-import ShippingPerformance from "@/components/dashboard/ShippingDelivery/ShippingPerformance";
-import ShippingProviderPerformance from "@/components/dashboard/ShippingDelivery/ShippingProviderPerformance";
+import DelayedShipments from "@/components/dashboard/analyticals/ShippingDelivery/DelayedShipments";
+import DeliveryTimes from "@/components/dashboard/analyticals/ShippingDelivery/DeliveryTimes";
+import OrderTracking from "@/components/dashboard/analyticals/ShippingDelivery/OrderTracking";
+import PackageDamageRate from "@/components/dashboard/analyticals/ShippingDelivery/PackageDamageRate";
+import ShippingCostPerItem from "@/components/dashboard/analyticals/ShippingDelivery/ShippingCostPerItem";
+import ShippingCosts from "@/components/dashboard/analyticals/ShippingDelivery/ShippingCosts";
+import ShippingMethodComparison from "@/components/dashboard/analyticals/ShippingDelivery/ShippingMethodComparison";
+import ShippingPerformance from "@/components/dashboard/analyticals/ShippingDelivery/ShippingPerformance";
+import ShippingProviderPerformance from "@/components/dashboard/analyticals/ShippingDelivery/ShippingProviderPerformance";
 
 const ShippingDeliveryPage: React.FC = () => {
   // Sample data for PackageDamageRate component

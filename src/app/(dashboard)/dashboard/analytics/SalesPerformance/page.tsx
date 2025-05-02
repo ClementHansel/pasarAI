@@ -1,7 +1,7 @@
 "use client";
-import RevenuePerProduct from "@/components/dashboard/SalesPerformance/RevenuePerProduct";
-import SalesTrends from "@/components/dashboard/SalesPerformance/SalesTrends";
-import TotalSales from "@/components/dashboard/SalesPerformance/TotalSales";
+import RevenuePerProduct from "@/components/dashboard/analyticals/SalesPerformance/RevenuePerProduct";
+import SalesTrends from "@/components/dashboard/analyticals/SalesPerformance/SalesTrends";
+import TotalSales from "@/components/dashboard/analyticals/SalesPerformance/TotalSales";
 
 export default function SalesPerformancePage() {
   return (
