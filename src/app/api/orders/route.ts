@@ -10,25 +10,27 @@ import {
 } from "@/lib/middleware";
 import { NextResponse } from "next/server";
 
-// GET all orders for a seller
 export const GET = withSellerAuth(async (req: AuthenticatedRequest) => {
-  const { searchParams } = new URL(req.url);
-  const sellerId = searchParams.get("sellerId");
+  const seller = req.user;
 
-  if (!sellerId) {
-    return NextResponse.json({ message: "Missing seller ID" }, { status: 400 });
-  }
-
-  // Check if the sellerId matches the logged-in seller
-  if (sellerId !== req.user?.id) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 403 });
+  if (!seller?.id || seller.role !== "SELLER") {
+    return NextResponse.json(
+      { message: "Unauthorized. Seller access only." },
+      { status: 403 }
+    );
   }
 
   try {
-    // Fetch orders for the seller
+    // Fetch all orders that include at least one product owned by this seller
     const orders = await db.order.findMany({
       where: {
-        buyerId: sellerId,
+        orderItems: {
+          some: {
+            product: {
+              accountId: seller.id, // product belongs to this seller
+            },
+          },
+        },
       },
       include: {
         orderItems: {
@@ -36,16 +38,16 @@ export const GET = withSellerAuth(async (req: AuthenticatedRequest) => {
             product: true,
           },
         },
-        buyer: true,
+        buyer: true, // optional if you want buyer info
       },
       orderBy: { createdAt: "desc" },
     });
 
     return NextResponse.json(orders);
   } catch (error) {
-    console.error("[GET_ORDERS_ERROR]", error);
+    console.error("[GET_SELLER_ORDERS_ERROR]", error);
     return NextResponse.json(
-      { message: "Failed to fetch orders" },
+      { message: "Failed to fetch orders for seller" },
       { status: 500 }
     );
   }

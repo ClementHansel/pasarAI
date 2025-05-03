@@ -11,11 +11,31 @@ export default function OrdersList() {
     // Fetch the orders on component mount
     const fetchOrders = async () => {
       try {
-        const res = await fetch("/api/seller-orders");
-        if (!res.ok) {
+        const token = localStorage.getItem("token"); // Adjust based on where you store your JWT
+
+        const userRes = await fetch("/api/auth/check", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!userRes.ok) {
+          throw new Error("Failed to verify user");
+        }
+
+        const { user } = await userRes.json();
+
+        const orderRes = await fetch(`/api/seller-orders?sellerId=${user.id}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!orderRes.ok) {
           throw new Error("Failed to fetch orders");
         }
-        const data: Order[] = await res.json();
+
+        const data: Order[] = await orderRes.json();
         setOrders(data);
       } catch (err) {
         setError("An error occurred while fetching orders.");
