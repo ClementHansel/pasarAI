@@ -88,13 +88,14 @@ model Account {
   reviewsReceived   Review[]        @relation("SellerReviews")
   eventLogs         EventLog[]      @relation("AccountLogs")
   orders            Order[]         @relation("AccountOrders")
+  salesOrders       Order[]         @relation("AccountSellerOrders")
   products          Product[]       @relation("AccountProducts")
   brands            Brand[]         @relation("AccountBrands")
   markets           Market[]        @relation("AccountMarkets")
   wallets           Wallet[]
   wallet_balance    Float           @default(0)
   messagesSent      Message[]       @relation("SenderAccount")
-  messagesOwned     Message[]        @relation("AccountMessageOwner")
+  messagesOwned     Message[]       @relation("AccountMessageOwner")
   conversations     Conversation[]  @relation("ConversationParticipants")
   wishlists         Wishlist[]
   activityType      ActivityType?
@@ -111,6 +112,7 @@ model Account {
 
   // Seller-specific relations
   cities           City[]           @relation("AccountCities")   // Sellers are associated with cities (multiple sellers can exist in a city)
+  customerMetrics  CustomerMetric[]
 }
 
 model Market {
@@ -256,6 +258,8 @@ model Order {
   id              String        @id @default(cuid())
   buyer           Account       @relation("AccountOrders", fields: [buyerId], references: [id])
   buyerId         String
+  sellerId        String
+  seller          Account       @relation("AccountSellerOrders", fields: [sellerId], references: [id])
   status          OrderStatus   @default(PENDING)
   paymentStatus   PaymentStatus @default(PENDING)
   paymentMethod   String
@@ -529,6 +533,26 @@ model AnalyticsEvent {
   timestamp DateTime @default(now())
   createdAt DateTime @default(now())
 }
+
+model CustomerMetric {
+  id               String   @id @default(uuid())
+  date             DateTime
+  activeUsers      Int?
+  churnRate        Float?
+  acquisitionCost  Float?
+  newCustomers     Int?
+  lifetimeValue    Float?
+  retentionRate    Float?
+  newCustomerCount Int?
+  returningCustomerCount Int?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  accountId               String
+  account                 Account  @relation(fields: [accountId], references: [id])
+}
+
+
+
 
 enum Role {
   ADMIN
