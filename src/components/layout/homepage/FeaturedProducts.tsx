@@ -21,7 +21,12 @@ const mockFeaturedProducts: Product[] = [
       { name: "New", id: "new", createdAt: new Date(), updatedAt: new Date() },
     ],
     brand: [
-      { id: 1, name: "Brand A", createdAt: new Date(), updatedAt: new Date() },
+      {
+        id: "1",
+        name: "Brand A",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
     ],
     tags: ["electronics", "headphones"],
     marketId: "market1",
@@ -49,7 +54,12 @@ const mockFeaturedProducts: Product[] = [
     stock: 150,
     isAvailable: true,
     brand: [
-      { id: 2, name: "Brand B", createdAt: new Date(), updatedAt: new Date() },
+      {
+        id: "2",
+        name: "Brand B",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
     ],
     tags: ["electronics", "smartwatch"],
     marketId: "market2",
@@ -78,7 +88,12 @@ const mockFeaturedProducts: Product[] = [
       { name: "New", id: "new", createdAt: new Date(), updatedAt: new Date() },
     ],
     brand: [
-      { id: 3, name: "Brand C", createdAt: new Date(), updatedAt: new Date() },
+      {
+        id: "3",
+        name: "Brand C",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
     ],
     tags: ["electronics", "speaker"],
     marketId: "market3",
@@ -116,7 +131,12 @@ const mockFeaturedProducts: Product[] = [
       },
     ],
     brand: [
-      { id: 4, name: "Brand D", createdAt: new Date(), updatedAt: new Date() },
+      {
+        id: "4",
+        name: "Brand D",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
     ],
     tags: ["electronics", "laptop"],
     marketId: "market4",
