@@ -212,6 +212,7 @@ model Product {
   isBestSeller      Boolean     @default(false) // Manually set or calculated
   isOnSale          Boolean     @default(false) // Discount or voucher
   isFeatured        Boolean     @default(false) // Based on seller promotional package
+  duration          Int? 
   wishlists         Wishlist[]
 }
 

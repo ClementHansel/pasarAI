@@ -29,6 +29,10 @@ export type Product = {
   labels: Label[];
   discount?: number;
   isFeatured?: boolean;
+  image?: string; // Make sure image is optional if some products might not have one
+  isNewArrival?: boolean; // Optional property for new arrivals
+  isBestSeller?: boolean; // Optional property for best sellers
+  isOnSale?: boolean; // Optional property for sale products
   isActive?: boolean;
   accountId: string;
   marketType: ProductType; // Add marketType to indicate domestic or global
