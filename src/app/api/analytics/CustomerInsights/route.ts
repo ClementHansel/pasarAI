@@ -38,7 +38,7 @@ export async function GET(request: UserRequest) {
 
         return NextResponse.json(
           await db.customerMetric.findMany({
-            where: { accountId: sellerId }, // Replace sellerId with accountId
+            where: { accountId: sellerId },
             select: selectFields[metric],
             orderBy: { date: "asc" },
           })
