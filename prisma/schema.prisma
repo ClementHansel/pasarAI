@@ -541,6 +541,9 @@ enum OrderStatus {
   CANCELLED
   SHIPPED
   DELIVERED
+  AWAITING_PICKUP
+  IN_TRANSIT
+  OUT_FOR_DELIVERY
 }
 
 enum WalletTransactionType {

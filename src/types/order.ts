@@ -8,6 +8,13 @@ export interface Order {
   cart: CartItem[];
   shippingAddress: string;
   totalAmount: number;
-  status: "pending" | "shipped" | "delivered" | "canceled";
+  status:
+    | "pending"
+    | "shipped"
+    | "delivered"
+    | "canceled"
+    | "awaiting_pickup"
+    | "in_transit"
+    | "delivered";
   createdAt: string;
 }

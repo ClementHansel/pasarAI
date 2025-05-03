@@ -7,7 +7,7 @@ export interface AuthenticatedRequest extends NextRequest {
   user?: {
     id: string;
     email: string;
-    role: "BUYER" | "SELLER";
+    role: "BUYER" | "SELLER" | "ADMIN";
   };
 }
 
@@ -18,7 +18,7 @@ export function verifyAccessToken(token: string) {
     const decoded = jwt.verify(token, JWT_SECRET) as {
       id: string;
       email: string;
-      role: "BUYER" | "SELLER";
+      role: "BUYER" | "SELLER" | "ADMIN";
     };
     return decoded;
   } catch (err) {
@@ -31,7 +31,7 @@ export function verifyAccessToken(token: string) {
 export function withAuth(
   handler: (req: AuthenticatedRequest) => Promise<Response>,
   options: {
-    allowedRoles?: ("BUYER" | "SELLER")[];
+    allowedRoles?: ("BUYER" | "SELLER" | "ADMIN")[];
     allowPublic?: boolean;
   } = {}
 ) {
@@ -103,4 +103,11 @@ export function withAnyAuth(
   handler: (req: AuthenticatedRequest) => Promise<Response>
 ) {
   return withAuth(handler, { allowedRoles: ["BUYER", "SELLER"] });
+}
+
+// Helper middleware for admin authenticated user
+export function withAdminAuth(
+  handler: (req: AuthenticatedRequest) => Promise<Response>
+) {
+  return withAuth(handler, { allowedRoles: ["ADMIN"] });
 }
