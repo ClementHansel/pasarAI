@@ -4,7 +4,7 @@
 import Image from "next/image";
 import { useState } from "react";
 import { ChevronLeft, ChevronRight, ZoomIn } from "lucide-react";
-import Dialog from "../ui/Dialog";
+import { Dialog } from "../ui/Dialog";
 
 export default function ProductImages({
   images,
@@ -48,6 +48,7 @@ export default function ProductImages({
           <button
             className="absolute bottom-2 right-2 bg-white/90 p-2 rounded-full shadow-md hover:bg-white transition-opacity opacity-0 group-hover:opacity-100"
             onClick={() => setIsZoomed(true)}
+            aria-label="zoom main image"
           >
             <ZoomIn className="w-5 h-5" />
           </button>
@@ -61,6 +62,7 @@ export default function ProductImages({
                 onClick={handlePrev}
                 disabled={startIndex === 0}
                 className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/80 p-1 rounded-full shadow-md hover:bg-white z-10 disabled:opacity-50"
+                aria-label="previous image"
               >
                 <ChevronLeft className="w-5 h-5" />
               </button>
@@ -68,6 +70,7 @@ export default function ProductImages({
                 onClick={handleNext}
                 disabled={startIndex + 3 >= images.length}
                 className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/80 p-1 rounded-full shadow-md hover:bg-white z-10 disabled:opacity-50"
+                aria-label="next image"
               >
                 <ChevronRight className="w-5 h-5" />
               </button>
@@ -85,6 +88,7 @@ export default function ProductImages({
                     ? "border-primary ring-2 ring-primary"
                     : "border-gray-200 hover:border-primary/50"
                 }`}
+                aria-label="set main image"
               >
                 <Image
                   src={image}
