@@ -32,7 +32,7 @@ const mockProducts: Product[] = [
     description: "Premium noise-cancelling over-ear headphones",
     brand: [
       {
-        id: 1,
+        id: "1",
         name: "SoundPro",
         createdAt: now,
         updatedAt: now,
@@ -71,7 +71,7 @@ const mockProducts: Product[] = [
     description: "Waterproof smartwatch with fitness tracking",
     brand: [
       {
-        id: 2,
+        id: "2",
         name: "FitTech",
         createdAt: now,
         updatedAt: now,

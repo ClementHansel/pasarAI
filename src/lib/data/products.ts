@@ -62,7 +62,7 @@ const sellers: Seller[] = [
 
 // Mock Brand
 const mockBrand: Brand = {
-  id: 1,
+  id: "1",
   name: "PasarAI Brand",
   createdAt: new Date(),
   updatedAt: new Date(),
