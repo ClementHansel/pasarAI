@@ -109,10 +109,20 @@ model Account {
   loginAttempts     LoginAttempt[]
   currencyId        String?          @unique
   currency          Currency?        @relation("AccountCurrency", fields: [currencyId], references: [id])
+  
+
 
   // Seller-specific relations
   cities           City[]           @relation("AccountCities")   // Sellers are associated with cities (multiple sellers can exist in a city)
   customerMetrics  CustomerMetric[]
+  attendances     Attendance[]
+  performances    Performance[]
+  satisfactions   Satisfaction[]
+  payrolls        Payroll[]
+  tasks           Task[]
+  collaborations  Collaboration[]
+  trainings       Training[]
+  workingHours    WorkingHours[]
 }
 
 model Market {
@@ -551,7 +561,77 @@ model CustomerMetric {
   account                 Account  @relation(fields: [accountId], references: [id])
 }
 
+model Attendance {
+  id          Int      @id @default(autoincrement())
+  accountId   String
+  date        DateTime
+  status      String
+  account     Account   @relation(fields: [accountId], references: [id])
+  @@index([accountId])
+}
 
+model Performance  {
+  id          Int      @id @default(autoincrement())
+  accountId   String
+  score       Float
+  reviewDate  DateTime
+  account     Account  @relation(fields: [accountId], references: [id])
+  @@index([accountId])
+}
+
+model Satisfaction  {
+  id        Int      @id @default(autoincrement())
+  accountId   String
+  satisfactionScore Int
+  surveyDate DateTime
+  account     Account  @relation(fields: [accountId], references: [id])
+  @@index([accountId])
+}
+
+model Payroll  {
+  id        Int      @id @default(autoincrement())
+  accountId   String
+  salary    Float
+  paymentDate DateTime
+  account     Account  @relation(fields: [accountId], references: [id])
+  @@index([accountId])
+}
+
+model Task  {
+  id        Int      @id @default(autoincrement())
+  accountId   String
+  taskName  String
+  dueDate   DateTime
+  account     Account  @relation(fields: [accountId], references: [id])
+  @@index([accountId])
+}
+
+model Collaboration  {
+  id        Int      @id @default(autoincrement())
+  accountId   String
+  score     Float
+  reviewDate DateTime
+  account     Account  @relation(fields: [accountId], references: [id])
+  @@index([accountId])
+}
+
+model Training  {
+  id        Int      @id @default(autoincrement())
+  accountId   String
+  trainingCourse String
+  completionStatus String
+  account     Account  @relation(fields: [accountId], references: [id])
+  @@index([accountId])
+}
+
+model WorkingHours  {
+  id        Int      @id @default(autoincrement())
+  accountId   String
+  hoursWorked Float
+  weekStartDate DateTime
+  account     Account  @relation(fields: [accountId], references: [id])
+  @@index([accountId])
+}
 
 
 enum Role {
