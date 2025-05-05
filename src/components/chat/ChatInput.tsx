@@ -6,6 +6,7 @@ import { Button } from "./Button";
 
 type AIChatMessageInputProps = {
   onSend: (text: string) => void;
+  disabled?: boolean;
 };
 
 export default function ChatInput({ onSend }: AIChatMessageInputProps) {

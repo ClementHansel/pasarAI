@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import AIChatHeader from "./AIChatHeader";
 import ChatInput from "./ChatInput";
-import { v4 as uuidv4 } from "uuid"; // Install with: npm install uuid
+import { v4 as uuidv4 } from "uuid";
 import AIChatMessages, { AIChatMessage } from "./AIChatMessages";
 
 interface AIChatPanelProps {
@@ -16,12 +16,13 @@ export default function AIChatPanel({
   onClose,
 }: AIChatPanelProps) {
   const [messages, setMessages] = useState<AIChatMessage[]>([]);
-  const [conversationId] = useState<string>(() => uuidv4()); // Generate once
-  const userAccountId = "user-12345"; // Replace with real account ID
-  const assistantAccountId = "assistant-system"; // Static or AI model ID
+  const [conversationId] = useState<string>(() => uuidv4());
+  const [loading, setLoading] = useState(false);
+  const userAccountId = "user-12345";
+  const assistantAccountId = "assistant-system";
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const handleSend = (text: string) => {
+  const handleSend = async (text: string) => {
     const timestamp = Date.now();
 
     const userMsg: AIChatMessage = {
@@ -33,16 +34,86 @@ export default function AIChatPanel({
       accountId: userAccountId,
     };
 
-    const aiMsg: AIChatMessage = {
-      id: (timestamp + 1).toString(),
-      content: `Echo: ${text}`,
-      role: "assistant",
-      timestamp: new Date(timestamp + 1).toISOString(),
-      conversationId,
-      accountId: assistantAccountId,
-    };
+    // Immediately show user message
+    setMessages((prev) => [...prev, userMsg]);
+    setLoading(true);
 
-    setMessages((prev) => [...prev, userMsg, aiMsg]);
+    try {
+      // Step 1: Save the user message to the chat API (this could be to store it in the database)
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ conversationId, message: text }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data?.message) {
+        // Step 2: Send the user message to the AI and get a response
+        const aiRes = await fetch("/api/ai", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ prompt: text }),
+        });
+
+        const aiData = await aiRes.json();
+
+        if (aiRes.ok && aiData?.result) {
+          // Step 3: Show the AI response message
+          const aiMsg: AIChatMessage = {
+            id: (timestamp + 1).toString(),
+            content: aiData.result, // AI's reply
+            role: "assistant",
+            timestamp: new Date(timestamp + 1).toISOString(),
+            conversationId,
+            accountId: assistantAccountId,
+          };
+
+          setMessages((prev) => [...prev, aiMsg]);
+        } else {
+          // AI failed to generate a response
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: (timestamp + 2).toString(),
+              content: "⚠️ Failed to get response from AI.",
+              role: "assistant",
+              timestamp: new Date(timestamp + 2).toISOString(),
+              conversationId,
+              accountId: assistantAccountId,
+            },
+          ]);
+        }
+      } else {
+        // Failed to save the user message
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: (timestamp + 2).toString(),
+            content: "⚠️ Failed to save message.",
+            role: "assistant",
+            timestamp: new Date(timestamp + 2).toISOString(),
+            conversationId,
+            accountId: assistantAccountId,
+          },
+        ]);
+      }
+    } catch (err) {
+      console.error("Chat error:", err);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: (timestamp + 3).toString(),
+          content: "⚠️ Network or server error.",
+          role: "assistant",
+          timestamp: new Date(timestamp + 3).toISOString(),
+          conversationId,
+          accountId: assistantAccountId,
+        },
+      ]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -65,7 +136,7 @@ export default function AIChatPanel({
       </div>
 
       <div className="sticky bottom-0 bg-white border-t border-gray-200 p-4">
-        <ChatInput onSend={handleSend} />
+        <ChatInput onSend={handleSend} disabled={loading} />
       </div>
     </div>
   );
