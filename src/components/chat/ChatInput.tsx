@@ -4,11 +4,11 @@ import React, { useState } from "react";
 import { Send } from "lucide-react";
 import { Button } from "./Button";
 
-type MessageInputProps = {
+type AIChatMessageInputProps = {
   onSend: (text: string) => void;
 };
 
-export default function MessageInput({ onSend }: MessageInputProps) {
+export default function ChatInput({ onSend }: AIChatMessageInputProps) {
   const [input, setInput] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {

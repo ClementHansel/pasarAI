@@ -90,7 +90,7 @@ export async function POST(req: Request) {
 
     // Look up currency by name (since name is not unique, use findFirst)
     const currencyRecord = await db.currency.findFirst({
-      where: { name: currency }, // <-- use the destructured currency variable
+      where: { name: currency },
     });
     if (!currencyRecord) {
       return NextResponse.json({ error: "Invalid currency" }, { status: 400 });

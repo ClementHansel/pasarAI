@@ -1,18 +1,20 @@
 import React from "react";
 import { cn } from "@/lib/utils";
 
-export interface Message {
+export interface AIChatMessage {
   id: string;
   content: string;
   role: "user" | "assistant";
   timestamp: string;
+  conversationId: string;
+  accountId: string;
 }
 
-interface ChatMessageProps {
-  messages: Message[];
+interface AIChatMessageProps {
+  messages: AIChatMessage[];
 }
 
-const AIChatMessage = ({ messages }: ChatMessageProps) => {
+const AIChatMessages = ({ messages }: AIChatMessageProps) => {
   return (
     <div className="space-y-4 px-4 py-6 sm:px-6">
       {messages.map((message) => (
@@ -48,4 +50,4 @@ const AIChatMessage = ({ messages }: ChatMessageProps) => {
   );
 };
 
-export default AIChatMessage;
+export default AIChatMessages;

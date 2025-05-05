@@ -109,8 +109,8 @@ model Account {
   loginAttempts     LoginAttempt[]
   currencyId        String?          @unique
   currency          Currency?        @relation("AccountCurrency", fields: [currencyId], references: [id])
-  
-
+  chatConversations ChatConversation[]
+  chatMessages      ChatMessage[]
 
   // Seller-specific relations
   cities                  City[]                @relation("AccountCities")   // Sellers are associated with cities (multiple sellers can exist in a city)
@@ -796,6 +796,27 @@ model TaxSummary {
   financialOverviewId     Int?                @unique
 }
 
+model ChatConversation {
+  id        String        @id @default(uuid())
+  accountId String
+  account   Account       @relation(fields: [accountId], references: [id])
+  role      Role 
+  title     String
+  messages  ChatMessage[]
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+}
+
+model ChatMessage {
+  id             String      @id @default(uuid())
+  content        String
+  role           String      // user | assistant
+  accountId      String
+  account        Account     @relation(fields: [accountId], references: [id])
+  conversationId String
+  conversation   ChatConversation @relation(fields: [conversationId], references: [id])
+  createdAt      DateTime    @default(now())
+}
 
 enum CashFlowType {
   Inflow

@@ -3,7 +3,7 @@ type MessageBubbleProps = {
   text: string;
 };
 
-export default function MessageBubble({ sender, text }: MessageBubbleProps) {
+export default function ChatBubble({ sender, text }: MessageBubbleProps) {
   const isUser = sender === "user";
 
   return (
