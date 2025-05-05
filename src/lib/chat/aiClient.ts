@@ -8,7 +8,7 @@ export async function callAI(prompt: string): Promise<string> {
   }
 
   const payload = {
-    model: "mistral/mistral-7b-instruct", // You can switch to: openchat/openchat-7b
+    model: "mistral/mistral-7b-instruct",
     messages: [
       { role: "system", content: "You are a helpful assistant." },
       { role: "user", content: prompt },
@@ -21,8 +21,9 @@ export async function callAI(prompt: string): Promise<string> {
       headers: {
         Authorization: `Bearer ${API_KEY}`,
         "Content-Type": "application/json",
-        "HTTP-Referer": "https://yourdomain.com", // ✅ Replace with your actual domain
-        "X-Title": "YourAppName", // ✅ Replace with your app name
+        "HTTP-Referer":
+          "https://pasar-ai-git-master-greedybugz-gmailcoms-projects.vercel.app/",
+        "X-Title": "PasarAi",
       },
       body: JSON.stringify(payload),
     });
