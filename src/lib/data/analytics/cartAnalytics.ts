@@ -1,46 +1,49 @@
-// src/data/analytics/cartAnalytics.ts
+// src/lib/data/analytics/cartAnalytics.ts
 
-export async function getCartAnalytics() {
-  return [
-    {
-      date: "2025-05-01",
-      cartsCreated: 320,
-      itemsAdded: 870,
-      itemsRemoved: 210,
-      avgCartValue: 110000,
-      conversionRate: 56, // percentage of carts that turned into orders
-    },
-    {
-      date: "2025-05-02",
-      cartsCreated: 400,
-      itemsAdded: 1020,
-      itemsRemoved: 300,
-      avgCartValue: 124000,
-      conversionRate: 61,
-    },
-    {
-      date: "2025-05-03",
-      cartsCreated: 280,
-      itemsAdded: 720,
-      itemsRemoved: 180,
-      avgCartValue: 95000,
-      conversionRate: 50,
-    },
-    {
-      date: "2025-05-04",
-      cartsCreated: 350,
-      itemsAdded: 910,
-      itemsRemoved: 240,
-      avgCartValue: 119000,
-      conversionRate: 58,
-    },
-    {
-      date: "2025-05-05",
-      cartsCreated: 430,
-      itemsAdded: 1180,
-      itemsRemoved: 260,
-      avgCartValue: 131000,
-      conversionRate: 64,
-    },
-  ];
+import { CartAnalytics as AnalyticsType } from "src/types/ai/analyticsTypes";
+
+export async function getCartAnalytics(): Promise<AnalyticsType[]> {
+  try {
+    // Simulating fetching cart analytics data
+    return [
+      {
+        date: "2025-05-01",
+        totalCartsCreated: 320,
+        abandonedCarts: 50, // Example value for abandoned carts
+        mostPopularProduct: "Product A", // Example most popular product
+        avgCartValue: 110000, // Average cart value
+      },
+      {
+        date: "2025-05-02",
+        totalCartsCreated: 400,
+        abandonedCarts: 60,
+        mostPopularProduct: "Product B",
+        avgCartValue: 124000,
+      },
+      {
+        date: "2025-05-03",
+        totalCartsCreated: 280,
+        abandonedCarts: 45,
+        mostPopularProduct: "Product C",
+        avgCartValue: 95000,
+      },
+      {
+        date: "2025-05-04",
+        totalCartsCreated: 350,
+        abandonedCarts: 55,
+        mostPopularProduct: "Product D",
+        avgCartValue: 119000,
+      },
+      {
+        date: "2025-05-05",
+        totalCartsCreated: 430,
+        abandonedCarts: 65,
+        mostPopularProduct: "Product E",
+        avgCartValue: 131000,
+      },
+    ];
+  } catch (error) {
+    console.error("Error fetching cart analytics:", error);
+    return []; // Return empty array in case of error
+  }
 }

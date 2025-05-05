@@ -48,7 +48,7 @@ const ChatPage = () => {
     };
 
     fetchConversations();
-  }, [accountId, accountRole]); // Add dependency to re-fetch if accountId or accountRole changes
+  }, [accountId, accountRole]);
 
   const handleSendMessage = async (content: string) => {
     const userMessage: AIChatMessage = {
@@ -64,6 +64,7 @@ const ChatPage = () => {
     setMessages((prev) => [userMessage, ...prev]);
 
     try {
+      // Step 1: Save user message to database
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -72,33 +73,64 @@ const ChatPage = () => {
           role: "user",
           accountId,
           conversationId,
-          accountRole, // pass the account's true role
+          accountRole,
         }),
       });
 
       const data = await res.json();
 
-      if (res.ok) {
-        const savedMessage = data.message;
-        setConversationId(savedMessage.conversationId);
-
-        // Simulated assistant reply after successful save
-        const assistantMessage: AIChatMessage = {
-          id: Date.now().toString() + "-a",
-          content:
-            "I'm an AI assistant. I'm here to help answer your questions.",
-          role: "assistant",
-          timestamp: new Date().toISOString(),
-          accountId,
-          conversationId: savedMessage.conversationId,
-        };
-
-        setTimeout(() => {
-          setMessages((prev) => [assistantMessage, ...prev]);
-        }, 1000);
-      } else {
+      if (!res.ok) {
         console.error("Failed to send message", data.error);
+        return;
       }
+
+      const savedUserMessage = data.message;
+      const newConversationId = savedUserMessage.conversationId;
+      setConversationId(newConversationId);
+
+      // Step 2: Call the AI response API with the user's message
+      const aiRes = await fetch("/api/ai", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: content }),
+      });
+
+      const aiData = await aiRes.json();
+
+      if (!aiRes.ok || !aiData.result) {
+        console.error("AI response failed", aiData.error);
+        return;
+      }
+
+      const aiResponse = aiData.result;
+
+      // Step 3: Save the AI message to DB
+      const assistantRes = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          content: aiResponse,
+          role: "assistant",
+          accountId,
+          conversationId: newConversationId,
+          accountRole,
+        }),
+      });
+
+      const assistantData = await assistantRes.json();
+
+      if (!assistantRes.ok) {
+        console.error("Failed to save assistant message", assistantData.error);
+        return;
+      }
+
+      const savedAssistantMessage: AIChatMessage = {
+        ...assistantData.message,
+        timestamp: new Date().toISOString(),
+      };
+
+      // Step 4: Show assistant message in UI
+      setMessages((prev) => [savedAssistantMessage, ...prev]);
     } catch (err) {
       console.error("Message send error", err);
     }

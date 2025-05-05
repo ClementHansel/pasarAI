@@ -1,46 +1,49 @@
 // src/data/analytics/checkoutAnalytics.ts
 
-export async function getCheckoutAnalytics() {
-  return [
-    {
-      date: "2025-05-01",
-      initiated: 240,
-      completed: 180,
-      abandoned: 60,
-      avgTimeToCheckout: 135, // seconds
-      revenue: 450000, // in local currency
-    },
-    {
-      date: "2025-05-02",
-      initiated: 310,
-      completed: 245,
-      abandoned: 65,
-      avgTimeToCheckout: 128,
-      revenue: 620000,
-    },
-    {
-      date: "2025-05-03",
-      initiated: 190,
-      completed: 140,
-      abandoned: 50,
-      avgTimeToCheckout: 142,
-      revenue: 360000,
-    },
-    {
-      date: "2025-05-04",
-      initiated: 280,
-      completed: 230,
-      abandoned: 50,
-      avgTimeToCheckout: 120,
-      revenue: 580000,
-    },
-    {
-      date: "2025-05-05",
-      initiated: 330,
-      completed: 300,
-      abandoned: 30,
-      avgTimeToCheckout: 110,
-      revenue: 760000,
-    },
-  ];
+import { CheckoutAnalytics as AnalyticsType } from "src/types/ai/analyticsTypes";
+
+export async function getCheckoutAnalytics(): Promise<AnalyticsType[]> {
+  try {
+    // Simulating fetching checkout analytics data
+    return [
+      {
+        date: "2025-05-01",
+        totalCheckouts: 240, // Renamed to match type
+        completedCheckouts: 180, // Renamed to match type
+        abandonmentRate: 25, // Calculated as abandoned / initiated * 100
+        paymentMethodPreference: "Credit Card", // Added for the new type
+      },
+      {
+        date: "2025-05-02",
+        totalCheckouts: 310,
+        completedCheckouts: 245,
+        abandonmentRate: 21, // Same calculation for abandonment rate
+        paymentMethodPreference: "Debit Card",
+      },
+      {
+        date: "2025-05-03",
+        totalCheckouts: 190,
+        completedCheckouts: 140,
+        abandonmentRate: 26,
+        paymentMethodPreference: "PayPal",
+      },
+      {
+        date: "2025-05-04",
+        totalCheckouts: 280,
+        completedCheckouts: 230,
+        abandonmentRate: 18,
+        paymentMethodPreference: "Credit Card",
+      },
+      {
+        date: "2025-05-05",
+        totalCheckouts: 330,
+        completedCheckouts: 300,
+        abandonmentRate: 9,
+        paymentMethodPreference: "PayPal",
+      },
+    ];
+  } catch (error) {
+    console.error("Error fetching checkout analytics:", error);
+    return []; // Return empty array in case of error
+  }
 }

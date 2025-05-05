@@ -1,46 +1,43 @@
 // src/data/analytics/wishlistAnalytics.ts
 
-export async function getWishlistAnalytics() {
-  return [
-    {
-      date: "2025-05-01",
-      wishlistsCreated: 120,
-      itemsWished: 450,
-      topCategory: "Electronics",
-      mostWishedProduct: "Wireless Headphones",
-      conversionRate: 25, // percentage of wished items that were purchased
-    },
-    {
-      date: "2025-05-02",
-      wishlistsCreated: 150,
-      itemsWished: 510,
-      topCategory: "Home & Living",
-      mostWishedProduct: "Smart Lamp",
-      conversionRate: 27,
-    },
-    {
-      date: "2025-05-03",
-      wishlistsCreated: 90,
-      itemsWished: 320,
-      topCategory: "Fashion",
-      mostWishedProduct: "Denim Jacket",
-      conversionRate: 22,
-    },
-    {
-      date: "2025-05-04",
-      wishlistsCreated: 130,
-      itemsWished: 470,
-      topCategory: "Electronics",
-      mostWishedProduct: "Bluetooth Speaker",
-      conversionRate: 29,
-    },
-    {
-      date: "2025-05-05",
-      wishlistsCreated: 160,
-      itemsWished: 560,
-      topCategory: "Beauty",
-      mostWishedProduct: "Organic Skincare Set",
-      conversionRate: 31,
-    },
-  ];
+import { WishlistAnalytics as AnalyticsType } from "src/types/ai/analyticsTypes";
+
+export async function getWishlistAnalytics(): Promise<AnalyticsType[]> {
+  try {
+    return [
+      {
+        date: "2025-05-01", // Added for consistency with other analytics
+        totalWishlists: 120, // Changed to match the prompt
+        mostAddedProduct: "Wireless Headphones", // Changed to match the prompt
+        abandonmentRate: 75, // Conversion rate is used to calculate abandonment rate (100 - conversionRate)
+      },
+      {
+        date: "2025-05-02",
+        totalWishlists: 150,
+        mostAddedProduct: "Smart Lamp",
+        abandonmentRate: 73,
+      },
+      {
+        date: "2025-05-03",
+        totalWishlists: 90,
+        mostAddedProduct: "Denim Jacket",
+        abandonmentRate: 78,
+      },
+      {
+        date: "2025-05-04",
+        totalWishlists: 130,
+        mostAddedProduct: "Bluetooth Speaker",
+        abandonmentRate: 71,
+      },
+      {
+        date: "2025-05-05",
+        totalWishlists: 160,
+        mostAddedProduct: "Organic Skincare Set",
+        abandonmentRate: 69,
+      },
+    ];
+  } catch (error) {
+    console.error("Error fetching wishlist analytics:", error);
+    return []; // Return empty array in case of error
+  }
 }

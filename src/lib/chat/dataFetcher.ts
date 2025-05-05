@@ -1,5 +1,3 @@
-// src/lib/chat/dataFetcher.ts
-
 import { getProductAnalytics } from "../data/analytics/productAnalytics";
 import { getCheckoutAnalytics } from "../data/analytics/checkoutAnalytics";
 import { getCartAnalytics } from "../data/analytics/cartAnalytics";
@@ -11,15 +9,15 @@ import { getRevenueAnalytics } from "../data/analytics/revenueAnalytics";
 import { AnalyticsType } from "@/types/ai/analyticsTypes";
 
 // Keywords to help AI intent classifier or fuzzy search
-const analyticsKeywordsMap: Record<AnalyticsType, string[]> = {
-  products: ["product", "catalog", "item", "stock"],
-  checkout: ["checkout", "purchase", "transaction"],
-  cart: ["cart", "abandon", "shopping"],
-  wishlist: ["wishlist", "favorite", "saved"],
-  sales: ["sales", "sold", "selling"],
-  returns: ["return", "refund", "cancel"],
-  customers: ["user", "customer", "buyer", "audience"],
-  revenue: ["money", "income", "revenue", "earning"],
+const analyticsKeywordsMap: Record<string, AnalyticsType> = {
+  products: "products",
+  checkout: "checkout",
+  cart: "cart",
+  wishlist: "wishlist",
+  sales: "sales",
+  returns: "returns",
+  customers: "customers",
+  revenue: "revenue",
 };
 
 // Main fetch function
@@ -51,15 +49,15 @@ export function inferAnalyticsTypeFromPrompt(
   prompt: string
 ): AnalyticsType | null {
   const lower = prompt.toLowerCase();
-  for (const [type, keywords] of Object.entries(analyticsKeywordsMap)) {
-    if (keywords.some((keyword) => lower.includes(keyword))) {
-      return type as AnalyticsType;
+  for (const [keyword, type] of Object.entries(analyticsKeywordsMap)) {
+    if (lower.includes(keyword)) {
+      return type; // Return the correct AnalyticsType
     }
   }
   return null;
 }
 
 // Optionally expose the list of available types
-export const availableAnalyticsTypes: AnalyticsType[] = Object.keys(
+export const availableAnalyticsTypes: AnalyticsType[] = Object.values(
   analyticsKeywordsMap
 ) as AnalyticsType[];
