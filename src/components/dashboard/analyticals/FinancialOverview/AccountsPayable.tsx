@@ -1,33 +1,10 @@
 // src/components/dashboard/FinancialOverview/AccountsPayable.tsx
+import { AccountsPayable as AccountsPayableType } from "@/types/analytical/financial";
 import React from "react";
 
-interface Payable {
-  vendor: string;
-  amount: number;
-  dueDate: string;
-  status: "pending" | "paid" | "overdue";
+interface AccountsPayableProps {
+  payables: AccountsPayableType[];
 }
-
-const payables: Payable[] = [
-  {
-    vendor: "Vendor A",
-    amount: 3200,
-    dueDate: "2025-04-20",
-    status: "pending",
-  },
-  {
-    vendor: "Vendor B",
-    amount: 1500,
-    dueDate: "2025-04-15",
-    status: "overdue",
-  },
-  {
-    vendor: "Vendor C",
-    amount: 2000,
-    dueDate: "2025-05-01",
-    status: "pending",
-  },
-];
 
 const getStatusColor = (status: string) => {
   switch (status) {
@@ -42,7 +19,7 @@ const getStatusColor = (status: string) => {
   }
 };
 
-const AccountsPayable: React.FC = () => {
+const AccountsPayable: React.FC<AccountsPayableProps> = ({ payables }) => {
   const totalPayables = payables.reduce((sum, p) => sum + p.amount, 0);
 
   return (
@@ -62,7 +39,7 @@ const AccountsPayable: React.FC = () => {
             <tr key={idx} className="border-b last:border-0">
               <td className="py-2">{p.vendor}</td>
               <td>${p.amount.toLocaleString()}</td>
-              <td>{p.dueDate}</td>
+              <td>{p.dueDate.toLocaleDateString()}</td>
               <td className={getStatusColor(p.status)}>{p.status}</td>
             </tr>
           ))}

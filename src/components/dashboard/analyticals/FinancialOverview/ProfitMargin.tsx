@@ -1,21 +1,20 @@
-// src/components/dashboard/FinancialOverview/ProfitMargin.tsx
 "use client";
-import React, { useEffect, useState } from "react";
+import React from "react";
 
-const ProfitMargin: React.FC = () => {
-  const [margin, setMargin] = useState<number>(0);
+interface ProfitMarginProps {
+  revenue: number;
+  cost: number;
+}
 
-  useEffect(() => {
-    const revenue = 150000;
-    const cost = 95000;
-    const marginCalc = ((revenue - cost) / revenue) * 100;
-    setMargin(parseFloat(marginCalc.toFixed(2)));
-  }, []);
+const ProfitMargin: React.FC<ProfitMarginProps> = ({ revenue, cost }) => {
+  const margin = ((revenue - cost) / revenue) * 100;
 
   return (
     <div className="bg-white p-4 rounded-lg shadow">
       <h2 className="text-lg font-bold mb-2">Profit Margin</h2>
-      <p className="text-2xl font-semibold text-blue-600">{margin}%</p>
+      <p className="text-2xl font-semibold text-blue-600">
+        {margin.toFixed(2)}%
+      </p>
     </div>
   );
 };

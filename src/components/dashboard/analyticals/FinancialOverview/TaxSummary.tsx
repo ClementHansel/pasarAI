@@ -1,4 +1,3 @@
-// src/components/dashboard/FinancialOverview/TaxSummary.tsx
 import React from "react";
 
 interface TaxDetails {
@@ -6,15 +5,11 @@ interface TaxDetails {
   amount: number;
 }
 
-const taxData: TaxDetails[] = [
-  { taxType: "Federal Tax", amount: 12000 },
-  { taxType: "State Tax", amount: 3500 },
-  { taxType: "Local Tax", amount: 1000 },
-  { taxType: "Sales Tax", amount: 2200 },
-  { taxType: "VAT", amount: 1800 },
-];
+interface TaxSummaryProps {
+  taxData: TaxDetails[];
+}
 
-const TaxSummary: React.FC = () => {
+const TaxSummary: React.FC<TaxSummaryProps> = ({ taxData }) => {
   return (
     <div className="bg-white p-4 rounded-lg shadow w-full">
       <h2 className="text-lg font-bold mb-4">Tax Summary</h2>

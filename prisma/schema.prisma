@@ -113,16 +113,21 @@ model Account {
 
 
   // Seller-specific relations
-  cities           City[]           @relation("AccountCities")   // Sellers are associated with cities (multiple sellers can exist in a city)
-  customerMetrics  CustomerMetric[]
-  attendances     Attendance[]
-  performances    Performance[]
-  satisfactions   Satisfaction[]
-  payrolls        Payroll[]
-  tasks           Task[]
-  collaborations  Collaboration[]
-  trainings       Training[]
-  workingHours    WorkingHours[]
+  cities                  City[]                @relation("AccountCities")   // Sellers are associated with cities (multiple sellers can exist in a city)
+  customerMetrics         CustomerMetric[]
+
+  // dashboard relations
+  attendances             Attendance[]
+  performances            Performance[]
+  satisfactions           Satisfaction[]
+  payrolls                Payroll[]
+  tasks                   Task[]
+  collaborations          Collaboration[]
+  trainings               Training[]
+  workingHours            WorkingHours[]
+  financialOverview       FinancialOverview[]
+  accountsPayable         AccountsPayable[]
+  accountsReceivable      AccountsReceivable[]
 }
 
 model Market {
@@ -632,6 +637,171 @@ model WorkingHours  {
   account     Account  @relation(fields: [accountId], references: [id])
   @@index([accountId])
 }
+
+model FinancialOverview {
+  id                              Int                      @id @default(autoincrement())
+  accountId                       String
+  accountsPayable                 AccountsPayable[]
+  accountsReceivable              AccountsReceivable[]
+  budgetVsActual                  BudgetVsActual[]
+  cashFlow                        CashFlow[]
+  ebitda                          EBITDA[]
+  financialRatio                  FinancialRatio[]
+  financialRatiosDebtToEquity     FinancialRatio[]         @relation("DebtToEquity")
+  financialRatiosCurrentRatio     FinancialRatio[]         @relation("CurrentRatio")
+  monthlyFinancialReport          MonthlyFinancialReport[]
+  netProfit                       Float
+  operatingExpenses               Float
+  profitMargin                    Float
+  refundsReturnsId                Int?                     @unique
+  refundsReturns                  RefundsReturn?           @relation(fields: [refundsReturnsId], references: [id])
+  revenueBreakdowns               RevenueBreakdown[]
+  taxSummaryId                    Int?                     @unique
+  taxSummary                      TaxSummary?              @relation(fields: [taxSummaryId], references: [id])
+
+  account                         Account                  @relation(fields: [accountId], references: [id])
+
+  @@index([accountId])
+}
+
+model AccountsPayable {
+  id                    String    @id @default(cuid()) // Unique ID for each payable entry
+  vendor                String
+  amount                Float
+  dueDate               DateTime
+  status                String 
+  createdAt             DateTime  @default(now()) // Timestamp when the payable was created
+  updatedAt             DateTime  @updatedAt // Timestamp when the payable was last updated
+  financialOverviewId   Int
+  financialOverview     FinancialOverview @relation(fields: [financialOverviewId], references: [id])
+  accountId             String
+  account               Account @relation(fields: [accountId], references: [id])
+}
+
+
+
+model AccountsReceivable {
+  id                    String   @id @default(cuid())
+  financialOverviewId   Int
+  financialOverview     FinancialOverview @relation(fields: [financialOverviewId], references: [id])
+  client                String
+  dueDate               DateTime
+  amount                Float
+  status                ReceivableStatus
+  accountId             String
+  account               Account @relation(fields: [accountId], references: [id])
+}
+
+enum ReceivableStatus {
+  Overdue
+  Pending
+  Paid
+}
+
+model BudgetVsActual {
+  id                    Int                @id @default(autoincrement())
+  month                 String
+  budget                Float
+  actual                Float
+  financialOverview     FinancialOverview @relation(fields: [financialOverviewId], references: [id])
+  financialOverviewId   Int
+}
+
+model CashFlow {
+  id                      String            @id @default(cuid())
+  type                    CashFlowType
+  description             String
+  amount                  Float
+  createdAt               DateTime          @default(now())
+  financialOverview       FinancialOverview @relation(fields: [financialOverviewId], references: [id])
+  financialOverviewId     Int
+}
+
+model EBITDA {
+  id                    String              @id @default(cuid())
+  month                 String
+  value                 Float
+  year                  Int
+  createdAt             DateTime            @default(now())
+  financialOverview     FinancialOverview   @relation(fields: [financialOverviewId], references: [id])
+  financialOverviewId   Int
+}
+
+model FinancialRatio {
+  id                      String              @id @default(cuid())
+  label                   String
+  value                   Float
+  createdAt               DateTime            @default(now())
+  
+  financialOverview       FinancialOverview   @relation(fields: [financialOverviewId], references: [id])
+  financialOverviewId     Int
+
+  debtToEquityOverview    FinancialOverview?  @relation("DebtToEquity", fields: [debtToEquityOverviewId], references: [id])
+  debtToEquityOverviewId  Int?
+
+  currentRatioOverview    FinancialOverview?  @relation("CurrentRatio", fields: [currentRatioOverviewId], references: [id])
+  currentRatioOverviewId  Int?
+}
+
+model MonthlyFinancialReport {
+  id                      String            @id @default(cuid())
+  month                   String
+  revenue                 Float
+  expenses                Float
+  year                    Int
+  createdAt               DateTime          @default(now())
+  financialOverview       FinancialOverview @relation(fields: [financialOverviewId], references: [id])
+  financialOverviewId     Int
+}
+
+model NetProfit {
+  id        Int    @id @default(autoincrement())
+  revenue   Float
+  expenses  Float
+}
+
+model OperatingExpense {
+  id        Int     @id @default(autoincrement())
+  category  String
+  amount    Float
+}
+
+model ProfitMargin {
+  id        Int     @id @default(autoincrement())
+  revenue   Float
+  cost      Float
+}
+
+model RefundsReturn {
+  id        Int     @id @default(autoincrement())
+  refunds   Float
+  returns   Int
+  financialOverview FinancialOverview?
+  financialOverviewId     Int?                @unique
+}
+
+model RevenueBreakdown {
+  id        Int     @id @default(autoincrement())
+  label     String
+  amount    Float
+  financialOverviewId   Int
+  financialOverview     FinancialOverview   @relation(fields: [financialOverviewId], references: [id])
+}
+
+model TaxSummary {
+  id        Int     @id @default(autoincrement())
+  taxRate               Float
+  taxAmount             Float
+  financialOverview     FinancialOverview?
+  financialOverviewId     Int?                @unique
+}
+
+
+enum CashFlowType {
+  Inflow
+  Outflow
+}
+
 
 
 enum Role {

@@ -1,42 +1,30 @@
-// src/components/dashboard/FinancialOverview/AccountsReceivable.tsx
+import { AccountsReceivable as AccountsReceivableType } from "@/types/analytical/financial";
 import React from "react";
 
-interface Receivable {
-  client: string;
-  dueDate: string;
-  amount: number;
-  status: "Overdue" | "Pending" | "Paid";
+interface AccountsReceivableProps {
+  receivables: AccountsReceivableType[];
 }
 
-const receivablesData: Receivable[] = [
-  {
-    client: "Alpha Corp",
-    dueDate: "2025-04-05",
-    amount: 1200,
-    status: "Overdue",
-  },
-  {
-    client: "Beta Ltd",
-    dueDate: "2025-04-15",
-    amount: 3000,
-    status: "Pending",
-  },
-  { client: "Gamma Inc", dueDate: "2025-03-20", amount: 2500, status: "Paid" },
-];
-
-const statusColorMap = {
+const statusColorMap: Record<AccountsReceivableType["status"], string> = {
   Overdue: "text-red-600",
   Pending: "text-yellow-600",
   Paid: "text-green-600",
 };
 
-const AccountsReceivable: React.FC = () => {
+const AccountsReceivable: React.FC<AccountsReceivableProps> = ({
+  receivables,
+}) => {
+  const totalReceivables = receivables.reduce(
+    (sum, item) => sum + item.amount,
+    0
+  );
+
   return (
     <div className="bg-white p-4 rounded-lg shadow w-full">
       <h2 className="text-lg font-bold mb-4">Accounts Receivable</h2>
       <table className="w-full text-sm">
         <thead>
-          <tr className="text-left text-gray-500">
+          <tr className="text-left text-gray-500 border-b">
             <th>Client</th>
             <th>Due Date</th>
             <th>Amount</th>
@@ -44,10 +32,10 @@ const AccountsReceivable: React.FC = () => {
           </tr>
         </thead>
         <tbody>
-          {receivablesData.map((item, idx) => (
+          {receivables.map((item, idx) => (
             <tr key={idx} className="border-t">
               <td>{item.client}</td>
-              <td>{item.dueDate}</td>
+              <td>{item.dueDate.toLocaleDateString()}</td>
               <td>${item.amount.toLocaleString()}</td>
               <td className={`${statusColorMap[item.status]} font-medium`}>
                 {item.status}
@@ -56,6 +44,9 @@ const AccountsReceivable: React.FC = () => {
           ))}
         </tbody>
       </table>
+      <div className="text-right mt-4 font-semibold">
+        Total Receivable: ${totalReceivables.toLocaleString()}
+      </div>
     </div>
   );
 };
