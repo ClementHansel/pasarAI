@@ -7,7 +7,7 @@ import {
   getAccountByEmail,
   getAccountByReferralCode,
 } from "@/services/account/accountService";
-import { Role } from "@prisma/client"; // Import the Role enum
+import { Role } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db/db";
 
