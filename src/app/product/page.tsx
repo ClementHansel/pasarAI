@@ -54,7 +54,7 @@ const ProductPage = () => {
 
   useEffect(() => {
     fetchProducts();
-  }, [fetchProducts]);
+  }, []);
 
   useEffect(() => {
     setFilters((prev) => ({ ...prev, search: debouncedSearch }));
