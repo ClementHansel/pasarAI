@@ -237,6 +237,7 @@ model Product {
 model Category {
   id        String    @id @default(cuid())
   name      String    @unique
+  description String?
   product   Product[] @relation("ProductCategories") // Products in this category
   label     String? // Optional: "Best Seller", "New Arrival", etc.
   createdAt DateTime  @default(now())
@@ -678,8 +679,6 @@ model AccountsPayable {
   accountId             String
   account               Account @relation(fields: [accountId], references: [id])
 }
-
-
 
 model AccountsReceivable {
   id                    String   @id @default(cuid())
