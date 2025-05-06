@@ -20,7 +20,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { buyerId, cartItems, shippingAddress, paymentMethod } = parsed.data;
+    const { buyerId, sellerId, cartItems, shippingAddress, paymentMethod } =
+      parsed.data;
 
     // Calculate total amount for the order
     const totalAmount = cartItems.reduce(
@@ -49,6 +50,7 @@ export async function POST(req: NextRequest) {
       return await tx.order.create({
         data: {
           buyerId,
+          sellerId,
           status: OrderStatus.PENDING,
           shippingAddress,
           paymentMethod,
