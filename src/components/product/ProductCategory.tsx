@@ -64,7 +64,7 @@ const ProductCategory = ({
     };
 
     fetchData();
-  }, [type, searchTerm, categoryFilter, selectedFilters]);
+  }, []);
 
   if (loading) {
     return (
@@ -91,9 +91,10 @@ const ProductCategory = ({
               : "grid-cols-1"
           )}
         >
-          {products.map((product: Product) => (
-            <ProductCard key={product.id} {...product} viewMode={viewMode} />
-          ))}
+          {products.length > 0 &&
+            products?.map((product: Product) => (
+              <ProductCard key={product.id} {...product} viewMode={viewMode} />
+            ))}
         </div>
       )}
     </div>
