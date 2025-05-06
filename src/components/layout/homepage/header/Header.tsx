@@ -12,6 +12,7 @@ import CategoriesNav from "./CategoriesNav";
 import Link from "next/link";
 import { Menu } from "lucide-react";
 import { usePathname } from "next/navigation";
+import { useSearch } from "@/context/SearchContext";
 
 const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -25,6 +26,8 @@ const Header = () => {
 
   // Check if we're on the homepage
   const isHomePage = pathname === "/";
+
+  const { query, setQuery, submitSearch } = useSearch();
 
   // Define navigation items based on page type
   const mainNavItems = [
@@ -77,7 +80,11 @@ const Header = () => {
 
           {/* Search Bar - Desktop */}
           <div className="hidden lg:flex flex-1 max-w-2xl mx-8">
-            <SearchBox />
+            <SearchBox
+              value={query}
+              onChange={setQuery}
+              onSubmit={submitSearch}
+            />
           </div>
 
           {/* Icons */}
@@ -91,7 +98,11 @@ const Header = () => {
 
         {/* Search Bar - Mobile */}
         <div className="lg:hidden py-3">
-          <SearchBox />
+          <SearchBox
+            value={query}
+            onChange={setQuery}
+            onSubmit={submitSearch}
+          />
         </div>
 
         {/* Navigation - Desktop */}
