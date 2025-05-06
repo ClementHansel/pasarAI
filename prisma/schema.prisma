@@ -187,6 +187,7 @@ model City {
 model Currency {
   id          String    @id @default(cuid())
   name        String
+  code        String    @unique
   markets     Market[]
   description String?
   accountId   String
@@ -822,8 +823,6 @@ enum CashFlowType {
   Inflow
   Outflow
 }
-
-
 
 enum Role {
   ADMIN
