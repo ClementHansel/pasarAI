@@ -1,3 +1,9 @@
+// COMMENTED OUT: This AI analytics agent is a work in progress and currently causes build errors due to missing types (e.g., '@/types/agent/analytics').
+// To re-enable, ensure all type imports and dependencies exist and are implemented.
+//
+// This file is intentionally disabled to allow successful builds. Please coordinate with the AI/data team before restoring.
+
+/*
 // src/lib/ai/agent/analyticsAgent.ts
 
 import {
@@ -80,3 +86,4 @@ export async function handleAnalyticsTask(
     };
   }
 }
+*/

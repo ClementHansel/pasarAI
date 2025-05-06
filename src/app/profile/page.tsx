@@ -8,6 +8,7 @@ import SellerReview from "@/components/review/SellerReview";
 import { Account } from "@/types/account";
 import { Product } from "@/types/product";
 import { Review } from "@/types/review";
+import { RouteGuard } from "@/components/auth/RouteGuard";
 
 async function getAccountData(): Promise<Account | null> {
   const res = await fetch(
@@ -36,70 +37,78 @@ async function getSellerData(id: string): Promise<{
   return { products, reviews };
 }
 
-export default async function ProfilePage() {
-  const session = await getServerSession(authOptions);
-
-  if (!session) {
-    redirect("/auth/login");
-  }
-
-  const account = await getAccountData();
-
-  if (!account) {
-    notFound();
-  }
-
-  const isSeller = account.role.toUpperCase() === "SELLER";
-
-  let products: Product[] = [];
-  let reviews: Review[] = [];
-
-  if (isSeller) {
-    const sellerData = await getSellerData(account.id);
-    products = sellerData.products;
-    reviews = sellerData.reviews;
-  }
-
+export default function ProfilePage() {
   return (
-    <div className="p-4 space-y-4 max-w-6xl mx-auto">
-      {/* Section 1: Account Info */}
-      <div className="bg-white shadow p-6 rounded">
-        <h1 className="text-2xl font-bold text-gray-800">{account.name}</h1>
-        <p className="text-sm text-gray-500">
-          Logged in as a {account.role.toLowerCase()}
-        </p>
-      </div>
+    <RouteGuard allowedRoles={["BUYER", "SELLER", "ADMIN"]}>
+      {(async function ProfileContent() {
+        const session = await getServerSession(authOptions);
 
-      {/* Section 2: Products (Seller Only) */}
-      {isSeller && (
-        <div className="bg-white shadow p-6 rounded space-y-4">
-          <h2 className="text-xl font-semibold">Your Products</h2>
-          {products?.length > 0 ? (
-            <ProductView products={products} viewMode="grid" />
-          ) : (
-            <p className="text-gray-500">
-              You have not added any products yet.
-            </p>
-          )}
-        </div>
-      )}
+        if (!session) {
+          redirect("/auth/login");
+        }
 
-      {/* Section 3: Reviews (Seller Only) */}
-      {isSeller && (
-        <div className="bg-white shadow p-6 rounded space-y-4">
-          <h2 className="text-xl font-semibold">Customer Reviews</h2>
-          {reviews?.length > 0 ? (
-            <SellerReview
-              sellerId={account.id}
-              reviews={reviews}
-              currentUserId={account.id}
-              currentUserRole={account.role}
-            />
-          ) : (
-            <p className="text-gray-500">No reviews yet.</p>
-          )}
-        </div>
-      )}
-    </div>
+        const account = await getAccountData();
+
+        if (!account) {
+          notFound();
+        }
+
+        const isSeller = account.role.toUpperCase() === "SELLER";
+
+        let products: Product[] = [];
+        let reviews: Review[] = [];
+
+        if (isSeller) {
+          const sellerData = await getSellerData(account.id);
+          products = sellerData.products;
+          reviews = sellerData.reviews;
+        }
+
+        return (
+          <div className="p-4 space-y-4 max-w-6xl mx-auto">
+            {/* Section 1: Account Info */}
+            <div className="bg-white shadow p-6 rounded">
+              <h1 className="text-2xl font-bold text-gray-800">
+                {account.name}
+              </h1>
+              <p className="text-sm text-gray-500">
+                Logged in as a {account.role.toLowerCase()}
+              </p>
+            </div>
+
+            {/* Section 2: Products (Seller Only) */}
+            {isSeller && (
+              <div className="bg-white shadow p-6 rounded space-y-4">
+                <h2 className="text-xl font-semibold">Your Products</h2>
+                {products?.length > 0 ? (
+                  <ProductView products={products} viewMode="grid" />
+                ) : (
+                  <p className="text-gray-500">
+                    You have not added any products yet.
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Section 3: Reviews (Seller Only) */}
+            {isSeller && (
+              <div className="bg-white shadow p-6 rounded space-y-4">
+                <h2 className="text-xl font-semibold">Customer Reviews</h2>
+                {reviews?.length > 0 ? (
+                  <SellerReview
+                    sellerId={account.id}
+                    reviews={reviews}
+                    currentUserId={account.id}
+                    currentUserRole={account.role}
+                  />
+                ) : (
+                  <p className="text-gray-500">No reviews yet.</p>
+                )}
+              </div>
+            )}
+          </div>
+        );
+      })()}
+    </RouteGuard>
   );
 }

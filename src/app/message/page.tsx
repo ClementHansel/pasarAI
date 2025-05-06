@@ -5,6 +5,7 @@ import MessageThread from "../../components/messages/MessageThread";
 import NoConversationSelected from "../../components/messages/NoConversationSelected";
 import { Conversation, Message } from "../../types/message";
 import { useMediaQuery } from "../../hooks/useMediaQuery";
+import { RouteGuard } from "@/components/auth/RouteGuard";
 
 // Shared fetch utility
 const fetcher = async (url: string) => {
@@ -14,6 +15,14 @@ const fetcher = async (url: string) => {
 };
 
 export default function MessagePage() {
+  return (
+    <RouteGuard allowedRoles={["BUYER", "SELLER", "ADMIN"]}>
+      <MessagePageContent />
+    </RouteGuard>
+  );
+}
+
+function MessagePageContent() {
   const [selectedConversationId, setSelectedConversationId] = useState<
     number | null
   >(null);

@@ -1,23 +1,25 @@
+// src/components/dashboard/FinancialOverview/CashFlowSummary.tsx
 import React from "react";
 
 interface CashFlowItem {
-  id?: string;
-  createdAt?: Date;
   type: "Inflow" | "Outflow";
   description: string;
   amount: number;
 }
 
-interface CashFlowSummaryProps {
-  data: CashFlowItem[];
-}
+const cashFlowData: CashFlowItem[] = [
+  { type: "Inflow", description: "Sales Revenue", amount: 35000 },
+  { type: "Inflow", description: "Investments", amount: 10000 },
+  { type: "Outflow", description: "Salaries", amount: 25000 },
+  { type: "Outflow", description: "Operational Costs", amount: 10000 },
+];
 
-const CashFlowSummary: React.FC<CashFlowSummaryProps> = ({ data }) => {
-  const inflow = data
+const CashFlowSummary: React.FC = () => {
+  const inflow = cashFlowData
     .filter((item) => item.type === "Inflow")
     .reduce((sum, item) => sum + item.amount, 0);
 
-  const outflow = data
+  const outflow = cashFlowData
     .filter((item) => item.type === "Outflow")
     .reduce((sum, item) => sum + item.amount, 0);
 
@@ -27,7 +29,7 @@ const CashFlowSummary: React.FC<CashFlowSummaryProps> = ({ data }) => {
     <div className="bg-white p-4 rounded-lg shadow w-full">
       <h2 className="text-lg font-bold mb-4">Cash Flow Summary</h2>
       <ul className="space-y-2 text-sm">
-        {data.map((item, idx) => (
+        {cashFlowData.map((item, idx) => (
           <li key={idx} className="flex justify-between">
             <span>
               {item.type === "Inflow" ? "🟢" : "🔴"} {item.description}

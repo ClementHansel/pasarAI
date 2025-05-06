@@ -1,13 +1,16 @@
+// src/components/dashboard/FinancialOverview/NetProfit.tsx
 "use client";
-import React from "react";
+import React, { useEffect, useState } from "react";
 
-interface NetProfitProps {
-  revenue: number;
-  expenses: number;
-}
+const NetProfit: React.FC = () => {
+  const [netProfit, setNetProfit] = useState<number>(0);
 
-const NetProfit: React.FC<NetProfitProps> = ({ revenue, expenses }) => {
-  const netProfit = revenue - expenses;
+  useEffect(() => {
+    // Mock calculation logic
+    const revenue = 150000;
+    const expenses = 95000;
+    setNetProfit(revenue - expenses);
+  }, []);
 
   return (
     <div className="bg-white p-4 rounded-lg shadow">

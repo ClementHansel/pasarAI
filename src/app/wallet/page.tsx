@@ -13,8 +13,9 @@ import { TransactionHistory } from "@/components/wallet/TransactionHistory";
 import { TransactionFilter } from "@/components/wallet/TransactionFilter";
 import { Transaction } from "@/types/wallet";
 import { v4 as uuidv4 } from "uuid";
+import { RouteGuard } from "@/components/auth/RouteGuard";
 
-const WalletPage = () => {
+const WalletPageContent = () => {
   const [balance, setBalance] = useState<number>(0);
   const [activeTab, setActiveTab] = useState("topup");
   const [amount, setAmount] = useState("");
@@ -277,4 +278,10 @@ const BillsPayment = () => {
   );
 };
 
-export default WalletPage;
+export default function WalletPage() {
+  return (
+    <RouteGuard allowedRoles={["BUYER", "SELLER", "ADMIN"]}>
+      <WalletPageContent />
+    </RouteGuard>
+  );
+}

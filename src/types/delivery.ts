@@ -8,3 +8,9 @@ export interface Order {
   status: string;
   accounts: AccountRef[];
 }
+
+export type OrderStatus =
+  | "awaiting_pickup"
+  | "in_transit"
+  | "out_for_delivery"
+  | "delivered";

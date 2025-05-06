@@ -1,11 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useRouter } from "next/navigation";
 import { Product } from "@/types/product";
-
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/CheckBox";
 import { Button } from "@/components/ui/button";
@@ -15,24 +13,38 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/Dialog";
-import { PromotionData } from "@/types/marketing";
+import { calculateFeaturedPrice } from "./FeaturedPrice";
 
+// Updated to use numeric durations
+const durations = [
+  { label: "24 Hours", value: 24, percent: 0.001, max: 5000 },
+  { label: "1 Week", value: 168, percent: 0.005, max: 50000 }, // 7 days = 168 hours
+  { label: "1 Month", value: 720, percent: 0.01, max: 100000 }, // 30 days = 720 hours
+];
+
+// Interface update to match API expectations
 interface MarketingModalProps {
   isOpen: boolean;
   onClose: () => void;
   product: Product;
-  onPromotionUpdate: (promotionData: PromotionData) => void;
+  onPromotionUpdate: (promotionData: {
+    isFeatured?: boolean;
+    isNewArrival?: boolean;
+    isBestSeller?: boolean;
+    isOnSale?: boolean;
+    duration?: number; // Now uses number
+    price?: number;
+  }) => void;
 }
 
-const durations = [
-  { label: "24 Hours", value: "24h", percent: 0.001, max: 5000 },
-  { label: "1 Week", value: "1w", percent: 0.005, max: 50000 },
-  { label: "1 Month", value: "1m", percent: 0.01, max: 100000 },
-];
-
-const MarketingModal = ({ isOpen, onClose, product }: MarketingModalProps) => {
+const MarketingModal = ({
+  isOpen,
+  onClose,
+  product,
+  onPromotionUpdate,
+}: MarketingModalProps) => {
   const router = useRouter();
-  const [duration, setDuration] = useState<string | null>(null);
+  const [duration, setDuration] = useState<number | undefined>(undefined);
   const [selectedLabels, setSelectedLabels] = useState<string[]>([]);
   const [price, setPrice] = useState<number>(0);
 
@@ -43,13 +55,12 @@ const MarketingModal = ({ isOpen, onClose, product }: MarketingModalProps) => {
   };
 
   useEffect(() => {
-    const selected = durations.find((d) => d.value === duration);
-    if (selected) {
-      const calculated = Math.min(
-        product.price * selected.percent,
-        selected.max
-      );
-      setPrice(Math.round(calculated));
+    if (duration) {
+      const calculated = calculateFeaturedPrice({
+        price: product.price,
+        duration: duration,
+      });
+      setPrice(calculated);
     } else {
       setPrice(0);
     }
@@ -63,7 +74,15 @@ const MarketingModal = ({ isOpen, onClose, product }: MarketingModalProps) => {
       labels: selectedLabels,
     };
 
-    // Redirect to a checkout page or send to an API
+    onPromotionUpdate({
+      isFeatured: selectedLabels.includes("Featured"),
+      isNewArrival: selectedLabels.includes("New Arrival"),
+      isBestSeller: selectedLabels.includes("Best Seller"),
+      isOnSale: selectedLabels.includes("On Sale"),
+      duration,
+      price,
+    });
+
     router.push(
       `/dashboard/marketing/checkout?data=${encodeURIComponent(
         JSON.stringify(payload)
@@ -73,62 +92,97 @@ const MarketingModal = ({ isOpen, onClose, product }: MarketingModalProps) => {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md bg-white rounded-lg shadow-lg">
         <DialogHeader>
-          <DialogTitle>Set Promotion for {product.name}</DialogTitle>
+          <DialogTitle className="text-xl font-bold text-gray-800">
+            Set Promotion for {product.name}
+          </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4">
-          {/* Featured Duration */}
+        <div className="space-y-6 pt-2">
+          {/* Featured Duration Section */}
           <div>
-            <Label className="mb-2 block">
+            <Label className="block text-sm font-medium text-gray-700 mb-2">
               🟡 Featured Duration (affects isFeatured)
             </Label>
-            <RadioGroup value={duration ?? ""} onValueChange={setDuration}>
+            <RadioGroup
+              value={duration ? String(duration) : ""}
+              onValueChange={(value) => setDuration(Number(value))}
+              className="space-y-2"
+            >
               {durations.map((d) => (
-                <div key={d.value} className="flex items-center space-x-2">
-                  <RadioGroupItem value={d.value} id={d.value} />
-                  <Label htmlFor={d.value}>
+                <div
+                  key={d.value}
+                  className="flex items-center space-x-2 p-2 rounded border border-gray-200 hover:border-gray-300 cursor-pointer"
+                >
+                  <RadioGroupItem
+                    value={String(d.value)}
+                    id={String(d.value)}
+                  />
+                  <Label htmlFor={String(d.value)} className="text-sm">
                     {d.label} –{" "}
-                    {Math.min(
-                      product.price * d.percent,
-                      d.max
-                    ).toLocaleString()}{" "}
-                    IDR
+                    <span className="font-medium text-gray-800">
+                      {calculateFeaturedPrice({
+                        price: product.price,
+                        duration: d.value,
+                      }).toLocaleString()}{" "}
+                      IDR
+                    </span>
                   </Label>
                 </div>
               ))}
             </RadioGroup>
           </div>
 
-          {/* Free Labels */}
+          {/* Labels Section */}
           <div>
-            <Label className="mb-2 block">🏷️ Labels (free)</Label>
-            {["New Arrival", "Best Seller", "On Sale"].map((label) => (
-              <div key={label} className="flex items-center space-x-2">
-                <Checkbox
-                  id={label}
-                  checked={selectedLabels.includes(label)}
-                  onCheckedChange={() => toggleLabel(label)}
-                />
-                <Label htmlFor={label}>{label}</Label>
-              </div>
-            ))}
+            <Label className="block text-sm font-medium text-gray-700 mb-2">
+              🏷️ Labels (free)
+            </Label>
+            {["Featured", "New Arrival", "Best Seller", "On Sale"].map(
+              (label) => (
+                <div
+                  key={label}
+                  className="flex items-center space-x-2 p-2 rounded border border-gray-200 hover:bg-gray-50 cursor-pointer"
+                >
+                  <Checkbox
+                    id={label}
+                    checked={selectedLabels.includes(label)}
+                    onCheckedChange={() => toggleLabel(label)}
+                  />
+                  <Label htmlFor={label} className="text-sm">
+                    {label}
+                  </Label>
+                </div>
+              )
+            )}
           </div>
 
-          {/* Price & Actions */}
-          <div className="text-sm text-gray-600">
-            <strong>Total Price:</strong>{" "}
-            {price > 0 ? `${price.toLocaleString()} IDR` : "Free (Labels Only)"}
+          {/* Price Summary */}
+          <div className="pt-2">
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-600">Total Cost:</span>
+              <span className="font-medium">
+                {price > 0
+                  ? `${price.toLocaleString()} IDR`
+                  : "Free (Labels Only)"}
+              </span>
+            </div>
           </div>
 
-          <div className="flex justify-end gap-2 pt-2">
-            <Button variant="outline" onClick={onClose}>
+          {/* Actions */}
+          <div className="flex justify-end gap-3">
+            <Button
+              variant="outline"
+              onClick={onClose}
+              className="px-4 py-2 text-sm"
+            >
               Cancel
             </Button>
             <Button
-              disabled={!duration && selectedLabels.length === 0}
               onClick={handleCheckout}
+              disabled={!duration && selectedLabels.length === 0}
+              className="px-4 py-2 text-sm"
             >
               Proceed to Checkout
             </Button>

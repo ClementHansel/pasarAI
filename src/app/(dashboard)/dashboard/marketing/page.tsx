@@ -1,16 +1,14 @@
 // src/app/(dashboard)/dashboard/marketing/page.tsx
-
 "use client";
 
 import { useState, useEffect } from "react";
-import { Product } from "@/types/product";
 import ProductList from "@/components/dashboard/marketing/ProductList";
 import MarketingModal from "@/components/dashboard/marketing/MarketingModal";
+import { Product } from "@/types/product";
 import {
   fetchProducts,
   updateProductPromotion,
 } from "@/lib/dashboard/marketing/marketing";
-import { PromotionData } from "@/types/marketing";
 
 export default function MarketingPage() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -19,8 +17,13 @@ export default function MarketingPage() {
 
   useEffect(() => {
     const getProducts = async () => {
-      const products = await fetchProducts();
-      setProducts(products);
+      try {
+        const data = await fetchProducts();
+        setProducts(data);
+      } catch (error) {
+        console.error("Failed to fetch products:", error);
+        setProducts([]); // Fallback to empty state
+      }
     };
     getProducts();
   }, []);
@@ -35,24 +38,41 @@ export default function MarketingPage() {
     setIsModalOpen(false);
   };
 
-  const handlePromotionUpdate = async (promotionData: PromotionData) => {
-    if (selectedProduct) {
+  const handlePromotionUpdate = async (promotionData: {
+    isFeatured?: boolean;
+    isNewArrival?: boolean;
+    isBestSeller?: boolean;
+    isOnSale?: boolean;
+    duration?: number;
+    price?: number;
+  }) => {
+    if (!selectedProduct) return;
+
+    try {
       const updatedProduct = await updateProductPromotion(
         selectedProduct.id,
         promotionData
       );
-      setProducts((prevProducts) =>
-        prevProducts.map((product) =>
-          product.id === updatedProduct.id ? updatedProduct : product
-        )
+      setProducts((prev) =>
+        prev.map((p) => (p.id === updatedProduct.id ? updatedProduct : p))
       );
       closeModal();
+    } catch (error) {
+      console.error("Failed to update promotion:", error);
     }
   };
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-semibold">Marketing Dashboard</h1>
+    <div className="container mx-auto px-4 py-6">
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-gray-800">
+          Marketing Dashboard
+        </h1>
+        <p className="text-sm text-gray-600 mt-1">
+          Set promotions and marketing features for your products
+        </p>
+      </div>
+
       <ProductList products={products} openModal={openModal} />
 
       {selectedProduct && (

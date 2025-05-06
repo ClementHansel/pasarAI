@@ -1,3 +1,12 @@
+// COMMENTED OUT: This API route is for triggering all analytical data generation jobs in parallel.
+// It is intended for use by backend CRON jobs or admin-triggered refreshes, not for direct user access.
+//
+// This route is currently causing build errors (likely due to missing or incomplete job handler imports).
+// Please review with the backend/data team before re-enabling.
+//
+// To re-enable, uncomment the code below and ensure all job handler imports are valid and implemented.
+
+/*
 import { NextResponse } from "next/server";
 
 // Import all 8 job handlers
@@ -36,3 +45,4 @@ export async function GET() {
     );
   }
 }
+*/

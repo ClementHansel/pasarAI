@@ -6,9 +6,9 @@ import { useCartStore } from "@/lib/cartStore";
 import type { CartState } from "@/lib/cartStore";
 import { CartItem } from "@/types/cart";
 import { WishlistItem } from "@/hooks/useWishlist";
-// Make sure this type exists
+import { RouteGuard } from "@/components/auth/RouteGuard";
 
-const CartPage: React.FC = () => {
+const CartPageContent: React.FC = () => {
   const cartItems = useCartStore((state: CartState) => state.items);
   const updateQuantity = useCartStore(
     (state: CartState) => state.updateQuantity
@@ -155,4 +155,10 @@ const CartPage: React.FC = () => {
   );
 };
 
-export default CartPage;
+export default function CartPage() {
+  return (
+    <RouteGuard allowedRoles={["BUYER", "SELLER", "ADMIN"]}>
+      <CartPageContent />
+    </RouteGuard>
+  );
+}

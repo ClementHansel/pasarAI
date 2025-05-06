@@ -10,49 +10,39 @@ import {
   Legend,
 } from "chart.js";
 
-interface BudgetVsActualProps {
-  months: string[];
-  budget: number[];
-  actual: number[];
-}
-
 ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend);
 
-const BudgetVsActual: React.FC<BudgetVsActualProps> = ({
-  months,
-  budget,
-  actual,
-}) => {
-  const data = {
-    labels: months,
-    datasets: [
-      {
-        label: "Budget",
-        data: budget,
-        backgroundColor: "#60a5fa",
-      },
-      {
-        label: "Actual",
-        data: actual,
-        backgroundColor: "#34d399",
-      },
-    ],
-  };
-
-  const options = {
-    responsive: true,
-    plugins: {
-      legend: {
-        position: "top" as const,
-      },
+const data = {
+  labels: ["January", "February", "March", "April"],
+  datasets: [
+    {
+      label: "Budget",
+      data: [10000, 12000, 11000, 14000],
+      backgroundColor: "#60a5fa",
     },
-    scales: {
-      y: {
-        beginAtZero: true,
-      },
+    {
+      label: "Actual",
+      data: [9500, 12500, 10500, 13500],
+      backgroundColor: "#34d399",
     },
-  };
+  ],
+};
 
+const options = {
+  responsive: true,
+  plugins: {
+    legend: {
+      position: "top" as const,
+    },
+  },
+  scales: {
+    y: {
+      beginAtZero: true,
+    },
+  },
+};
+
+const BudgetVsActual: React.FC = () => {
   return (
     <div className="bg-white p-4 rounded-lg shadow w-full">
       <h2 className="text-lg font-bold mb-4">Budget vs Actual</h2>

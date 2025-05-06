@@ -1,8 +1,8 @@
-export type DurationOption = "24h" | "1w" | "1m";
+// src/components/dashboard/marketing/FeaturedPrice.ts
 
-interface FeaturedPriceProps {
+export interface FeaturedPriceProps {
   price: number;
-  duration: DurationOption;
+  duration: number;
 }
 
 /**
@@ -12,26 +12,13 @@ export function calculateFeaturedPrice({
   price,
   duration,
 }: FeaturedPriceProps): number {
-  let percentage = 0;
-  let max = 0;
+  const config: Record<number, { percent: number; max: number }> = {
+    24: { percent: 0.001, max: 5000 },
+    168: { percent: 0.005, max: 50000 },
+    720: { percent: 0.01, max: 100000 },
+  };
 
-  switch (duration) {
-    case "24h":
-      percentage = 0.001;
-      max = 5000;
-      break;
-    case "1w":
-      percentage = 0.005;
-      max = 50000;
-      break;
-    case "1m":
-      percentage = 0.01;
-      max = 100000;
-      break;
-    default:
-      return 0;
-  }
-
-  const fee = price * percentage;
+  const { percent, max } = config[duration] || { percent: 0, max: 0 };
+  const fee = price * percent;
   return Math.min(Math.round(fee), max);
 }

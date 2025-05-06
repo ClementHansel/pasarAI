@@ -1,3 +1,4 @@
+import { RouteGuard } from "@/components/auth/RouteGuard";
 import ChurnRate from "@/components/dashboard/analyticals/UserEngagement/ChurnRate";
 import ContentInteractionRate from "@/components/dashboard/analyticals/UserEngagement/ContentInteractionRate";
 import CustomerSatisfaction from "@/components/dashboard/analyticals/UserEngagement/CustomerSatisfaction";
@@ -13,23 +14,25 @@ import UserSegments from "@/components/dashboard/analyticals/UserEngagement/User
 
 export default function UserEngagementPage() {
   return (
-    <div className="space-y-6 p-4">
-      <h1 className="text-2xl font-bold">👥 User Engagement</h1>
+    <RouteGuard allowedRoles={["SELLER"]}>
+      <div className="space-y-6 p-4">
+        <h1 className="text-2xl font-bold">👥 User Engagement</h1>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        <ChurnRate />
-        <ContentInteractionRate />
-        <CustomerSatisfaction />
-        <EngagementOverTime />
-        <MostViewedContent />
-        <RetentionRate />
-        <SessionDuration />
-        <TopPerformingContent />
-        <UserAcquisitionGrowth />
-        <UserActions />
-        <UserFeedback />
-        <UserSegments />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <ChurnRate />
+          <ContentInteractionRate />
+          <CustomerSatisfaction />
+          <EngagementOverTime />
+          <MostViewedContent />
+          <RetentionRate />
+          <SessionDuration />
+          <TopPerformingContent />
+          <UserAcquisitionGrowth />
+          <UserActions />
+          <UserFeedback />
+          <UserSegments />
+        </div>
       </div>
-    </div>
+    </RouteGuard>
   );
 }

@@ -9,14 +9,17 @@ import {
   markNotificationAsRead,
 } from "@/services/notification/notificationService"; // Import the API service
 import { NotificationProvider } from "@/context/NotificationContext";
+import { RouteGuard } from "@/components/auth/RouteGuard";
 
 export default function NotificationPage() {
   const accountId = "user123"; // Replace with actual account ID
 
   return (
-    <NotificationProvider accountId={accountId}>
-      <NotificationPageContent accountId={accountId} />
-    </NotificationProvider>
+    <RouteGuard allowedRoles={["BUYER", "SELLER", "ADMIN"]}>
+      <NotificationProvider accountId={accountId}>
+        <NotificationPageContent accountId={accountId} />
+      </NotificationProvider>
+    </RouteGuard>
   );
 }
 

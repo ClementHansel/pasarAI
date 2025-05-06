@@ -2,6 +2,7 @@
 "use client";
 
 import WishlistList from "@/components/wishlist/WishlistList";
+import { RouteGuard } from "@/components/auth/RouteGuard";
 
 // Mock session data for development
 const useMockSession = () => ({
@@ -14,6 +15,14 @@ const useMockSession = () => ({
 });
 
 export default function WishlistPage() {
+  return (
+    <RouteGuard allowedRoles={["BUYER", "SELLER", "ADMIN"]}>
+      <WishlistPageContent />
+    </RouteGuard>
+  );
+}
+
+function WishlistPageContent() {
   // Use mock session instead of real auth
   const { data: session, status } = useMockSession();
 

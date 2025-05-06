@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { ArrowRight } from "lucide-react";
+import { RouteGuard } from "@/components/auth/RouteGuard";
 
 const analyticsPages = [
   {
@@ -50,27 +51,29 @@ const analyticsPages = [
   },
 ];
 
-export default function AnalyticsOverviewPage() {
+export default function AnalyticsPage() {
   return (
-    <div className="p-6">
-      <h1 className="text-3xl font-bold mb-6">Analytics Dashboard</h1>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {analyticsPages.map((page) => (
-          <Link key={page.href} href={page.href}>
-            <Card className="hover:shadow-xl transition-shadow cursor-pointer">
-              <CardContent className="p-6">
-                <div className="flex justify-between items-center mb-2">
-                  <h2 className="text-xl font-semibold">{page.title}</h2>
-                  <ArrowRight className="w-5 h-5 text-muted-foreground" />
-                </div>
-                <p className="text-muted-foreground text-sm">
-                  {page.description}
-                </p>
-              </CardContent>
-            </Card>
-          </Link>
-        ))}
+    <RouteGuard allowedRoles={["SELLER"]}>
+      <div className="p-6">
+        <h1 className="text-3xl font-bold mb-6">Analytics Dashboard</h1>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {analyticsPages.map((page) => (
+            <Link key={page.href} href={page.href}>
+              <Card className="hover:shadow-xl transition-shadow cursor-pointer">
+                <CardContent className="p-6">
+                  <div className="flex justify-between items-center mb-2">
+                    <h2 className="text-xl font-semibold">{page.title}</h2>
+                    <ArrowRight className="w-5 h-5 text-muted-foreground" />
+                  </div>
+                  <p className="text-muted-foreground text-sm">
+                    {page.description}
+                  </p>
+                </CardContent>
+              </Card>
+            </Link>
+          ))}
+        </div>
       </div>
-    </div>
+    </RouteGuard>
   );
 }

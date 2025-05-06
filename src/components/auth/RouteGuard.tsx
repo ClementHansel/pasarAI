@@ -1,3 +1,5 @@
+"use client";
+
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
@@ -5,7 +7,7 @@ import { toast } from "react-hot-toast";
 
 interface RouteGuardProps {
   children: React.ReactNode;
-  allowedRoles: ("BUYER" | "SELLER")[];
+  allowedRoles: ("BUYER" | "SELLER" | "ADMIN")[];
 }
 
 export function RouteGuard({ children, allowedRoles }: RouteGuardProps) {
@@ -23,11 +25,14 @@ export function RouteGuard({ children, allowedRoles }: RouteGuardProps) {
       return;
     }
 
-    if (!allowedRoles.includes(session.user.role as "BUYER" | "SELLER")) {
+    const userRole = session.user.role as "BUYER" | "SELLER" | "ADMIN";
+    if (!allowedRoles.includes(userRole)) {
       toast.error("You don't have permission to access this page");
-      router.push(
-        session.user.role === "SELLER" ? "/seller/dashboard" : "/market"
-      );
+      if (userRole === "SELLER" || userRole === "ADMIN") {
+        router.push("/dashboard");
+      } else {
+        router.push("/market");
+      }
       return;
     }
 

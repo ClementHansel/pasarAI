@@ -1,3 +1,4 @@
+// src/components/dashboard/FinancialOverview/OperatingExpenses.tsx
 import React from "react";
 
 interface Expense {
@@ -5,11 +6,15 @@ interface Expense {
   amount: number;
 }
 
-interface OperatingExpensesProps {
-  expenses: Expense[];
-}
+const expenses: Expense[] = [
+  { category: "Salaries", amount: 25000 },
+  { category: "Marketing", amount: 8000 },
+  { category: "R&D", amount: 5000 },
+  { category: "Utilities", amount: 2000 },
+  { category: "Other", amount: 3000 },
+];
 
-const OperatingExpenses: React.FC<OperatingExpensesProps> = ({ expenses }) => {
+const OperatingExpenses: React.FC = () => {
   const total = expenses.reduce((sum, exp) => sum + exp.amount, 0);
 
   return (

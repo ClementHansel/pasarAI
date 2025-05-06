@@ -8,8 +8,17 @@ import ShippingForm from "@/components/checkout/ShippingForm";
 import DeliverySelector from "@/components/checkout/DeliverySelector";
 import OrderSummary from "@/components/common/OrderSummary";
 import axios from "axios";
+import { RouteGuard } from "@/components/auth/RouteGuard";
 
 export default function CheckoutPage() {
+  return (
+    <RouteGuard allowedRoles={["BUYER", "SELLER", "ADMIN"]}>
+      <CheckoutContent />
+    </RouteGuard>
+  );
+}
+
+function CheckoutContent() {
   const { balance } = useWallet();
   const router = useRouter();
 

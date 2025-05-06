@@ -1,3 +1,4 @@
+import { RouteGuard } from "@/components/auth/RouteGuard";
 import DelayedShipments from "@/components/dashboard/analyticals/ShippingDelivery/DelayedShipments";
 import DeliveryTimes from "@/components/dashboard/analyticals/ShippingDelivery/DeliveryTimes";
 import OrderTracking from "@/components/dashboard/analyticals/ShippingDelivery/OrderTracking";
@@ -8,7 +9,7 @@ import ShippingMethodComparison from "@/components/dashboard/analyticals/Shippin
 import ShippingPerformance from "@/components/dashboard/analyticals/ShippingDelivery/ShippingPerformance";
 import ShippingProviderPerformance from "@/components/dashboard/analyticals/ShippingDelivery/ShippingProviderPerformance";
 
-const ShippingDeliveryPage: React.FC = () => {
+const ShippingDeliveryPageContent: React.FC = () => {
   // Sample data for PackageDamageRate component
   const damageRate = 1.2; // Example damage rate
   const trend: "up" | "down" = "down"; // Example trend
@@ -39,4 +40,10 @@ const ShippingDeliveryPage: React.FC = () => {
   );
 };
 
-export default ShippingDeliveryPage;
+export default function ShippingDeliveryPage() {
+  return (
+    <RouteGuard allowedRoles={["SELLER"]}>
+      <ShippingDeliveryPageContent />
+    </RouteGuard>
+  );
+}

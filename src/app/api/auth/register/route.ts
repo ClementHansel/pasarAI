@@ -1,4 +1,4 @@
-import { hashPassword } from "@/lib/auth/authUtils";
+import { hashPassword, generateMagicLinkToken } from "@/lib/auth/authUtils";
 import { generateReferralCode } from "@/lib/referral/referralUtils";
 import { validateEmail, validatePassword } from "@/lib/validation/utils";
 import { createReferralVouchers } from "@/lib/voucher/generateVoucherCode";
@@ -7,6 +7,7 @@ import {
   getAccountByEmail,
   getAccountByReferralCode,
 } from "@/services/account/accountService";
+import { sendEmail } from "@/lib/mailer.server";
 import { Role } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db/db";
@@ -123,10 +124,29 @@ export async function POST(req: Request) {
       }
     }
 
+    // --- MAGIC LINK EMAIL VERIFICATION ---
+    if (!process.env.EMAIL_ACCOUNT || !process.env.EMAIL_PASS) {
+      console.error(
+        "Missing EMAIL_ACCOUNT or EMAIL_PASS environment variables"
+      );
+      return NextResponse.json(
+        { error: "Email service not configured" },
+        { status: 500 }
+      );
+    }
+    const token = generateMagicLinkToken(email);
+    const verifyUrl = `${
+      process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
+    }/api/auth/verify?token=${token}`;
+    const subject = "Verify your email address";
+    const text = `Welcome to PasarAI! Please verify your email by clicking the following link: ${verifyUrl}`;
+    await sendEmail(subject, email, text);
+
     // Return successful response with minimal account info
     return NextResponse.json(
       {
-        message: "Account registered successfully",
+        message:
+          "Account registered successfully. Please check your email to verify your account.",
         account: {
           id: newAccount.id,
           email: newAccount.email,

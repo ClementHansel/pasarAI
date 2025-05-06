@@ -8,6 +8,7 @@ import ShippingForm from "@/components/checkout/ShippingForm";
 import DeliverySelector from "@/components/checkout/DeliverySelector";
 import OrderSummary from "@/components/common/OrderSummary";
 import { useCartStore } from "@/lib/cartStore";
+import { RouteGuard } from "@/components/auth/RouteGuard";
 
 interface ShippingData {
   fullName: string;
@@ -17,6 +18,14 @@ interface ShippingData {
 }
 
 export default function CheckoutPage() {
+  return (
+    <RouteGuard allowedRoles={["BUYER", "SELLER", "ADMIN"]}>
+      <CheckoutContent />
+    </RouteGuard>
+  );
+}
+
+function CheckoutContent() {
   const { balance } = useWallet();
   const router = useRouter();
 

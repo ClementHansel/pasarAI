@@ -1,33 +1,45 @@
-import BackorderedItems from "@/components/dashboard/analyticals/OrdersInventory/BackorderedItems";
-import InventoryTurnover from "@/components/dashboard/analyticals/OrdersInventory/InventoryTurnover";
-import InventoryValue from "@/components/dashboard/analyticals/OrdersInventory/InventoryValue";
-import LowStockAlerts from "@/components/dashboard/analyticals/OrdersInventory/LowStockAlerts";
-import OrderFulfillmentTime from "@/components/dashboard/analyticals/OrdersInventory/OrderFulfillmentTime";
-import OrderStatus from "@/components/dashboard/analyticals/OrdersInventory/OrderStatus";
-import ReorderLevel from "@/components/dashboard/analyticals/OrdersInventory/ReorderLevel";
-import StockAvailability from "@/components/dashboard/analyticals/OrdersInventory/StockAvailability";
-import StockMovement from "@/components/dashboard/analyticals/OrdersInventory/StockMovement";
-import TopSellingProducts from "@/components/dashboard/analyticals/OrdersInventory/TopSellingProducts";
-import TotalOrders from "@/components/dashboard/analyticals/OrdersInventory/TotalOrders";
+import { RouteGuard } from "@/components/auth/RouteGuard";
+import DelayedShipments from "@/components/dashboard/analyticals/ShippingDelivery/DelayedShipments";
+import DeliveryTimes from "@/components/dashboard/analyticals/ShippingDelivery/DeliveryTimes";
+import OrderTracking from "@/components/dashboard/analyticals/ShippingDelivery/OrderTracking";
+import PackageDamageRate from "@/components/dashboard/analyticals/ShippingDelivery/PackageDamageRate";
+import ShippingCostPerItem from "@/components/dashboard/analyticals/ShippingDelivery/ShippingCostPerItem";
+import ShippingCosts from "@/components/dashboard/analyticals/ShippingDelivery/ShippingCosts";
+import ShippingMethodComparison from "@/components/dashboard/analyticals/ShippingDelivery/ShippingMethodComparison";
+import ShippingPerformance from "@/components/dashboard/analyticals/ShippingDelivery/ShippingPerformance";
+import ShippingProviderPerformance from "@/components/dashboard/analyticals/ShippingDelivery/ShippingProviderPerformance";
 
-export default function OrdersInventoryPage() {
+const ShippingDeliveryPage: React.FC = () => {
+  // Sample data for PackageDamageRate component
+  const damageRate = 1.2; // Example damage rate
+  const trend: "up" | "down" = "down"; // Example trend
+  const comparison = "compared to last month"; // Example comparison
+
   return (
-    <div className="space-y-6 p-4">
-      <h1 className="text-2xl font-bold">📦 Orders & Inventory</h1>
+    <RouteGuard allowedRoles={["SELLER"]}>
+      <div className="space-y-6 p-4">
+        <h1 className="text-2xl font-bold">🚚 Shipping & Delivery</h1>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        <BackorderedItems />
-        <InventoryTurnover />
-        <InventoryValue />
-        <LowStockAlerts />
-        <OrderFulfillmentTime />
-        <OrderStatus />
-        <ReorderLevel />
-        <StockAvailability />
-        <StockMovement />
-        <TopSellingProducts />
-        <TotalOrders />
+        {/* Grid Layout for components */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <DelayedShipments />
+          <DeliveryTimes />
+          <OrderTracking />
+          {/* Pass props to PackageDamageRate component */}
+          <PackageDamageRate
+            damageRate={damageRate}
+            trend={trend}
+            comparison={comparison}
+          />
+          <ShippingCostPerItem />
+          <ShippingCosts />
+          <ShippingMethodComparison />
+          <ShippingPerformance />
+          <ShippingProviderPerformance />
+        </div>
       </div>
-    </div>
+    </RouteGuard>
   );
-}
+};
+
+export default ShippingDeliveryPage;

@@ -1,21 +1,29 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import ProductForm from "@/components/dashboard/inventory/ProductForm";
-import ProductList from "@/components/dashboard/inventory/ProductList";
-
+import { useEffect, useState, useCallback } from "react";
+import ProductForm from "src/components/dashboard/inventory/ProductForm";
+import ProductList from "src/components/dashboard/inventory/ProductList";
 import { Spinner } from "react-bootstrap";
-import { Market, Product } from "@/types/inventory";
+import { Market, Product } from "src/types/inventory";
+import { useSession } from "next-auth/react";
+import { useNotifications } from "src/hooks/useNotifications";
+import { RouteGuard } from "@/components/auth/RouteGuard";
 
 const InventoryPage = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [markets, setMarkets] = useState<Market[]>([]);
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<Product | undefined>(
+    undefined
+  );
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
 
-  const fetchProducts = async () => {
+  const { data: session } = useSession();
+  const accountId = session?.user?.id ?? "";
+  const { addNotification } = useNotifications(accountId);
+
+  const fetchProducts = useCallback(async () => {
     setLoading(true);
     try {
       const token = localStorage.getItem("accessToken");
@@ -35,22 +43,28 @@ const InventoryPage = () => {
       setProducts(data.products || []);
       setMarkets(data.markets || []);
     } catch (err: unknown) {
-      if (err instanceof Error) {
-        setError(err.message || "Failed to fetch products");
-      } else {
-        setError("An unexpected error occurred");
-      }
+      const message = err instanceof Error ? err.message : "Fetch failed";
+      addNotification({
+        id: Date.now().toString(),
+        title: "Error",
+        message,
+        content: message,
+        timestamp: new Date().toISOString(),
+        recipientEmail: session?.user?.email ?? "",
+        read: false,
+      });
+      setError(message);
     } finally {
       setLoading(false);
     }
-  };
+  }, [addNotification, session?.user?.email]);
 
   useEffect(() => {
     fetchProducts();
-  }, []);
+  }, [fetchProducts]);
 
   const handleAddNew = () => {
-    setSelectedProduct(null);
+    setSelectedProduct(undefined);
     setShowForm(true);
   };
 
@@ -74,8 +88,27 @@ const InventoryPage = () => {
         )
       );
 
+      addNotification({
+        id: Date.now().toString(),
+        title: "Success",
+        message: `Deleted ${ids.length} product(s) successfully`,
+        content: `Deleted ${ids.length} product(s) successfully`,
+        timestamp: new Date().toISOString(),
+        recipientEmail: session?.user?.email ?? "",
+        read: false,
+      });
+
       fetchProducts();
     } catch {
+      addNotification({
+        id: Date.now().toString(),
+        title: "Error",
+        message: "Failed to delete product(s)",
+        content: "Failed to delete product(s)",
+        timestamp: new Date().toISOString(),
+        recipientEmail: session?.user?.email ?? "",
+        read: false,
+      });
       setError("Failed to delete product(s)");
     }
   };
@@ -127,4 +160,10 @@ const InventoryPage = () => {
   );
 };
 
-export default InventoryPage;
+export default function WrappedInventoryPage() {
+  return (
+    <RouteGuard allowedRoles={["SELLER", "ADMIN"]}>
+      <InventoryPage />
+    </RouteGuard>
+  );
+}
