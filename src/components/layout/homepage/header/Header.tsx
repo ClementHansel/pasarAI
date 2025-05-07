@@ -107,7 +107,7 @@ const Header = () => {
 
         {/* Navigation - Desktop */}
         <nav className="hidden lg:flex items-center justify-between py-3">
-          <CategoriesNav />
+          <CategoriesNav setIsMobileMenuOpen={setIsMobileMenuOpen} />
           <div className="flex items-center space-x-6">
             {mainNavItems.map((item) => (
               <Link

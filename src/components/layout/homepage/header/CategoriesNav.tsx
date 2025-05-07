@@ -1,68 +1,80 @@
-// src/components/layout/homepage/header/CategoriesNav.tsx
-import React, { useState, useEffect } from "react";
-import { ChevronDown } from "lucide-react";
 import {
   Popover,
-  PopoverTrigger,
   PopoverContent,
+  PopoverTrigger,
 } from "@/components/ui/popover";
+import { ChevronDown } from "lucide-react";
+import Link from "next/link";
+import React, { useEffect, useState } from "react";
+import { Category, Product } from "@/types/product"; // Import your types
 
-const categories = {
-  Fashion: ["Men's Wear", "Women's Wear", "Kids' Fashion", "Accessories"],
-  Electronics: ["Smartphones", "Laptops", "Accessories", "Gaming"],
-  "Home & Living": ["Furniture", "Decor", "Kitchen", "Storage"],
-  Beauty: ["Skincare", "Makeup", "Haircare", "Fragrances"],
-  Sports: ["Equipment", "Clothing", "Shoes", "Accessories"],
-  Books: ["Fiction", "Non-Fiction", "Academic", "Children's"],
-  Toys: ["Educational", "Action Figures", "Board Games", "Outdoor"],
-  Automotive: ["Parts", "Accessories", "Tools", "Car Care"],
-};
-
-const CategoriesNav = () => {
+const CategoriesNav = ({
+  setIsMobileMenuOpen,
+}: {
+  setIsMobileMenuOpen: React.Dispatch<React.SetStateAction<boolean>>;
+}) => {
+  const [categories, setCategories] = useState<Category[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const closeTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    // Function to check if device is mobile based on window width
     const checkIsMobile = () => {
       setIsMobile(window.innerWidth <= 768);
     };
-
     checkIsMobile();
     window.addEventListener("resize", checkIsMobile);
-
     return () => {
       window.removeEventListener("resize", checkIsMobile);
-      if (closeTimeoutRef.current) {
-        clearTimeout(closeTimeoutRef.current);
-      }
+      if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
     };
   }, []);
 
-  // Handlers for mouse enter and leave to open/close popover on desktop
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        // Fetch products data from the existing products API
+        const res = await fetch("/api/products");
+        const data = await res.json();
+
+        // Ensure that we get a correctly typed response
+        const products: Product[] = data.products;
+
+        // Extract categories from the products
+        const categoriesSet = new Set<Category>();
+        products.forEach((product) => {
+          if (product.category) {
+            categoriesSet.add(product.category); // Add category to set to ensure uniqueness
+          }
+        });
+
+        // Convert the set to an array
+        setCategories(Array.from(categoriesSet));
+      } catch (err) {
+        console.error("Failed to load categories", err);
+      }
+    };
+
+    fetchCategories();
+  }, []);
+
   const handleMouseEnter = () => {
     if (!isMobile) {
-      if (closeTimeoutRef.current) {
-        clearTimeout(closeTimeoutRef.current);
-        closeTimeoutRef.current = null;
-      }
+      if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
       setIsOpen(true);
     }
   };
 
   const handleMouseLeave = () => {
     if (!isMobile) {
-      closeTimeoutRef.current = setTimeout(() => {
-        setIsOpen(false);
-      }, 300); // delay before closing
+      closeTimeoutRef.current = setTimeout(() => setIsOpen(false), 300);
     }
   };
 
-  // Handler for click to toggle popover on mobile
   const handleClick = () => {
     if (isMobile) {
       setIsOpen(!isOpen);
+      setIsMobileMenuOpen(false); // Close the mobile menu when a category is clicked
     }
   };
 
@@ -77,26 +89,18 @@ const CategoriesNav = () => {
           className="flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-black"
           onClick={handleClick}
         >
-          <div className="flex items-center">
-            <span className="mr-2">All Categories</span>
-            <ChevronDown className="w-4 h-4" />
-          </div>
+          <span className="mr-2">All Categories</span>
+          <ChevronDown className="w-4 h-4" />
         </PopoverTrigger>
-        <PopoverContent className="w-[800px] p-6 grid grid-cols-4 gap-6">
-          {Object.entries(categories).map(([category, subcategories]) => (
-            <div key={category}>
-              <h3 className="font-semibold mb-2">{category}</h3>
-              <ul className="space-y-1">
-                {subcategories.map((sub) => (
-                  <li
-                    key={sub}
-                    className="text-sm text-gray-600 hover:text-primary cursor-pointer"
-                  >
-                    {sub}
-                  </li>
-                ))}
-              </ul>
-            </div>
+        <PopoverContent className="w-[300px] p-4 grid grid-cols-1 gap-2">
+          {categories.map((category) => (
+            <Link
+              key={category.id}
+              href={`/product/${encodeURIComponent(category.name)}`}
+              className="text-sm text-gray-700 hover:text-primary"
+            >
+              {category.name}
+            </Link>
           ))}
         </PopoverContent>
       </div>
