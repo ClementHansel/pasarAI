@@ -10,17 +10,19 @@ interface ProductFilterProps {
 }
 
 const ProductFilter = ({ value, onFilterChange }: ProductFilterProps) => {
-  // Local state mirrors the filter input
   const [local, setLocal] = useState<ProductFilterInput>(value);
 
-  // Keep local state in sync with parent value
   useEffect(() => {
     setLocal(value);
   }, [value]);
 
-  // Notify parent on any local change
+  // Debounce filter updates to parent
   useEffect(() => {
-    onFilterChange(local);
+    const timeout = setTimeout(() => {
+      onFilterChange(local);
+    }, 300);
+
+    return () => clearTimeout(timeout);
   }, [local, onFilterChange]);
 
   return (
@@ -34,8 +36,8 @@ const ProductFilter = ({ value, onFilterChange }: ProductFilterProps) => {
           onChange={(e) => setLocal((l) => ({ ...l, search: e.target.value }))}
           className="w-full pl-4 pr-8 py-2 border border-gray-300 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
         />
-        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
       </div>
+
       {/* Category Filter */}
       <div className="relative">
         <select
@@ -53,6 +55,7 @@ const ProductFilter = ({ value, onFilterChange }: ProductFilterProps) => {
         </select>
         <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
       </div>
+
       {/* Price Range Filter */}
       <div className="flex gap-2">
         <input
@@ -80,6 +83,7 @@ const ProductFilter = ({ value, onFilterChange }: ProductFilterProps) => {
           className="w-1/2 pl-4 pr-2 py-2 border border-gray-300 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
         />
       </div>
+
       {/* Stock Filter */}
       <div className="flex items-center gap-2 pl-4">
         <input
@@ -95,6 +99,7 @@ const ProductFilter = ({ value, onFilterChange }: ProductFilterProps) => {
           In Stock Only
         </label>
       </div>
+
       {/* Sort Filter */}
       <div className="relative">
         <select

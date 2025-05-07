@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { cn } from "@/lib/utils";
 import { Product, ProductType } from "@/types/product";
 import type { ProductFilterInput } from "@/types/product";
@@ -21,6 +21,8 @@ const ProductPage = () => {
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [searchInput, setSearchInput] = useState("");
   const debouncedSearch = useDebounce(searchInput, 300);
+
+  const prevFiltersRef = useRef<ProductFilterInput | null>(null);
 
   const fetchProducts = useCallback(async () => {
     try {
@@ -53,12 +55,16 @@ const ProductPage = () => {
   }, [filters]);
 
   useEffect(() => {
-    fetchProducts();
-  }, [fetchProducts]);
+    const prev = prevFiltersRef.current;
+    if (JSON.stringify(prev) !== JSON.stringify(filters)) {
+      prevFiltersRef.current = filters;
+      fetchProducts(); // Only fetch if filters changed
+    }
+  }, [filters]);
 
   useEffect(() => {
-    setFilters((prev) => ({ ...prev, search: debouncedSearch }));
-  }, [debouncedSearch]);
+    fetchProducts();
+  }, [fetchProducts]);
 
   const handleFilterChange = useCallback((newFilters: ProductFilterInput) => {
     setFilters((prev) => ({ ...prev, ...newFilters }));
