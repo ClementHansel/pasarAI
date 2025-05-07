@@ -1,3 +1,4 @@
+// src/components/floating/WhatsAppWidget.tsx
 "use client";
 
 import { useState } from "react";
@@ -10,9 +11,10 @@ export default function WhatsAppWidget() {
 
   return (
     <div className="relative">
+      {/* Button positioned at bottom-right */}
       <button
         onClick={() => setOpen(!open)}
-        className="w-14 h-14 rounded-full bg-green-600 text-white shadow-lg hover:bg-green-700 transition flex items-center justify-center"
+        className="w-14 h-14 rounded-full bg-green-600 text-white shadow-lg hover:bg-green-700 transition flex items-center justify-center z-50"
         aria-label="Chat on WhatsApp"
         title="Chat on WhatsApp"
       >
@@ -20,7 +22,7 @@ export default function WhatsAppWidget() {
       </button>
 
       {open && (
-        <div className="absolute bottom-16 right-0 w-[280px] bg-white rounded-xl shadow-xl border border-gray-200 p-4 z-50">
+        <div className="absolute bottom-20 right-0 w-[280px] bg-white rounded-xl shadow-xl border border-gray-200 p-4 z-50 transform">
           <div className="font-semibold text-gray-800 mb-2">Need Help?</div>
           <p className="text-sm text-gray-600 mb-3">Chat us on WhatsApp.</p>
           <Link

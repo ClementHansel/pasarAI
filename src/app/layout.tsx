@@ -1,3 +1,4 @@
+// src/app/layout.tsx
 "use client";
 
 import { Geist, Geist_Mono } from "next/font/google";
@@ -7,6 +8,9 @@ import Footer from "@/components/layout/homepage/Footer";
 import { WalletProvider } from "@/context/WalletContext";
 import { SessionProvider } from "next-auth/react";
 import { SearchProvider } from "@/context/SearchContext";
+
+// Import floating widgets container
+import FloatingWidgetContainer from "@/components/floating/FloatingWidgetContainer";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -35,6 +39,7 @@ export default function RootLayout({
               <WalletProvider>{children}</WalletProvider>
             </main>
             <Footer />
+            <FloatingWidgetContainer />
           </SearchProvider>
         </SessionProvider>
       </body>

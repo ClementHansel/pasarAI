@@ -1,27 +1,23 @@
+// prisma/seedtest.ts
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log("🌱 Start seeding...");
-
-  // Create Accounts
-  const farmer = await prisma.account.create({
-    data: {
-      name: "Farmer Joe",
-      email: "farmer@farm.com",
-      role: "SELLER",
-    },
+  // Create sample categories
+  const categoryFashion = await prisma.category.create({
+    data: { name: "Fashion" },
   });
 
-  const buyer = await prisma.account.create({
-    data: {
-      name: "Buyer Bob",
-      email: "buyer@market.com",
-      role: "BUYER",
-    },
+  const categoryElectronics = await prisma.category.create({
+    data: { name: "Electronics" },
   });
 
+  const categoryHomeLiving = await prisma.category.create({
+    data: { name: "Home & Living" },
+  });
+
+  // Create sample sellers
   const sellerTechStore = await prisma.account.create({
     data: {
       name: "Tech Store",
@@ -50,62 +46,20 @@ async function main() {
     },
   });
 
-  // Create Currencies
-  const idr = await prisma.currency.create({
-    data: {
-      name: "Indonesian Rupiah",
-      code: "IDR",
-      accountId: farmer.id,
-    },
-  });
-
-  const usd = await prisma.currency.create({
-    data: {
-      name: "United States Dollar",
-      code: "USD",
-      accountId: buyer.id,
-    },
-  });
-
-  // Create Region/SubRegion/City
-  const region = await prisma.region.create({
-    data: { name: "Asia", description: "Asia Region" },
-  });
-
-  const subRegion = await prisma.subRegion.create({
-    data: {
-      name: "Southeast Asia",
-      description: "SEA countries",
-      regionId: region.id,
-    },
-  });
-
-  const city = await prisma.city.create({
-    data: {
-      name: "Jakarta",
-      description: "Capital of Indonesia",
-      subRegionId: subRegion.id,
-    },
-  });
-
-  // Create Market
-  const domesticMarket = await prisma.market.create({
+  // Create sample markets
+  const marketDomestic = await prisma.market.create({
     data: {
       name: "Domestic Market",
-      description: "Indonesian market",
-      currencyId: idr.id,
-      location: "Indonesia",
-      regionId: region.id,
-      subRegionId: subRegion.id,
-      cityId: city.id,
+      location: "Local Market",
+      marketType: "LOCAL",
+      revenue: 0,
+      productCount: 0,
     },
   });
 
   const marketGlobal = await prisma.market.create({
     data: {
       name: "Global Market",
-      description: "International market",
-      currencyId: usd.id,
       location: "International Market",
       marketType: "GLOBAL",
       revenue: 0,
@@ -113,75 +67,7 @@ async function main() {
     },
   });
 
-  // Create Wallets
-  const farmerWallet = await prisma.wallet.create({
-    data: {
-      accountId: farmer.id,
-      balance: 5000,
-      currency: "IDR",
-    },
-  });
-
-  const buyerWallet = await prisma.wallet.create({
-    data: {
-      accountId: buyer.id,
-      balance: 10000,
-      currency: "USD",
-    },
-  });
-
-  // Wallet Transaction Logs
-  await prisma.walletTransactionLog.createMany({
-    data: [
-      {
-        walletId: farmerWallet.id,
-        action: "INITIAL",
-        oldValue: { balance: 0 },
-        newValue: { balance: 5000 },
-      },
-      {
-        walletId: buyerWallet.id,
-        action: "TOPUP",
-        oldValue: { balance: 0 },
-        newValue: { balance: 10000 },
-      },
-    ],
-  });
-
-  // Create Categories
-  const [
-    categoryVegetables,
-    categorySeafood,
-    categoryMeat,
-    categorySpices,
-    categoryElectronics,
-    categoryFashion,
-    categoryHomeLiving,
-  ] = await Promise.all(
-    [
-      "Vegetables",
-      "Seafood",
-      "Meat",
-      "Spices",
-      "Electronics",
-      "Fashion",
-      "HomeLiving",
-    ].map(async (name) => prisma.category.create({ data: { name } }))
-  );
-
-  // Create Products
-  const product = await prisma.product.create({
-    data: {
-      name: "Fresh Shrimp",
-      description: "Wild-caught Indonesian shrimp",
-      price: 120,
-      stock: 500,
-      categoryId: categorySeafood.id,
-      accountId: farmer.id,
-      marketId: domesticMarket.id,
-    },
-  });
-
+  // Create sample products
   const product1 = await prisma.product.create({
     data: {
       name: "Wireless Headphones",
@@ -194,7 +80,7 @@ async function main() {
       unit: "pcs",
       isActive: true,
       accountId: sellerTechStore.id,
-      marketId: domesticMarket.id,
+      marketId: marketDomestic.id,
       ecoCertifications: "RoHS, Energy Star",
       origin: "China",
       sku: "HP-001",
@@ -202,7 +88,7 @@ async function main() {
       isBestSeller: false,
       isOnSale: true,
       isFeatured: true,
-      duration: 720,
+      duration: 720, // 30 days
       categories: {
         connect: [{ id: categoryElectronics.id }],
       },
@@ -220,7 +106,7 @@ async function main() {
       unit: "pcs",
       isActive: true,
       accountId: sellerFashionHub.id,
-      marketId: domesticMarket.id,
+      marketId: marketDomestic.id,
       ecoCertifications: "GOTS, Fair Trade",
       origin: "India",
       sku: "TS-001",
@@ -246,7 +132,7 @@ async function main() {
       unit: "pcs",
       isActive: true,
       accountId: sellerTechStore.id,
-      marketId: domesticMarket.id,
+      marketId: marketDomestic.id,
       ecoCertifications: "IP67, Bluetooth",
       origin: "South Korea",
       sku: "SW-001",
@@ -264,41 +150,16 @@ async function main() {
     },
   });
 
-  // Create Order
-  const order = await prisma.order.create({
-    data: {
-      buyerId: buyer.id,
-      sellerId: farmer.id,
-      productId: product.id,
-      quantity: 10,
-      totalPrice: 1200,
-      status: "PENDING",
-    },
-  });
-
-  // Create Transaction
-  await prisma.transaction.create({
-    data: {
-      accountId: buyer.id,
-      walletId: buyerWallet.id,
-      type: "TOPUP",
-      amount: 1200,
-      method: "Wallet",
-      orderId: order.id,
-      status: "SUCCESS",
-      description: "Order payment for shrimp",
-    },
-  });
-
-  console.log("✅ Seeding complete.");
+  console.log(
+    "✅ Database seeded with 3 products, 8 categories, and 2 sellers"
+  );
 }
 
 main()
-  .then(async () => {
-    await prisma.$disconnect();
-  })
-  .catch(async (e) => {
-    console.error("❌ Seeding failed:", e);
-    await prisma.$disconnect();
+  .catch((e) => {
+    console.error(e);
     process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
   });

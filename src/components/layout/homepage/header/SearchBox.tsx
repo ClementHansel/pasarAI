@@ -1,39 +1,38 @@
 // src/components/layout/homepage/header/SearchBox.tsx
+"use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Search } from "lucide-react";
-import { useSearch } from "@/context/SearchContext"; // Ensure you import the useSearch hook if you decide to use context
 
 interface SearchBoxProps {
   value: string;
   onChange: (value: string) => void;
-  onSubmit?: () => void;
 }
 
-const SearchBox: React.FC<SearchBoxProps> = ({ value, onChange, onSubmit }) => {
-  const { submitSearch } = useSearch();
+export default function SearchBox({ value, onChange }: SearchBoxProps) {
+  // Debounce user typing
+  const [local, setLocal] = useState(value);
 
-  // Use submitSearch from context on Enter key press
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
-      submitSearch();
-      if (onSubmit) onSubmit();
-    }
-  };
+  useEffect(() => {
+    const id = setTimeout(() => onChange(local.trim()), 300);
+    return () => clearTimeout(id);
+  }, [local, onChange]);
+
+  // Keep local in sync if parent resets it
+  useEffect(() => {
+    setLocal(value);
+  }, [value]);
 
   return (
-    <div className="relative w-full max-w-2xl mx-auto">
+    <div className="relative w-full max-w-md">
       <input
         type="text"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        onKeyDown={handleKeyDown}
-        placeholder="Search for products, brands, and more..."
-        className="w-full h-10 pl-10 pr-4 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
+        value={local}
+        onChange={(e) => setLocal(e.target.value)}
+        placeholder="Search products..."
+        className="w-full h-10 pl-10 pr-4 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary text-sm"
       />
-      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500" />
+      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
     </div>
   );
-};
-
-export default SearchBox;
+}

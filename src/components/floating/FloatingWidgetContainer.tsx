@@ -1,3 +1,4 @@
+// src/components/floating/FloatingWidgetContainer.tsx
 "use client";
 
 import ChatWidget from "./ChatWidget";
@@ -5,9 +6,9 @@ import WhatsAppWidget from "./WhatsAppWidget";
 
 export default function FloatingWidgetContainer() {
   return (
-    <div className="fixed bottom-6 right-6 flex flex-col items-end gap-4 z-50">
-      <ChatWidget />
+    <div className="fixed bottom-4 right-4 flex flex-col gap-4 z-50">
       <WhatsAppWidget />
+      <ChatWidget />
     </div>
   );
 }
