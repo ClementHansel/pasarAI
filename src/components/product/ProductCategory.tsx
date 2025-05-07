@@ -64,7 +64,14 @@ const ProductCategory = ({
     };
 
     fetchData();
-  }, []);
+  }, [
+    type,
+    searchTerm,
+    categoryFilter,
+    selectedFilters.region,
+    selectedFilters.subRegion,
+    selectedFilters.city,
+  ]);
 
   if (loading) {
     return (
