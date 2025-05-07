@@ -6,6 +6,7 @@ import { useProductFilter } from "@/context/ProductCategoryContext";
 import SearchBox from "./header/SearchBox";
 import ProductCard from "./ProductCard";
 import type { Product } from "@/types/product";
+import { useSearch } from "@/context/SearchContext";
 
 const ITEMS_PER_PAGE = 8;
 type Tab = "all" | "featured" | "topRated" | "recent";
@@ -24,6 +25,7 @@ export default function ProductsExplorer() {
   const { category, market, setMarket } = useProductFilter();
   const [tab, setTab] = useState<Tab>("all");
   const [search, setSearch] = useState<string>("");
+  const { submitSearch } = useSearch();
   const [page, setPage] = useState<number>(1);
   const [products, setProducts] = useState<Product[]>([]);
   const [totalPages, setTotalPages] = useState<number>(1);
@@ -85,6 +87,7 @@ export default function ProductsExplorer() {
                 setSearch(v);
                 setPage(1);
               }}
+              onSubmit={submitSearch}
             />
 
             <div className="flex gap-2">
