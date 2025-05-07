@@ -3,6 +3,7 @@
 import { ChevronDown } from "lucide-react";
 import { useState, useEffect } from "react";
 import type { ProductFilterInput } from "@/types/product";
+import isEqual from "lodash.isequal";
 
 interface ProductFilterProps {
   value: ProductFilterInput;
@@ -19,11 +20,13 @@ const ProductFilter = ({ value, onFilterChange }: ProductFilterProps) => {
   // Debounce filter updates to parent
   useEffect(() => {
     const timeout = setTimeout(() => {
-      onFilterChange(local);
+      if (!isEqual(local, value)) {
+        onFilterChange(local);
+      }
     }, 300);
 
     return () => clearTimeout(timeout);
-  }, [local, onFilterChange]);
+  }, [local, onFilterChange, value]);
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 w-full">

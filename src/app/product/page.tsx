@@ -10,7 +10,6 @@ import ProductCategory from "@/components/product/ProductCategory";
 import { Home, Globe, RefreshCw, Grid, List, Sliders, X } from "lucide-react";
 import { useCartStore } from "@/lib/cartStore";
 import type { CartState } from "@/lib/cartStore";
-import { useDebounce } from "@/hooks/use-debounce";
 
 const ProductPage = () => {
   const addItem = useCartStore((state: CartState) => state.addItem);
@@ -20,7 +19,6 @@ const ProductPage = () => {
   const [viewMode, setViewMode] = useState<"list" | "grid">("grid");
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [searchInput, setSearchInput] = useState("");
-  const debouncedSearch = useDebounce(searchInput, 300);
 
   const prevFiltersRef = useRef<ProductFilterInput | null>(null);
 
