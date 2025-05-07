@@ -7,6 +7,7 @@ import { Search } from "lucide-react";
 interface SearchBoxProps {
   value: string;
   onChange: (value: string) => void;
+  onSubmit: () => void;
 }
 
 export default function SearchBox({ value, onChange }: SearchBoxProps) {
