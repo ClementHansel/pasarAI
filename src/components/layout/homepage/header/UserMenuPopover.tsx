@@ -21,7 +21,7 @@ const UserMenuPopover = () => {
         <ul className="text-sm space-y-1">
           <li
             className="hover:text-primary cursor-pointer"
-            onClick={() => router.push("/auth/login")}
+            onClick={() => router.push("/login")}
           >
             Login / Register
           </li>
