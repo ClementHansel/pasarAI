@@ -7,8 +7,10 @@ import {
   PopoverTrigger,
   PopoverContent,
 } from "@/components/ui/popover";
+import { useRouter } from "next/navigation";
 
 const UserMenuPopover = () => {
+  const router = useRouter();
   return (
     <Popover>
       <PopoverTrigger className="relative">
@@ -17,14 +19,24 @@ const UserMenuPopover = () => {
       <PopoverContent className="w-72 p-4">
         <h4 className="font-semibold mb-2">Account</h4>
         <ul className="text-sm space-y-1">
-          <li className="hover:text-primary cursor-pointer">
+          <li
+            className="hover:text-primary cursor-pointer"
+            onClick={() => router.push("/auth/login")}
+          >
             Login / Register
           </li>
-          <li className="hover:text-primary cursor-pointer">
+          <li
+            className="hover:text-primary cursor-pointer"
+            onClick={() => router.push("/dashboard")}
+          >
             Seller Dashboard
           </li>
-          <li className="hover:text-primary cursor-pointer">Profile</li>
-          <li className="hover:text-primary cursor-pointer">Settings</li>
+          <li
+            className="hover:text-primary cursor-pointer"
+            onClick={() => router.push("/profile")}
+          >
+            Profile
+          </li>
         </ul>
       </PopoverContent>
     </Popover>

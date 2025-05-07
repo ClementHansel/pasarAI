@@ -1,34 +1,78 @@
-// src/app/api/auth/register/route.ts
-
-import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
 import { hashPassword } from "@/lib/auth/authUtils";
-
-// Initialize Prisma client
-const prisma = new PrismaClient();
+import { generateReferralCode } from "@/lib/referral/referralUtils";
+import { validateEmail, validatePassword } from "@/lib/validation/utils";
+import { createReferralVouchers } from "@/lib/voucher/generateVoucherCode";
+import {
+  createAccount,
+  getAccountByEmail,
+  getAccountByReferralCode,
+} from "@/services/account/accountService";
+import { Role } from "@prisma/client";
+import { NextResponse } from "next/server";
+import { db } from "@/lib/db/db";
 
 export async function POST(req: Request) {
   try {
-    // Parse incoming JSON data
-    const { name, email, password, role } = await req.json();
+    const body = await req.json();
 
-    // Input validation
+    console.log("Register API received body:", body);
+
+    const {
+      name,
+      email,
+      password,
+      role,
+      referralCode: usedCode,
+      phone,
+      address,
+      country,
+      province,
+      city,
+      profileImage,
+      currency,
+    } = body;
+
+    // Basic validations
     if (!name || !email || !password) {
+      console.error("Missing required fields:", { name, email, password });
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 }
       );
     }
 
-    // Ensure role is either USER or SELLER, default to USER
-    const userRole =
-      role && (role === "SELLER" || role === "USER") ? role : "USER";
-
-    // Check if the user already exists
-    const existingUser = await prisma.user.findUnique({ where: { email } });
-    if (existingUser) {
+    // Validate email and password
+    if (!validateEmail(email)) {
+      console.error("Invalid email format:", email);
       return NextResponse.json(
-        { error: "User already exists" },
+        { error: "Invalid email format" },
+        { status: 400 }
+      );
+    }
+
+    if (!validatePassword(password)) {
+      console.error("Invalid password format");
+      return NextResponse.json(
+        {
+          error:
+            "Password must be at least 8 characters long and include a special character",
+        },
+        { status: 400 }
+      );
+    }
+
+    // Map role string to Prisma Role enum
+    const accountRole: Role = role === "SELLER" ? Role.SELLER : Role.BUYER;
+
+    // Check if the account already exists
+    const existingAccount = await getAccountByEmail(email);
+    if (existingAccount) {
+      // Return a clear error for the frontend
+      return NextResponse.json(
+        {
+          error:
+            "An account with this email already exists. Please log in or use a different email.",
+        },
         { status: 409 }
       );
     }
@@ -36,30 +80,70 @@ export async function POST(req: Request) {
     // Hash the password
     const hashedPassword = await hashPassword(password);
 
-    // Create a new user
-    const newUser = await prisma.user.create({
-      data: {
-        name,
-        email,
-        password: hashedPassword,
-        role: userRole, // Set role to USER or SELLER
-      },
+    // Generate a new referral code
+    const newReferralCode = generateReferralCode();
+
+    // Look up currency by name (since name is not unique, use findFirst)
+    const currencyRecord = await db.currency.findFirst({
+      where: { code: currency },
+    });
+    if (!currencyRecord) {
+      console.error("Currency not found:", currency);
+      return NextResponse.json({ error: "Invalid currency" }, { status: 400 });
+    }
+
+    // Create a new account using service layer
+    const newAccount = await createAccount({
+      name,
+      email,
+      password: hashedPassword,
+      role: accountRole,
+      referralCode: newReferralCode,
+      phone,
+      address,
+      country,
+      province,
+      city,
+      profileImage,
+      currencyId: currencyRecord.id, // <-- pass currencyId directly
     });
 
-    // Respond with success
-    return NextResponse.json({
-      message: "User registered successfully",
-      user: {
-        id: newUser.id,
-        email: newUser.email,
-        name: newUser.name,
-        role: newUser.role, // Include role in response
-      },
-    });
-  } catch (error) {
-    console.error("Register Error:", error);
+    // Handle referral if a code was provided
+    if (usedCode) {
+      const referrer = await getAccountByReferralCode(usedCode);
+
+      if (referrer) {
+        // Create referral entry and generate vouchers
+        await createReferralVouchers(referrer.id, newAccount.id);
+      }
+    }
+
+    // Return successful response with minimal account info
     return NextResponse.json(
-      { error: "Internal server error" },
+      {
+        message: "Account registered successfully",
+        account: {
+          id: newAccount.id,
+          email: newAccount.email,
+          name: newAccount.name,
+          role: newAccount.role,
+          referralCode: newReferralCode,
+        },
+      },
+      { status: 201 }
+    );
+  } catch (error: unknown) {
+    console.error("Register Error:", error);
+
+    if (error instanceof Error) {
+      return NextResponse.json(
+        { error: "Internal server error" },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json(
+      { error: "Internal server error", details: "Unknown error occurred" },
       { status: 500 }
     );
   }

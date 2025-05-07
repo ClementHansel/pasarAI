@@ -1,6 +1,9 @@
-import type { Metadata } from "next";
+// src/app/layout.tsx
+"use client";
+
 import { Geist, Geist_Mono } from "next/font/google";
 import "@/styles/globals.css";
+<<<<<<< HEAD
 import Logo from "@/components/layout/homepage/header/Logo";
 import SearchBox from "@/components/layout/homepage/header/SearchBox";
 import CartPopover from "@/components/layout/homepage/header/CartPopover";
@@ -8,6 +11,16 @@ import MessagePopover from "@/components/layout/homepage/header/MessagePopover";
 import UserMenuPopover from "@/components/layout/homepage/header/UserMenuPopover";
 import NotificationPopover from "@/components/layout/homepage/header/NotificationPopover";
 import { Link } from "lucide-react";
+=======
+import Header from "@/components/layout/homepage/header/Header";
+import Footer from "@/components/layout/homepage/Footer";
+import { WalletProvider } from "@/context/WalletContext";
+import { SessionProvider } from "next-auth/react";
+import { SearchProvider } from "@/context/SearchContext";
+
+// Import floating widgets container
+import FloatingWidgetContainer from "@/components/floating/FloatingWidgetContainer";
+>>>>>>> 6ade732fe3b0717f0fc5e7faf51b1b305019f520
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -19,11 +32,6 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  title: "PasarAI",
-  description: "Marketplace for exporting local produce",
-};
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -34,6 +42,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-white text-black min-h-screen flex flex-col`}
       >
+<<<<<<< HEAD
         {/* HEADER */}
         <header className="w-full p-4 bg-gray-100 shadow-md flex justify-between items-center">
           <div className="container mx-auto flex items-center justify-between gap-4">
@@ -83,6 +92,18 @@ export default function RootLayout({
         <footer className="w-full p-4 bg-gray-100 text-center text-sm">
           © {new Date().getFullYear()} PasarAI. All rights reserved.
         </footer>
+=======
+        <SessionProvider>
+          <SearchProvider>
+            <Header />
+            <main className="flex-grow">
+              <WalletProvider>{children}</WalletProvider>
+            </main>
+            <Footer />
+            <FloatingWidgetContainer />
+          </SearchProvider>
+        </SessionProvider>
+>>>>>>> 6ade732fe3b0717f0fc5e7faf51b1b305019f520
       </body>
     </html>
   );

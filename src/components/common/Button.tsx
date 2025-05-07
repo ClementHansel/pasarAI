@@ -5,8 +5,18 @@ import React from "react";
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   children: React.ReactNode;
   loading?: boolean;
-  variant?: "primary" | "secondary" | "danger" | "ghost"; // Added "ghost" variant
-  size?: "sm" | "md" | "lg"; // Added size options
+  variant?:
+    | "primary"
+    | "secondary"
+    | "danger"
+    | "ghost"
+    | "global"
+    | "default"
+    | "outline"
+    | "destructive"
+    | "solid"
+    | "outline";
+  size?: "sm" | "md" | "lg";
   className?: string;
 }
 

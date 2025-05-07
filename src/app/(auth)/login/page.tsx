@@ -1,95 +1,64 @@
+// app/login/page.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { useRouter } from "next/navigation";
-
-import Button from "@/components/common/Button";
-import Input from "@/components/common/Input";
+import Link from "next/link";
+import LoginForm from "@/components/auth/LoginForm";
+import { toast } from "react-hot-toast";
+import { signIn } from "next-auth/react";
 
 export default function LoginPage() {
   const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setError(null);
-    setLoading(true);
-
+  const handleLogin = async (email: string, password: string) => {
+    setIsLoading(true);
     try {
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+      // Use NextAuth credentials provider
+      const result = await signIn("credentials", {
+        redirect: false,
+        email,
+        password,
       });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || "Login failed");
+      if (result?.error) {
+        toast.error(result.error);
+        return;
       }
-
-      // Store tokens (example: localStorage or cookie)
-      localStorage.setItem("accessToken", data.accessToken);
-      localStorage.setItem("refreshToken", data.refreshToken);
-
-      // Optional: Store user info in context/localStorage
-      localStorage.setItem("user", JSON.stringify(data.user));
-
-      router.push("/dashboard");
-    } catch (err) {
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError("Something went wrong");
-      }
+      toast.success("Login successful!");
+      router.push("/market");
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 p-6">
-      <form
-        onSubmit={handleLogin}
-        className="w-full max-w-sm p-6 bg-white rounded-xl shadow-md space-y-4"
-      >
-        <h2 className="text-2xl font-bold text-center">Login</h2>
-
-        {error && <p className="text-red-500 text-sm text-center">{error}</p>}
-
-        <Input
-          label="Email"
-          type="email"
-          value={email}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-            setEmail(e.target.value)
-          }
-          required
-        />
-
-        <Input
-          label="Password"
-          type="password"
-          value={password}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-            setPassword(e.target.value)
-          }
-          required
-        />
-
-        <Button type="submit" loading={loading} className="w-full">
-          Login
-        </Button>
-
-        <p className="text-sm text-center text-gray-500">
-          Don’t have an account?{" "}
-          <a href="/register" className="text-blue-600 hover:underline">
-            Register
-          </a>
-        </p>
-      </form>
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="w-full max-w-md p-8 space-y-8 bg-white rounded-2xl shadow-lg">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold text-gray-900">Sign In</h1>
+          <p className="mt-2 text-sm text-gray-600">
+            Welcome back! Please sign in to your account
+          </p>
+        </div>
+        <Suspense fallback={<div>Loading...</div>}>
+          <LoginForm isLoading={isLoading} onSubmit={handleLogin} />
+        </Suspense>
+        <div className="flex items-center justify-between">
+          <Link
+            href="/forgot-password"
+            className="text-sm text-blue-600 hover:text-blue-500"
+          >
+            Forgot password?
+          </Link>
+          <Link
+            href="/register"
+            className="font-medium text-blue-600 hover:text-blue-500"
+          >
+            Create account
+          </Link>
+        </div>
+      </div>
     </div>
   );
 }

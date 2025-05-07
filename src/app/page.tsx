@@ -1,63 +1,50 @@
+// src/app/page.tsx
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { Toaster } from "react-hot-toast";
-
+import AiAssistPromo from "@/components/layout/homepage/AiAssistPromo";
 import HeroSection from "@/components/layout/homepage/HeroSection";
-import FeaturedProducts from "@/components/layout/homepage/FeaturedProducts";
-import TopUpAndBills from "@/components/layout/homepage/TopUpAndBills";
-import SelectedCategorySection from "@/components/layout/homepage/SelectedCategorySection";
-import RecentSearchProducts from "@/components/layout/homepage/RecentSearchProducts";
-import ProductsSection from "@/components/layout/homepage/ProductsSection";
-import CategoryButtons from "@/components/layout/homepage/CategoryButtons";
+import { ProductFilterProvider } from "@/context/ProductCategoryContext";
+import ProductsExplorer from "@/components/layout/homepage/ProductsExplorer";
+import FinanceCenter from "@/components/layout/homepage/FinanceCenter";
+import MarketsExplorer from "@/components/layout/homepage/MarketsExplorer";
 
-import { Product } from "@/types/product";
-
-const HomePage = () => {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
-
-  useEffect(() => {
-    const fetchProducts = async () => {
-      setLoading(true);
-      try {
-        const res = await fetch("/api/products");
-        const data = await res.json();
-
-        // Safe assignment — ensures `products` is always an array
-        const productsData = Array.isArray(data)
-          ? data
-          : Array.isArray(data.products)
-          ? data.products
-          : [];
-
-        setProducts(productsData);
-      } catch (error) {
-        console.error("Error fetching products:", error);
-        setProducts([]); // prevent undefined usage
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchProducts();
-  }, []);
-
+export default function HomePage() {
   return (
     <>
       <Toaster position="top-right" />
+      <main className="flex flex-col items-center bg-gray-50">
+        {/* AI Assistant Promo Banner */}
+        <div className="w-full bg-white shadow-md">
+          <AiAssistPromo />
+        </div>
 
-      <div className="space-y-12">
-        <HeroSection />
-        <FeaturedProducts />
-        <TopUpAndBills />
-        <SelectedCategorySection />
-        <RecentSearchProducts />
-        <ProductsSection products={products} loading={loading} />
-        <CategoryButtons />
-      </div>
+        {/* Hero Section */}
+        <section className="w-full">
+          <HeroSection />
+        </section>
+
+        {/* Main Content Container */}
+        <section className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16 py-12">
+          {/* Finance Center (Top-Up, Bills, Redeem) */}
+          <div className="bg-white p-6 rounded-lg shadow-sm">
+            <FinanceCenter />
+          </div>
+
+          {/* Products Explorer */}
+          <ProductFilterProvider>
+            <div className="bg-white p-6 rounded-lg shadow-sm">
+              <ProductsExplorer />
+            </div>
+          </ProductFilterProvider>
+
+          {/* Markets Explorer */}
+          <div className="bg-white p-6 rounded-lg shadow-sm">
+            <MarketsExplorer />
+          </div>
+        </section>
+      </main>
     </>
   );
-};
-
-export default HomePage;
+}

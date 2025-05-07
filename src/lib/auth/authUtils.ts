@@ -10,7 +10,7 @@ const ACCESS_TOKEN_EXPIRES_IN = "15m";
 const REFRESH_TOKEN_EXPIRES_IN = "7d";
 
 // --- Custom Role Type ---
-type Role = "ADMIN" | "USER" | "MODERATOR" | "SELLER" | "CONSUMER";
+type Role = "ADMIN" | "BUYER" | "MODERATOR" | "SELLER";
 
 // --- PASSWORD UTILS ---
 export async function hashPassword(password: string): Promise<string> {
@@ -23,6 +23,13 @@ export async function comparePassword(
   hashedPassword: string
 ): Promise<boolean> {
   return bcrypt.compare(plainText, hashedPassword);
+}
+
+export async function verifyPassword(
+  plainPassword: string,
+  hashedPassword: string
+) {
+  return bcrypt.compare(plainPassword, hashedPassword);
 }
 
 // --- TOKEN PAYLOAD TYPES ---
@@ -38,30 +45,30 @@ export type RefreshTokenPayload = {
 };
 
 // --- TOKEN GENERATION ---
-export function generateAccessToken(user: {
+export function generateAccessToken(account: {
   id: string;
   email: string;
   role: Role;
 }): string {
   return jwt.sign(
     {
-      sub: user.id,
-      email: user.email,
-      role: user.role,
+      sub: account.id,
+      email: account.email,
+      role: account.role,
     },
     JWT_SECRET,
     { expiresIn: ACCESS_TOKEN_EXPIRES_IN }
   );
 }
 
-export function generateRefreshToken(user: {
+export function generateRefreshToken(account: {
   id: string;
   tokenVersion: number;
 }): string {
   return jwt.sign(
     {
-      sub: user.id,
-      version: user.tokenVersion,
+      sub: account.id,
+      version: account.tokenVersion,
     },
     JWT_REFRESH_SECRET,
     { expiresIn: REFRESH_TOKEN_EXPIRES_IN }
@@ -111,17 +118,17 @@ export function generateTokenIdentifier(): string {
 }
 
 // --- RBAC UTILS ---
-export function hasRole(user: { role: Role }, requiredRole: Role): boolean {
-  return user.role === requiredRole;
+export function hasRole(account: { role: Role }, requiredRole: Role): boolean {
+  return account.role === requiredRole;
 }
 
-export function isAdmin(user: { role: Role }): boolean {
-  return user.role === "ADMIN";
+export function isAdmin(account: { role: Role }): boolean {
+  return account.role === "ADMIN";
 }
 
 // Additional Role-Specific Checks
-export function isSeller(user: { role: Role }): boolean {
-  return user.role === "SELLER"; // Check if user is a seller
+export function isSeller(account: { role: Role }): boolean {
+  return account.role === "SELLER"; // Check if account is a seller
 }
 
 // --- OTP / MAGIC LINK UTILS ---
@@ -148,7 +155,7 @@ export function verifyMagicLinkToken(token: string): { email: string } {
 }
 
 // --- SOCIAL LOGIN HOOK ---
-export function mapOAuthUserToAppUser(profile: {
+export function mapOAuthaccountToAppaccount(profile: {
   id: string;
   email: string;
   name?: string;
@@ -160,7 +167,7 @@ export function mapOAuthUserToAppUser(profile: {
 } {
   return {
     email: profile.email,
-    name: profile.name ?? "OAuth User",
+    name: profile.name ?? "OAuth account",
     profileImage: profile.avatar ?? "",
   };
 }
