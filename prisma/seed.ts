@@ -1,1282 +1,304 @@
-// import {
-//   OrderStatus,
-//   PaymentStatus,
-//   Prisma,
-//   PrismaClient,
-//   Role,
-// } from "@prisma/client";
-// import bcrypt from "bcrypt";
-
-// const prisma = new PrismaClient();
-
-// async function hashPassword(password: string) {
-//   return await bcrypt.hash(password, 10);
-// }
-
-// async function main() {
-//   console.log("🌱 Seeding started...");
-
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-// Fungsi untuk membuat session baru
-export async function createSession(data: {
-  accountId: string;
-  refreshToken: string;
-  userAgent?: string;
-  ipAddress?: string;
-  expiresAt: Date;
-}) {
-  try {
-    const session = await prisma.session.create({
-      data,
-    });
-    return session;
-  } catch (error) {
-    console.error('Error creating session:', error);
-    throw error;
-  }
+async function main() {
+  console.log("🌱 Start seeding...");
+
+  // Create Accounts
+  const farmer = await prisma.account.create({
+    data: {
+      name: "Farmer Joe",
+      email: "farmer@farm.com",
+      role: "SELLER",
+    },
+  });
+
+  const buyer = await prisma.account.create({
+    data: {
+      name: "Buyer Bob",
+      email: "buyer@market.com",
+      role: "BUYER",
+    },
+  });
+
+  const sellerTechStore = await prisma.account.create({
+    data: {
+      name: "Tech Store",
+      email: "techstore@example.com",
+      role: "SELLER",
+      phone: "+1234567890",
+      address: "123 Tech Street",
+      country: "USA",
+      province: "California",
+      city: "San Francisco",
+      profileImage: "https://picsum.photos/200/300",
+    },
+  });
+
+  const sellerFashionHub = await prisma.account.create({
+    data: {
+      name: "Fashion Hub",
+      email: "fashionhub@example.com",
+      role: "SELLER",
+      phone: "+19876543210",
+      address: "456 Fashion Ave",
+      country: "USA",
+      province: "New York",
+      city: "New York City",
+      profileImage: "https://picsum.photos/200/301",
+    },
+  });
+
+  // Create Currencies
+  const idr = await prisma.currency.create({
+    data: {
+      name: "Indonesian Rupiah",
+      code: "IDR",
+      accountId: farmer.id,
+    },
+  });
+
+  const usd = await prisma.currency.create({
+    data: {
+      name: "United States Dollar",
+      code: "USD",
+      accountId: buyer.id,
+    },
+  });
+
+  // Create Region/SubRegion/City
+  const region = await prisma.region.create({
+    data: { name: "Asia", description: "Asia Region" },
+  });
+
+  const subRegion = await prisma.subRegion.create({
+    data: {
+      name: "Southeast Asia",
+      description: "SEA countries",
+      regionId: region.id,
+    },
+  });
+
+  const city = await prisma.city.create({
+    data: {
+      name: "Jakarta",
+      description: "Capital of Indonesia",
+      subRegionId: subRegion.id,
+    },
+  });
+
+  // Create Market
+  const domesticMarket = await prisma.market.create({
+    data: {
+      name: "Domestic Market",
+      description: "Indonesian market",
+      currencyId: idr.id,
+      location: "Indonesia",
+      regionId: region.id,
+      subRegionId: subRegion.id,
+      cityId: city.id,
+    },
+  });
+
+  const marketGlobal = await prisma.market.create({
+    data: {
+      name: "Global Market",
+      description: "International market",
+      currencyId: usd.id,
+      location: "International Market",
+      marketType: "GLOBAL",
+      revenue: 0,
+      productCount: 0,
+    },
+  });
+
+  // Create Wallets
+  const farmerWallet = await prisma.wallet.create({
+    data: {
+      accountId: farmer.id,
+      balance: 5000,
+      currency: "IDR",
+    },
+  });
+
+  const buyerWallet = await prisma.wallet.create({
+    data: {
+      accountId: buyer.id,
+      balance: 10000,
+      currency: "USD",
+    },
+  });
+
+  // Wallet Transaction Logs
+  await prisma.walletTransactionLog.createMany({
+    data: [
+      {
+        walletId: farmerWallet.id,
+        action: "INITIAL",
+        oldValue: { balance: 0 },
+        newValue: { balance: 5000 },
+      },
+      {
+        walletId: buyerWallet.id,
+        action: "TOPUP",
+        oldValue: { balance: 0 },
+        newValue: { balance: 10000 },
+      },
+    ],
+  });
+
+  // Create Categories
+  const [
+    categoryVegetables,
+    categorySeafood,
+    categoryMeat,
+    categorySpices,
+    categoryElectronics,
+    categoryFashion,
+    categoryHomeLiving,
+  ] = await Promise.all(
+    [
+      "Vegetables",
+      "Seafood",
+      "Meat",
+      "Spices",
+      "Electronics",
+      "Fashion",
+      "HomeLiving",
+    ].map(async (name) => prisma.category.create({ data: { name } }))
+  );
+
+  // Create Products
+  const product = await prisma.product.create({
+    data: {
+      name: "Fresh Shrimp",
+      description: "Wild-caught Indonesian shrimp",
+      price: 120,
+      stock: 500,
+      categoryId: categorySeafood.id,
+      accountId: farmer.id,
+      marketId: domesticMarket.id,
+    },
+  });
+
+  const product1 = await prisma.product.create({
+    data: {
+      name: "Wireless Headphones",
+      description: "Premium noise-canceling wireless headphones",
+      price: 89.99,
+      originalPrice: 99.99,
+      image: "https://picsum.photos/seed/headphones/200/300",
+      stock: 50,
+      soldCount: 15,
+      unit: "pcs",
+      isActive: true,
+      accountId: sellerTechStore.id,
+      marketId: domesticMarket.id,
+      ecoCertifications: "RoHS, Energy Star",
+      origin: "China",
+      sku: "HP-001",
+      isNewArrival: true,
+      isBestSeller: false,
+      isOnSale: true,
+      isFeatured: true,
+      duration: 720,
+      categories: {
+        connect: [{ id: categoryElectronics.id }],
+      },
+    },
+  });
+
+  const product2 = await prisma.product.create({
+    data: {
+      name: "Organic Cotton T-Shirt",
+      description: "100% organic cotton t-shirt in multiple sizes",
+      price: 24.99,
+      image: "https://picsum.photos/seed/tshirt/200/300",
+      stock: 100,
+      soldCount: 30,
+      unit: "pcs",
+      isActive: true,
+      accountId: sellerFashionHub.id,
+      marketId: domesticMarket.id,
+      ecoCertifications: "GOTS, Fair Trade",
+      origin: "India",
+      sku: "TS-001",
+      isNewArrival: false,
+      isBestSeller: true,
+      isOnSale: false,
+      isFeatured: false,
+      categories: {
+        connect: [{ id: categoryFashion.id }],
+      },
+    },
+  });
+
+  const product3 = await prisma.product.create({
+    data: {
+      name: "Smartwatch Fitness Tracker",
+      description: "Bluetooth-enabled smartwatch with heart rate monitoring",
+      price: 129.99,
+      originalPrice: 149.99,
+      image: "https://picsum.photos/seed/smartwatch/200/300",
+      stock: 30,
+      soldCount: 10,
+      unit: "pcs",
+      isActive: true,
+      accountId: sellerTechStore.id,
+      marketId: domesticMarket.id,
+      ecoCertifications: "IP67, Bluetooth",
+      origin: "South Korea",
+      sku: "SW-001",
+      isNewArrival: false,
+      isBestSeller: true,
+      isOnSale: true,
+      isFeatured: true,
+      duration: 720,
+      categories: {
+        connect: [
+          { id: categoryElectronics.id },
+          { id: categoryHomeLiving.id },
+        ],
+      },
+    },
+  });
+
+  // Create Order
+  const order = await prisma.order.create({
+    data: {
+      buyerId: buyer.id,
+      sellerId: farmer.id,
+      productId: product.id,
+      quantity: 10,
+      totalPrice: 1200,
+      status: "PENDING",
+    },
+  });
+
+  // Create Transaction
+  await prisma.transaction.create({
+    data: {
+      accountId: buyer.id,
+      walletId: buyerWallet.id,
+      type: "TOPUP",
+      amount: 1200,
+      method: "Wallet",
+      orderId: order.id,
+      status: "SUCCESS",
+      description: "Order payment for shrimp",
+    },
+  });
+
+  console.log("✅ Seeding complete.");
 }
 
-// Contoh penggunaan fungsi createSession
-const sessionData = await prisma.session.create({
-    data: {
-    accountId: 'acc_01hxyzabc123',
-    refreshToken: 'refreshtoken_abc123',
-    userAgent: 'Mozilla/5.0',
-    ipAddress: '192.168.1.1',
-    expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24) // 24 jam ke depan
-  },
-});
-
-// Contoh penggunaan fungsi createSessionActivity
-const activityData = await prisma.sessionActivity.create({
-    data: {
-    accountId: 'acc_01hxyzabc123',
-    activity: 'LOGIN_SUCCESS',
-    ipAddress: '192.168.1.1',
-    userAgent: 'Mozilla/5.0'
-  },
-});                                                                                                                                                                                                                                                                                                             
-const actionData = await prisma.accountAction.create({
-    data: {
-    accountId: 'acc_01hxyzabc123',
-    action: 'UPDATED_PASSWORD'
-  },
-});
-  
-
-  const errorLogData = await prisma.errorLog.create({
-    data: {
-    message: 'Unhandled exception in payment flow',
-    stack: 'ReferenceError: x is not defined\n    at Payment.js:23:10',
-    context: 'PaymentController'
-  },
-});
-  
-  const loginAttemptData = await prisma.loginAttempt.create({
-    data: {
-    email: 'user@example.com',
-    success: false,
-    ipAddress: '192.168.1.1',
-    userAgent: 'Mozilla/5.0',
-    accountId: 'acc_01hxyzabc123' // optional
-  },
-});
-  
-// 1. Users
-const [account1, account2] = await Promise.all([
-  prisma.account.create({
-    data: {
-      name: "John Doe",
-      email: "john@example.com",
-      password: await hashPassword("password123"),
-      role: Role.BUYER,
-      phone: "0811111111",
-      address: "123 Ocean Ave",
-      profileImage: "https://example.com/john.jpg",
-      isVerified: true,
-      emailVerifiedAt: new Date(),
-    },
-  }),
-  prisma.account.create({
-    data: {
-      name: "Jane Smith",
-      email: "jane@example.com",
-      password: await hashPassword("password456"),
-      role: Role.CONSUMER,
-      phone: "0822222222",
-      address: "456 Bay St",
-      profileImage: "https://example.com/jane.jpg",
-      isVerified: true,
-      emailVerifiedAt: new Date(),
-    },
-  }),
-]);
-console.log("✅ Users created");
-
-// 2. Sellers
-const [seller1, seller2] = await Promise.all([
-  prisma.account.create({
-    data: {
-      name: "EcoFarm",
-      email: "eco@farm.com",
-      password: await hashPassword("eco123"),
-      phone: "0833333333",
-      address: "Green Valley",
-      isVerified: true,
-      emailVerifiedAt: new Date(),
-    },
-  }),
-  prisma.account.create({
-    data: {
-      name: "NatureMarket",
-      email: "nature@market.com",
-      password: await hashPassword("nature123"),
-      phone: "0844444444",
-      address: "Nature Road",
-      isVerified: true,
-      emailVerifiedAt: new Date(),
-    },
-  }),
-]);
-console.log("✅ Sellers created");
-
-//   // 3. Market
-//   const market = await prisma.market.create({
-//     data: {
-//       name: "Green Market",
-//       description: "Eco-friendly goods only",
-//       location: "Downtown",
-//       sellers: {
-//         connect: [{ id: seller1.id }, { id: seller2.id }],
-//       },
-//     },
-//   });
-
-    const BrandWithProducts = await prisma.brand.create ({
-        data: {
-            name: 'Urban Style Co.',
-            description: 'Brand streetwear anak muda.',
-            label: 'Best Seller',
-            products: {
-            connect: [
-                { id: 'prod_abc123' },
-                { id: 'prod_def456' }
-            ]
-            }
-        }
-        });
-
-    const TagWithProducts = await prisma.tag.create({
-        data: {
-            name: 'Limited Edition',
-            products: {
-            connect: [
-                { id: 'prod_abc123' },
-                { id: 'prod_xyz789' }
-            ]
-            }
-        }
-        });
-
-    const createLabelWithProducts = await prisma.label.create({
-        data: {
-            name: 'New Arrival',
-            products: {
-            connect: [
-                { id: 'prod_mno321' },
-                { id: 'prod_xyz789' }
-            ]
-            }
-        }
-        });
-
-
-const brand = await prisma.brand.create({
-  data: {
-    name: "All Fresh",
-    description: "Hydrophonic Vegetables",
-    sellers: {
-      connect: [{ id: seller1.id }, { id: seller2.id }],
-    },
-  },
-});
-console.log("✅ Brand created");
-// Safely add brand relation if it exists
-// if (brand) {
-//   productData.brand = { connect: { id: brand.id } };
-// }
-console.log("✅ Market created");
-
-// 4. Categories & Tags
-const [catFruit, catVeg] = await Promise.all([
-  prisma.category.create({ data: { name: "Fruits" } }),
-  prisma.category.create({ data: { name: "Vegetables" } }),
-]);
-
-//   const [tagOrganic, tagFresh] = await Promise.all([
-//     prisma.tag.create({ data: { name: "Organic" } }),
-//     prisma.tag.create({ data: { name: "Fresh" } }),
-//   ]);
-//   console.log("✅ Categories and Tags created");
-
-// 5. Products
-const product1 = await prisma.product.create({
-  data: {
-    name: "Organic Apple",
-    description: "Fresh organic apples",
-    price: 49000,
-    originalPrice: 55000,
-    stock: 100,
-    soldCount: 10,
-    unit: "kg",
-    categoryId: catFruit.id,
-    accountId: seller1.id,
-    marketId: market.id,
-    tags: {
-      connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
-    },
-    sku: "APL-001",
-    ecoCertifications: "USDA Organic",
-    origin: "Bandung",
-    image: "https://images.unsplash.com/photo-1513677785800-9df79ae4b10b?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D, https://images.unsplash.com/photo-1570913149827-d2ac84ab3f9a?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D, https://images.unsplash.com/photo-1598170845055-806a9e9f3f72?q=80&w=2071&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D, https://images.unsplash.com/photo-1599907617275-3e69f1adfcf0?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-    // Removed imageArray as it is not a valid property
-    isBestSeller: true,
-    isOnSale: true,
-    isFeatured: true,
-    labels: {
-      connectOrCreate: [
-        {
-          where: { name: "Best Sellers" },
-          create: { name: "Best Sellers" },
-        },
-      ],
-    },
-  },
-});
-
-const product2 = await prisma.product.create({
-  data: {
-    name: "Carrot",
-    description: "Crunchy carrots",
-    price: 15000,
-    originalPrice: 18000,
-    stock: 50,
-    soldCount: 5,
-    unit: "kg",
-    categoryId: catVeg.id,
-    accountId: seller2.id,
-    marketId: market.id,
-    tags: {
-      connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
-    },
-    sku: "CRT-002",
-    origin: "Bogor",
-    image: "https://images.unsplash.com/photo-1590868309235-ea34bed7bd7f?q=80&w=2127&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D, https://images.unsplash.com/photo-1582515073490-39981397c445?q=80&w=2069&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D, https://images.unsplash.com/photo-1598170845058-32b9d6a5da37?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D, https://images.unsplash.com/photo-1633380110125-f6e685676160?q=80&w=2071&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-    isBestSeller: false,
-    isOnSale: true,
-    isFeatured: false,
-    labels: {
-      connectOrCreate: [
-        {
-          where: { name: "New Arrivals" },
-          create: { name: "New Arrivals" },
-        },
-      ],
-    },
-  },
-});
-
-const product3 = await prisma.product.create({
-  data: {
-    name: "Tomato",
-    description: "Fresh juicy tomatoes",
-    price: 24000,
-    originalPrice: 28000,
-    stock: 80,
-    soldCount: 20,
-    unit: "kg",
-    category: { connect: { id: catVeg.id } },
-    account: { connect: { id: seller1.id } },
-    market: { connect: { id: market.id } },
-    tags: {
-      connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
-    },
-    sku: "TOM-003",
-    origin: "Bandung",
-    image: "https://images.unsplash.com/photo-1607305387299-a3d9611cd469?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D, https://plus.unsplash.com/premium_photo-1661811820259-2575b82101bf?q=80&w=2080&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D, https://images.unsplash.com/photo-1582284540020-8acbe03f4924?q=80&w=1935&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D, https://images.unsplash.com/photo-1561136594-7f68413baa99?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-    isBestSeller: false,
-    isOnSale: true,
-    isFeatured: true,
-    labels: {
-      connectOrCreate: [
-        {
-          where: { name: "On Sale" },
-          create: { name: "On Sale" },
-        },
-      ],
-    },
-  },
-});
-
-const product4 = await prisma.product.create({
-  data: {
-    name: "Organic Banana",
-    description: "Sweet and ripe organic bananas",
-    price: 24000,
-    originalPrice: 28000,
-    stock: 120,
-    soldCount: 15,
-    unit: "kg",
-    categoryId: catFruit.id,
-    accountId: seller1.id,
-    marketId: market.id,
-    tags: {
-      connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
-    },
-    sku: "BAN-001",
-    ecoCertifications: "Fair Trade",
-    origin: "Lampung",
-    image: "https://images.unsplash.com/photo-1668762924635-a3683caf32bf?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D, https://plus.unsplash.com/premium_photo-1724250081106-4bb1be9bf950?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D, https://images.unsplash.com/photo-1744659753302-9f4fc320f085?q=80&w=1931&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D, https://images.unsplash.com/photo-1729332185302-e80ec9e483a7?q=80&w=1925&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-    isBestSeller: true,
-    isOnSale: false,
-    isFeatured: true,
-    labels: {
-      connectOrCreate: [
-        {
-          where: { name: "Top Rated" },
-          create: { name: "Top Rated" },
-        },
-      ],
-    },
-  },
-});
-
-const product5 = await prisma.product.create({
-  data: {
-    name: "Fresh Mango",
-    description: "Juicy and fragrant mangoes",
-    price: 57000,
-    originalPrice: 60000,
-    stock: 80,
-    soldCount: 20,
-    unit: "kg",
-    categoryId: catFruit.id,
-    accountId: seller1.id,
-    marketId: market.id,
-    tags: {
-      connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
-    },
-    sku: "MNG-001",
-    ecoCertifications: "Local Farm Certified",
-    origin: "Cirebon",
-    image: "https://images.unsplash.com/photo-1669207334420-66d0e3450283?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D, https://images.unsplash.com/photo-1601493700631-2b16ec4b4716?q=80&w=1935&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D, https://images.unsplash.com/photo-1501746877-14782df58970?q=80&w=1935&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D, https://images.unsplash.com/photo-1519096845289-95806ee03a1a?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-    isBestSeller: false,
-    isOnSale: true,
-    isFeatured: true,
-    labels: {
-      connectOrCreate: [
-        {
-          where: { name: "Seasonal" },
-          create: { name: "Seasonal" },
-        },
-      ],
-    },
-  },
-});
-
-const product6 = await prisma.product.create({
-  data: {
-    name: "Red Grapes",
-    description: "Seedless red grapes",
-    price: 82000,	
-    originalPrice: 90000,
-    stock: 60,
-    soldCount: 25,
-    unit: "kg",
-    categoryId: catFruit.id,
-    accountId: seller1.id,
-    marketId: market.id,
-    tags: {
-      connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
-    },
-    sku: "GRP-001",
-    ecoCertifications: "Eco Friendly",
-    origin: "Bali",
-    image: "https://images.unsplash.com/photo-1635843116188-b67a2f1ef23f?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D, https://images.unsplash.com/photo-1596380862374-ad7fa9407822?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D, https://images.unsplash.com/photo-1571663716920-9fd87840c9ef?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D, https://images.unsplash.com/photo-1641317113966-a1669ce77c96?q=80&w=1978&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-    isBestSeller: true,
-    isOnSale: true,
-    isFeatured: false,
-    labels: {
-      connectOrCreate: [
-        {
-          where: { name: "Best Sellers" },
-          create: { name: "Best Sellers" },
-        },
-      ],
-    },
-  },
-});
-const product7 = await prisma.product.create({
-  data: {
-    name: "Watermelon",
-    description: "Large and juicy watermelon",
-    price: 90000,
-    originalPrice: 115000,
-    stock: 40,
-    soldCount: 30,
-    unit: "each",
-    categoryId: catFruit.id,
-    accountId: seller1.id,
-    marketId: market.id,
-    tags: {
-      connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
-    },
-    sku: "WTM-001",
-    ecoCertifications: "Water Efficient Farming",
-    origin: "Surabaya",
-    image: "https://images.unsplash.com/photo-1621961048737-a9993789e1ad?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D, https://images.unsplash.com/photo-1587049352846-4a222e784d38?q=80&w=2080&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D, https://images.unsplash.com/photo-1622208489373-1fe93e2c6720?q=80&w=2070 auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-    isBestSeller: false,
-    isOnSale: true,
-    isFeatured: false,
-    labels: {
-      connectOrCreate: [
-        {
-          where: { name: "Featured" },
-          create: { name: "Featured" },
-        },
-      ],
-    },
-  },
-});
-
-const product8 = await prisma.product.create({
-  data: {
-    name: "Pineapple",
-    description: "Sweet tropical pineapples",
-    price: 65000,
-    originalPrice: 82000,
-    stock: 70,
-    soldCount: 18,
-    unit: "each",
-    categoryId: catFruit.id,
-    accountId: seller1.id,
-    marketId: market.id,
-    tags: {
-      connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
-    },
-    sku: "PNP-001",
-    ecoCertifications: "USDA Organic",
-    origin: "Medan",
-    image: "https://images.unsplash.com/photo-1550828520-4cb496926fc9?q=80&w=1633&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D, https://images.unsplash.com/photo-1562522513-a22a63a0e21e?q=80&w=1468&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D, https://images.unsplash.com/photo-1614963366795-973eb8748ebb?q=80&w=1374&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D, https://images.unsplash.com/photo-1550258987-190a2d41a8ba?q=80&w=1374&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-    isBestSeller: true,
-    isOnSale: false,
-    isFeatured: true,
-    labels: {
-      connectOrCreate: [
-        {
-          where: { name: "Top Rated" },
-          create: { name: "Top Rated" },
-        },
-      ],
-    },
-  },
-});
-
-const product9 = await prisma.product.create({
-  data: {
-    name: "Strawberries",
-    description: "Fresh and juicy strawberries",
-    price: 100000,
-    originalPrice: 123000,
-    stock: 30,
-    soldCount: 12,
-    unit: "box",
-    categoryId: catFruit.id,
-    accountId: seller1.id,
-    marketId: market.id,
-    tags: {
-      connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
-    },
-    sku: "STB-001",
-    ecoCertifications: "Rainforest Alliance",
-    origin: "Lembang",
-    image: "https://images.unsplash.com/photo-1464965911861-746a04b4bca6?q=80&w=1470&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D, https://plus.unsplash.com/premium_photo-1690291012436-6600ce6ffdbe?q=80&w=1376&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D, https://images.unsplash.com/photo-1549007953-2f2dc0b24019?q=80&w=1470&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D, https://images.unsplash.com/photo-1543158181-e6f9f6712055?q=80&w=1470&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D,https://images.unsplash.com/photo-1610725664338-2be2cb450798?q=80&w=1530&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-    isBestSeller: true,
-    isOnSale: true,
-    isFeatured: true,
-    labels: {
-      connectOrCreate: [
-        {
-          where: { name: "Limited Edition" },
-          create: { name: "Limited Edition" },
-        },
-      ],
-    },
-  },
-});
-
-const product10 = await prisma.product.create({
-  data: {
-    name: "Papaya",
-    description: "Tropical and healthy papaya",
-    price: 41000,
-    originalPrice: 50000,
-    stock: 90,
-    soldCount: 22,
-    unit: "each",
-    categoryId: catFruit.id,
-    accountId: seller1.id,
-    marketId: market.id,
-    tags: {  
-      connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
-    },
-    sku: "PAP-001",
-    ecoCertifications: "Organic Indonesia",
-    origin: "Bekasi",
-    image: "https://images.unsplash.com/photo-1541472596887-494ee5c0fe30?q=80&w=1567&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D, https://images.unsplash.com/photo-1526318472351-c75fcf070305?q=80&w=1374&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D, https://plus.unsplash.com/premium_photo-1675639895212-696149c275f9?q=80&w=1527&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D, https://images.unsplash.com/photo-1617112848923-cc2234396a8d?q=80&w=1374&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-    isBestSeller: false,
-    isOnSale: true,
-    isFeatured: false,
-    labels: {
-      connectOrCreate: [
-        {
-          where: { name: "Healthy Choice" },
-          create: { name: "Healthy Choice" },
-        },
-      ],
-    },
-  },
-});
-
-const product11 = await prisma.product.create({
-  data: {
-    name: "Kiwi",
-    description: "Imported kiwi fruits",
-    price: 100000,
-    originalPrice: 105000,
-    stock: 50,
-    soldCount: 19,
-    unit: "box",
-    categoryId: catFruit.id,
-    accountId: seller1.id,
-    marketId: market.id,
-    tags: {
-      connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
-    },
-    sku: "KIW-001",
-    ecoCertifications: "Non-GMO",
-    origin: "New Zealand",
-    image: "https://images.unsplash.com/photo-1616684000067-36952fde56ec?q=80&w=1528&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D, https://images.unsplash.com/photo-1609889132698-1625aefc7f6b?q=80&w=1467&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D, https://images.unsplash.com/photo-1572565638061-ecff52429d86?q=80&w=1528&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D, https://images.unsplash.com/photo-1610917040803-1fccf9623064?q=80&w=1470&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-    isBestSeller: false,
-    isOnSale: false,
-    isFeatured: true,
-    labels: {
-      connectOrCreate: [
-        {
-          where: { name: "Imported" },
-          create: { name: "Imported" },
-        },
-      ],
-    },
-  },
-});
-
-const product12 = await prisma.product.create({
-  data: {
-    name: "Avocado",
-    description: "Creamy organic avocados",
-    price: 70000,
-    originalPrice: 82000,
-    stock: 65,
-    soldCount: 28,
-    unit: "kg",
-    categoryId: catFruit.id,
-    accountId: seller1.id,
-    marketId: market.id,
-    tags: {
-      connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
-    },
-    sku: "AVC-001",
-    ecoCertifications: "USDA Organic",
-    origin: "Bogor",
-    image: "https://images.unsplash.com/photo-1583029901628-8039767c7ad0?q=80&w=1470&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D, https://images.unsplash.com/photo-1671624749229-7d37826013b5?q=80&w=1470&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D, https://images.unsplash.com/photo-1612506266679-606568a33215?q=80&w=1374&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D, https://images.unsplash.com/photo-1601039641847-7857b994d704?q=80&w=1470&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-    isBestSeller: true,
-    isOnSale: true,
-    isFeatured: true,
-    labels: {
-      connectOrCreate: [
-        {
-          where: { name: "Best Sellers" },
-          create: { name: "Best Sellers" },
-        },
-      ],
-    },
-  },
-});
-
-
-
-const product13 = await prisma.product.create({
-  data: {
-    name: "Spinach",
-    description: "Fresh green spinach leaves",
-    price: 17000,
-    originalPrice: 20000,
-    stock: 70,
-    soldCount: 15,
-    unit: "bunch",
-    categoryId: catVeg.id,
-    accountId: seller1.id,
-    marketId: market.id,
-    tags: {
-      connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
-    },
-    sku: "SPI-002",
-    origin: "Lembang",
-    image: "https://images.unsplash.com/photo-1576045057995-568f588f82fb?q=80&w=1480&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D, https://images.unsplash.com/photo-1578283326173-fbb0f83b59b2?q=80&w=1374&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D, https://images.unsplash.com/photo-1580910365203-91ea9115a319?q=80&w=1470&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D, https://images.unsplash.com/photo-1574316071802-0d684efa7bf5?q=80&w=1470&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-    isBestSeller: false,
-    isOnSale: true,
-    isFeatured: false,
-    labels: {
-      connectOrCreate: [
-        {
-          where: { name: "New Arrivals" },
-          create: { name: "New Arrivals" },
-        },
-      ],
-    },
-  },
-});
-
-const product14 = await prisma.product.create({
-  data: {
-    name: "Potato",
-    description: "Fresh and starchy potatoes",
-    price: 17000,
-    originalPrice: 20000,
-    stock: 120,
-    soldCount: 40,
-    unit: "kg",
-    categoryId: catVeg.id,
-    accountId: seller1.id,
-    marketId: market.id,
-    tags: {
-      connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
-    },
-    sku: "POT-002",
-    origin: "Cimahi",
-    image: "https://images.unsplash.com/photo-1518977676601-b53f82aba655?q=80&w=1470&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D, https://images.unsplash.com/photo-1590165482129-1b8b27698780?q=80&w=1527&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D, https://images.unsplash.com/photo-1603048719539-9ecb4aa395e3?q=80&w=1484&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D, https://images.unsplash.com/photo-1578594640334-b71fbed2a406?q=80&w=1470&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-    isBestSeller: true,
-    isOnSale: false,
-    isFeatured: false,
-    labels: {
-      connectOrCreate: [
-        {
-          where: { name: "Best Sellers" },
-          create: { name: "Best Sellers" },
-        },
-      ],
-    },
-  },
-});
-const product15 = await prisma.product.create({
-  data: {
-    name: "Cucumber",
-    description: "Crisp and refreshing cucumbers",
-    price: 17000,
-    originalPrice: 20000,
-    stock: 90,
-    soldCount: 18,
-    unit: "kg",
-    categoryId: catVeg.id,
-    accountId: seller1.id,
-    marketId: market.id,
-    tags: {
-      connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
-    },
-    sku: "CUC-004",
-    origin: "Cianjur",
-    image: "https://images.unsplash.com/photo-1587411768638-ec71f8e33b78?q=80&w=1480&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D, https://images.unsplash.com/photo-1604977042946-1eecc30f269e?q=80&w=1480&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D, https://images.unsplash.com/photo-1611048661702-7b55eed346b4?q=80&w=1374&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D, https://images.unsplash.com/photo-1566486189376-d5f21e25aae4?q=80&w=1467&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-    isBestSeller: true,
-    isOnSale: true,
-    isFeatured: false,
-    labels: {
-      connectOrCreate: [
-        {
-          where: { name: "Best Sellers" },
-          create: { name: "Best Sellers" },
-        },
-      ],
-    },
-  },
-});
-const product16 = await prisma.product.create({
-  data: {
-    name: "Broccoli",
-    description: "Nutritious green broccoli",
-    price: 41000,
-    originalPrice: 50000,
-    stock: 60,
-    soldCount: 25,
-    unit: "kg",
-    categoryId: catVeg.id,
-    accountId: seller1.id,
-    marketId: market.id,
-    tags: {
-      connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
-    },
-    sku: "BRO-005",
-    origin: "Ciwidey",
-    image: "https://plus.unsplash.com/premium_photo-1702403157830-9df749dc6c1e?q=80&w=1470&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D, https://images.unsplash.com/photo-1459411621453-7b03977f4bfc?q=80&w=1501&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D, https://images.unsplash.com/photo-1614336215203-05a588f74627?q=80&w=1470&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D, https://images.unsplash.com/photo-1685504445355-0e7bdf90d415?q=80&w=1528&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-    isBestSeller: false,
-    isOnSale: false,
-    isFeatured: true,
-    labels: {
-      connectOrCreate: [
-        {
-          where: { name: "New Arrivals" },
-          create: { name: "New Arrivals" },
-        },
-      ],
-    },
-  },
-});
-const product17 = await prisma.product.create({
-  data: {
-    name: "Cauliflower",
-    description: "Fresh white cauliflower",
-    price: 37000,
-    originalPrice: 37500,
-    stock: 55,
-    soldCount: 17,
-    unit: "kg",
-    categoryId: catVeg.id,
-    accountId: seller1.id,
-    marketId: market.id,
-    tags: {
-      connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
-    },
-    sku: "CAU-006",
-    origin: "Pangalengan",
-    image: "https://images.unsplash.com/photo-1692956706779-576c151ec712?q=80&w=1374&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D, https://images.unsplash.com/photo-1613743983303-b3e89f8a2b80?q=80&w=1470&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D, https://images.unsplash.com/photo-1613743990305-736d763f3d70?q=80&w=1374&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D, https://images.unsplash.com/photo-1566842600175-97dca489844f?q=80&w=1528&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-    isBestSeller: false,
-    isOnSale: false,
-    isFeatured: false,
-    labels: {
-      connectOrCreate: [
-        {
-          where: { name: "Best Sellers" },
-          create: { name: "Best Sellers" },
-        },
-      ],
-    },
-  },
-});
-const product18 = await prisma.product.create({
-  data: {
-    name: "Bell Pepper",
-    description: "Colorful bell peppers",
-    price: 32000,
-    originalPrice: 41000,
-    stock: 85,
-    soldCount: 22,
-    unit: "kg",
-    categoryId: catVeg.id,
-    accountId: seller1.id,
-    marketId: market.id,
-    tags: {
-      connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
-    },
-    sku: "BEL-007",
-    origin: "Cimahi",
-    image: "https://images.unsplash.com/photo-1592548868664-f8b4e4b1cfb7?q=80&w=1382&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D, https://images.unsplash.com/photo-1608737637507-9aaeb9f4bf30?q=80&w=1470&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D, https://images.unsplash.com/photo-1669863347362-1630fe821708?q=80&w=1374&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D, https://images.unsplash.com/photo-1601648764658-cf37e8c89b70?q=80&w=1471&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-    isBestSeller: true,
-    isOnSale: true,
-    isFeatured: false,
-    labels: {
-      connectOrCreate: [
-        {
-          where: { name: "New Arrivals" },
-          create: { name: "New Arrivals" },
-        },
-      ],
-    },
-  },
-});
-const product19 = await prisma.product.create({
-  data: {
-    name: "Eggplant",
-    description: "Glossy purple eggplants",
-    price: 29000,
-    originalPrice: 36000,
-    stock: 65,
-    soldCount: 12,
-    unit: "kg",
-    categoryId: catVeg.id,
-    accountId: seller1.id,
-    marketId: market.id,
-    tags: {
-      connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
-    },
-    sku: "EGG-007",
-    origin: "Subang",
-    image: "https://images.unsplash.com/photo-1683543122945-513029986574?q=80&w=1374&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D, https://images.unsplash.com/photo-1528826007177-f38517ce9a8a?q=80&w=1430&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D, https://images.unsplash.com/photo-1605197378540-10ebaf6999e5?q=80&w=1374&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D, https://images.unsplash.com/photo-1604321272882-07c73743be32?q=80&w=1470&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-    isBestSeller: false,
-    isOnSale: true,
-    isFeatured: false,
-    labels: {
-      connectOrCreate: [
-        {
-          where: { name: "Best Sellers" },
-          create: { name: "Best Sellers" },
-        },
-      ],
-    },
-  },
-});
-const product20 = await prisma.product.create({
-  data: {
-    name: "Chili Pepper",
-    description: "Spicy red chili peppers",
-    price: 65000,
-    originalPrice: 73000,
-    stock: 40,
-    soldCount: 30,
-    unit: "kg",
-    categoryId: catVeg.id,
-    accountId: seller1.id,
-    marketId: market.id,
-    tags: {
-      connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
-    },
-    sku: "CHL-008",
-    origin: "Majalengka",
-    image: "https://images.unsplash.com/photo-1546860255-95536c19724e?q=80&w=1416&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D, https://plus.unsplash.com/premium_photo-1668772703498-ab25f579f3cc?q=80&w=1374&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D, https://images.unsplash.com/photo-1588252303782-cb80119abd6d?q=80&w=1480&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D, https://images.unsplash.com/photo-1526346698789-22fd84314424?q=80&w=1470&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-    isBestSeller: true,
-    isOnSale: false,
-    isFeatured: true,
-    labels: {
-      connectOrCreate: [
-        {
-          where: { name: "Best Sellers" },
-          create: { name: "Best Sellers" },
-        },
-      ],
-    },
-  },
-});
-const product21 = await prisma.product.create({
-  data: {
-    name: "Green Beans",
-    description: "Fresh green beans",
-    price: 31000,
-    originalPrice: 39000,
-    stock: 75,
-    soldCount: 10,
-    unit: "kg",
-    categoryId: catVeg.id,
-    accountId: seller1.id,
-    marketId: market.id,
-    tags: {
-      connect: [{ id: tagOrganic.id }, { id: tagFresh.id }],
-    },
-    sku: "GRB-009",
-    origin: "Sumedang",
-    image: "https://images.unsplash.com/photo-1567375698348-5d9d5ae99de0?q=80&w=1470&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D, https://images.unsplash.com/photo-1603046918675-7bee81f7aa0d?q=80&w=1374&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D, https://images.unsplash.com/photo-1574963835594-61eede2070dc?q=80&w=1374&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D, https://images.unsplash.com/photo-1693667660455-7ce865932e6a?q=80&w=1556&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-    isBestSeller: false,
-    isOnSale: true,
-    isFeatured: false,
-    labels: {
-      connectOrCreate: [
-        {
-          where: { name: "New Arrivals" },
-          create: { name: "New Arrivals" },
-        },
-      ],
-    },
-  },
-});
-
-console.log("✅ Products created");
-
-// 6. GiftCard
-const vouchers = await prisma.voucher.create({
-  data: {
-    code: "WELCOME10",
-    discount: 10,
-    type: "percentage",
-  },
-});
-
-const createVoucher = async (data: {
-    code: string;
-    discount?: number;
-    value?: number;
-    expiryDate?: Date;
-    type: string;
-    createdBy: string;
-  }) => {
-    try {
-      const voucher = await prisma.voucher.create({
-        data,
-      });
-      return voucher;
-    } catch (error) {
-      console.error('Failed to create voucher:', error);
-      throw error;
-    }
-  };
-  
-  // Mendapatkan voucher berdasarkan kode
-  const getVoucherByCode = async (code: string) => {
-    try {
-      const voucher = await prisma.voucher.findUnique({
-        where: { code },
-        include: {
-          orders: true,
-          referrals: true,
-          redemptionLogs: true,
-        },
-      });
-      return voucher;
-    } catch (error) {
-      console.error('Failed to get voucher by code:', error);
-      throw error;
-    }
-  };
-  
-  // Menebus (redeem) voucher
-  const redeemVoucher = async (code: string) => {
-    try {
-      const voucher = await prisma.voucher.update({
-        where: { code },
-        data: {
-          isRedeemed: true,
-          redeemedAt: new Date(),
-        },
-      });
-      return voucher;
-    } catch (error) {
-      console.error('Failed to redeem voucher:', error);
-      throw error;
-    }
-  };
-  
-  // Menonaktifkan voucher
-  const deactivateVoucher = async (id: string) => {
-    try {
-      const voucher = await prisma.voucher.update({
-        where: { id },
-        data: {
-          isActive: false,
-        },
-      });
-      return voucher;
-    } catch (error) {
-      console.error('Failed to deactivate voucher:', error);
-      throw error;
-    }
-  };
-  
-  export {
-    createVoucher,
-    getVoucherByCode,
-    redeemVoucher,
-    deactivateVoucher,
-  };
-
-console.log("✅ Gift Card created");
-
-const createOrderWithItems = await prisma.order.create({
-      data: {
-        buyerId: 'acc_buyer_123',
-        sellerId: 'acc_seller_456',
-        paymentMethod: 'credit_card',
-        shippingAddress: 'Jl. Contoh No. 123, Jakarta',
-        notes: 'Mohon dikirim sore hari',
-        totalPrice: 400000,
-        discountApplied: 50000,
-        paymentStatus: 'PAID',
-        status: 'CONFIRMED',
-        voucherId: 'voucher_001', // optional
-        items: {
-          productNotes: "contoh JSON", // if needed
-        },
-        orderItems: {
-          create: [
-            {
-              accountId: 'acc_buyer_123',
-              productId: 'prod_abc123',
-              quantity: 2,
-              price: 150000
-            },
-            {
-              accountId: 'acc_buyer_123',
-              productId: 'prod_xyz789',
-              quantity: 1,
-              price: 100000
-            }
-          ]
-        }
-      },
-      include: {
-        orderItems: true
-      }
-    });
-
-// // 7. Orders & Order Items
-// const order = await prisma.order.create({
-//   data: {
-//     buyerId: account1.id,
-//     status: OrderStatus.COMPLETED,
-//     paymentStatus: PaymentStatus.COMPLETED,
-//     paymentMethod: "Wallet",
-//     shippingAddress: "123 Ocean Ave",
-//     notes: "Please pack with care",
-//     totalPrice: 6.49,
-//     discountApplied: 1.0,
-//     voucherId: vouchers.id,
-//     shippedAt: new Date(),
-//     orderItems: {
-//       create: [
-//         {
-//           productId: product1.id,
-//           quantity: 1,
-//         },
-//         {
-//           productId: product2.id,
-//           quantity: 2,
-//         },
-//         {
-//           productId: product3.id,
-//           quantity: 1,
-//         },
-//       ],
-//     },
-//   },
-// });
-console.log("✅ Order and OrderItems created");
-
-//   // 8. Transaction
-
-const createTransaction = await prisma.transaction.create({
-      data: {
-        accountId: 'acc_buyer_123',
-        walletId: 1, // harus sesuai wallet yang sudah ada
-        type: 'DEBIT', // contoh: DEBIT atau CREDIT
-        amount: 250000,
-        method: 'wallet',
-        transactionId: 'TRX-20250507-001',
-        description: 'Pembayaran pesanan #ORD123',
-        status: 'PAID',
-        orderId: 'ord_abc123' // opsional, jika ada relasi order
-      }
-    });
-
-
-  const createEventLog = await prisma.eventLog.create({
-      data: {
-        event: 'PAYMENT_SUCCESS',
-        accountId: 'acc_buyer_123',
-        orderId: 'ord_abc123', // opsional
-        productId: null, // bisa diisi jika terkait produk
-        action: 'Pembayaran berhasil untuk pesanan ORD123'
-      }
-    });
-
-  console.log("✅ Transaction created");
-
-// 9. Reviews
-await prisma.review.createMany({
-  data: [
-    {
-      productId: product1.id,
-      accountId: account1.id,
-      rating: 5,
-      comment: "Amazing apples!",
-      sellerId: "",
-    },
-    {
-      productId: product2.id,
-      accountId: account2.id,
-      rating: 4,
-      comment: "Very fresh and tasty",
-      sellerId: "",
-    },
-    {
-      productId: product3.id,
-      accountId: account2.id,
-      rating: 2,
-      comment: "Very cheap but not fresh",
-      sellerId: "",
-    },
-    {
-      productId: product4.id,
-      accountId: account1.id,
-      rating: 3,
-      comment: "Good quality but expensive",
-      sellerId: "",
-    },
-    {
-      productId: product5.id,
-      accountId: account2.id,
-      rating: 5,
-      comment: "Best mangoes ever!",
-      sellerId: "",
-    },
-    {
-      productId: product6.id,
-      accountId: account1.id,
-      rating: 4,
-      comment: "Great grapes, will buy again",
-      sellerId: "",
-    },
-    {
-      productId: product7.id,
-      accountId: account2.id,
-      rating: 3,
-      comment: "Watermelon was a bit overripe",
-      sellerId: "",
-    },
-    {
-      productId: product8.id,
-      accountId: account1.id,
-      rating: 5,
-      comment: "Delicious pineapple!",
-      sellerId: "",
-    },
-    {
-      productId: product9.id,
-      accountId: account2.id,
-      rating: 4,
-      comment: "Fresh strawberries, loved them",
-      sellerId: "",
-    },
-    {
-      productId: product10.id,
-      accountId: account1.id,
-      rating: 2,
-      comment: "Papaya was not ripe enough",
-      sellerId: "",
-    },
-    {
-      productId: product11.id,
-      accountId: account2.id,
-      rating: 5,
-      comment: "Kiwi was sweet and juicy",
-      sellerId: "",
-    },
-    {
-      productId: product12.id,
-      accountId: account1.id,
-      rating: 4,
-      comment: "Avocado was creamy and fresh",
-      sellerId: "",
-    },
-    {
-      productId: product13.id,
-      accountId: account2.id,
-      rating: 3,
-      comment: "Zucchini was okay, not the best",
-      sellerId: "",
-    },
-    {
-      productId: product14.id,
-      accountId: account1.id,
-      rating: 5,
-      comment: "Carrot was crunchy and sweet",
-      sellerId: "",
-    },
-    {
-      productId: product15.id,
-      accountId: account2.id,
-      rating: 4,
-      comment: "Spinach was fresh and green",
-      sellerId: "",
-    },
-    {
-      productId: product16.id,
-      accountId: account1.id,
-      rating: 2,
-      comment: "Tomato was not fresh enough",
-      sellerId: "",
-    },
-    {
-      productId: product17.id,
-      accountId: account2.id,
-      rating: 5,
-      comment: "Potato was starchy and delicious",
-      sellerId: "",
-    },
-    {
-      productId: product18.id,
-      accountId: account1.id,
-      rating: 4,
-      comment: "Cucumber was crisp and refreshing",
-      sellerId: "",
-    },
-    {
-      productId: product19.id,
-      accountId: account2.id,
-      rating: 3,
-      comment: "Broccoli was okay, not the best",
-      sellerId: "",
-    },
-    {
-      productId: product20.id,
-      accountId: account1.id,
-      rating: 5,
-      comment: "Cauliflower was fresh and white",
-      sellerId: "",
-    },
-    {
-      productId: product21.id,
-      accountId: account2.id,
-      rating: 4,
-      comment: "Bell pepper was colorful and sweet",
-      sellerId: "",
-    },
-
-  ],
-});
-console.log("✅ Reviews created");
-
-// 10. Event Logs
-await prisma.eventLog.createMany({
-  data: [
-    {
-      event: "User login",
-      accountId: account1.id,
-      action: "login",
-    },
-    {
-      event: "Order placed",
-      orderId: order.id,
-      accountId: account1.id,
-      action: "create_order",
-    },
-    {
-      event: "Product updated",
-      productId: product1.id,
-      accountId: seller1.id,
-      action: "update_product",
-    },
-  ],
-});
-console.log("✅ Event Logs created");
-
-//   console.log("🌱 Seeding complete!");
-// }
-
-// main()
-//   .catch((e) => {
-//     console.error("❌ Seeding error:", e);
-//     process.exit(1);
-//   })
-//   .finally(async () => {
-//     await prisma.$disconnect();
-//   });
-
+main()
+  .then(async () => {
+    await prisma.$disconnect();
+  })
+  .catch(async (e) => {
+    console.error("❌ Seeding failed:", e);
+    await prisma.$disconnect();
+    process.exit(1);
+  });
