@@ -179,6 +179,8 @@ model City {
 model Currency {
   id          String   @id @default(cuid())
   name        String
+  code        String    @unique
+  markets     Market[]
   description String?
   accountId   String
   code        String   @unique
@@ -228,7 +230,9 @@ model Product {
 model Category {
   id        String    @id @default(cuid())
   name      String    @unique
-  label     String?
+  description String?
+  product   Product[] @relation("ProductCategories") // Products in this category
+  label     String? // Optional: "Best Seller", "New Arrival", etc.
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   product   Product[] @relation("ProductCategories")

@@ -15,9 +15,26 @@ import { db } from "@/lib/db/db";
 import { Role } from "@prisma/client";
 
 // Helper function to handle errors and generate responses
-function handleApiError(err: unknown, message: string) {
-  console.error(message, err);
-  return NextResponse.json({ success: false, message }, { status: 500 });
+export function handleApiError(err: unknown, defaultMessage: string) {
+  let errorMessage = defaultMessage;
+
+  if (err instanceof Error) {
+    errorMessage = `${defaultMessage}: ${err.message}`;
+    console.error("Stack Trace:", err.stack);
+  } else if (typeof err === "string") {
+    errorMessage = `${defaultMessage}: ${err}`;
+    console.error("Error String:", err);
+  } else {
+    console.error("Unknown error type:", err);
+  }
+
+  return NextResponse.json(
+    {
+      success: false,
+      message: errorMessage,
+    },
+    { status: 500 }
+  );
 }
 
 // Group markets into regions, subregions, and cities

@@ -12,6 +12,7 @@ export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleRegister = async (values: RegisterFormValues) => {
+    console.log("Register payload:", values);
     setIsLoading(true);
     try {
       const response = await fetch("/api/auth/register", {

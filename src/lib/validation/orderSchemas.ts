@@ -36,6 +36,7 @@ export const CartItemSchema = z.object({
 // For creating an order from a cart (typically from frontend)
 export const CreateOrderSchema = z.object({
   buyerId: z.string().min(1),
+  sellerId: z.string(),
   cartItems: z.array(CartItemSchema).nonempty(),
   shippingAddress: z.string().min(1),
   paymentMethod: z.string().min(1),

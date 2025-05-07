@@ -1,19 +1,34 @@
-// src/components/auth/RegisterForm.tsx
-import React from "react";
+"use client";
+import React, { useEffect, useState } from "react";
 import { FormContainer } from "./forms/FormContainer";
 import { PasswordField } from "./fields/PasswordField";
-import { RoleSelector } from "./fields/RoleSelector"; // Added missing import
+import { RoleSelector } from "./fields/RoleSelector";
 import { useRegisterForm } from "@/hooks/useRegisterForm";
 import { User, Mail, Phone, Home, MapPin, ImageIcon } from "lucide-react";
 import { InputField } from "./fields/InputFields";
 import { RegisterFormValues } from "@/lib/validation/registerSchema";
 import { UserAvatar } from "@/components/common/UserAvatar";
 
+interface Country {
+  geonameId: number;
+  countryCode: string;
+  countryName: string;
+}
+
+interface Province {
+  geonameId: string;
+  name: string;
+}
+
+interface City {
+  name: string;
+}
+
 interface RegisterFormProps {
   isLoading: boolean;
   onSubmit: (values: RegisterFormValues) => void;
-  hidePasswordField?: boolean; // For social profile completion
-  initialValues?: Partial<RegisterFormValues>; // For pre-filling
+  hidePasswordField?: boolean;
+  initialValues?: Partial<RegisterFormValues>;
 }
 
 export const RegisterForm: React.FC<RegisterFormProps> = ({
@@ -30,6 +45,81 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
     setShowPassword,
     setRole,
   } = useRegisterForm({ onSubmit });
+
+  const [countries, setCountries] = useState<Country[]>([]);
+  const [provinces, setProvinces] = useState<Province[]>([]);
+  const [cities, setCities] = useState<City[]>([]);
+
+  useEffect(() => {
+    fetch(
+      "http://api.geonames.org/countryInfoJSON?formatted=true&lang=en&username=greedybugz"
+    )
+      .then((res) => res.json())
+      .then((data) => {
+        setCountries(data.geonames ?? []);
+      })
+      .catch(() => {
+        setCountries([]);
+      });
+  }, []);
+
+  const handleCountryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    // 1) push the ISO code into formData.country
+    handleChange(e);
+
+    // 2) find the geonameId for the fetch
+    const countryCode = e.target.value;
+    const countryObj = countries.find((c) => c.countryCode === countryCode);
+    if (!countryObj) {
+      return;
+    }
+
+    // 3) set the currency in formData
+    const newCurrency = countryCode === "ID" ? "IDR" : "USD";
+    handleChange({
+      target: { name: "currency", value: newCurrency },
+    } as React.ChangeEvent<HTMLSelectElement>);
+
+    // 4) fetch provinces by that numeric geonameId
+    fetch(
+      `http://api.geonames.org/childrenJSON?geonameId=${countryObj.geonameId}&username=greedybugz`
+    )
+      .then((r) => r.json())
+      .then((data) => setProvinces(data.geonames ?? []))
+      .catch(() => setProvinces([]));
+
+    // 5) clear city list
+    setCities([]);
+  };
+
+  const handleProvinceChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const selectedProvGeoId = e.target.value;
+
+    // 1) find the province by its geonameId
+    const provObj = provinces.find((p) => p.geonameId === selectedProvGeoId);
+    if (provObj) {
+      // 2) push the province *name* into formData.province
+      handleChange({
+        target: { name: "province", value: provObj.name },
+      } as React.ChangeEvent<HTMLSelectElement>);
+    } else {
+      // fallback if no match (e.g. cleared out)
+      handleChange(e);
+    }
+
+    // Fetch cities by numeric geonameId
+    fetch(
+      `http://api.geonames.org/childrenJSON?geonameId=${selectedProvGeoId}&username=greedybugz`
+    )
+      .then((res) => res.json())
+      .then((data) => {
+        const children: Province[] = data.geonames ?? [];
+        setCities(children.map((child) => ({ name: child.name })));
+      })
+      .catch(() => {
+        setCities([]);
+      });
+  };
 
   return (
     <FormContainer onSubmit={handleSubmit}>
@@ -72,8 +162,8 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
           onChange={handleChange}
           required
           className="mt-1 block w-full rounded-lg border border-gray-300 bg-white py-2 px-3 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+          disabled
         >
-          <option value="">Select currency</option>
           <option value="IDR">IDR - Indonesian Rupiah</option>
           <option value="USD">USD - US Dollar</option>
         </select>
@@ -94,7 +184,6 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
           togglePassword={setShowPassword}
         />
       )}
-
       {!hidePasswordField && (
         <PasswordField
           name="confirmPassword"
@@ -127,33 +216,104 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
       />
 
       <div className="grid grid-cols-3 gap-4">
-        <InputField
-          name="city"
-          icon={<MapPin className="h-5 w-5 text-gray-400" aria-hidden="true" />}
-          label="City"
-          type="text"
-          placeholder="Enter your city"
-          value={formData.city || ""}
-          onChange={handleChange}
-        />
-        <InputField
-          name="province"
-          icon={<MapPin className="h-5 w-5 text-gray-400" aria-hidden="true" />}
-          label="Province"
-          type="text"
-          placeholder="Enter your province"
-          value={formData.province || ""}
-          onChange={handleChange}
-        />
-        <InputField
-          name="country"
-          icon={<MapPin className="h-5 w-5 text-gray-400" aria-hidden="true" />}
-          label="Country"
-          type="text"
-          placeholder="Enter your country"
-          value={formData.country || ""}
-          onChange={handleChange}
-        />
+        {/* Country */}
+        <div className="mb-4">
+          <label
+            htmlFor="country"
+            className="block text-sm font-medium text-gray-700"
+          >
+            Country <span className="text-red-500">*</span>
+          </label>
+          <div className="flex items-center">
+            <MapPin className="h-5 w-5 text-gray-400 mr-2" aria-hidden="true" />
+            <select
+              id="country"
+              name="country"
+              value={formData.country || ""}
+              onChange={handleCountryChange}
+              required
+              className="mt-1 block w-full rounded-lg border border-gray-300 bg-white py-2 px-3 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            >
+              <option value="">Select country</option>
+              {countries.map((c) => (
+                <option key={c.geonameId} value={c.countryCode}>
+                  {c.countryName}
+                </option>
+              ))}
+            </select>
+          </div>
+          {errors.country && (
+            <p className="mt-1 text-sm text-red-600" role="alert">
+              {errors.country}
+            </p>
+          )}
+        </div>
+
+        {/* Province */}
+        <div className="mb-4">
+          <label
+            htmlFor="province"
+            className="block text-sm font-medium text-gray-700"
+          >
+            Province <span className="text-red-500">*</span>
+          </label>
+          <div className="flex items-center">
+            <MapPin className="h-5 w-5 text-gray-400 mr-2" aria-hidden="true" />
+            <select
+              id="province"
+              name="province"
+              value={formData.province || ""}
+              onChange={handleProvinceChange}
+              required
+              className="mt-1 block w-full rounded-lg border border-gray-300 bg-white py-2 px-3 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            >
+              <option value="">Select province</option>
+              {provinces.map((p) => (
+                <option key={p.geonameId} value={p.geonameId}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          {errors.province && (
+            <p className="mt-1 text-sm text-red-600" role="alert">
+              {errors.province}
+            </p>
+          )}
+        </div>
+
+        {/* City */}
+        <div className="mb-4">
+          <label
+            htmlFor="city"
+            className="block text-sm font-medium text-gray-700"
+          >
+            City <span className="text-red-500">*</span>
+          </label>
+          <div className="flex items-center">
+            <MapPin className="h-5 w-5 text-gray-400 mr-2" aria-hidden="true" />
+            <select
+              id="city"
+              name="city"
+              value={formData.city || ""}
+              onChange={handleChange}
+              required
+              className="mt-1 block w-full rounded-lg border border-gray-300 bg-white py-2 px-3 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            >
+              <option value="">Select city</option>
+              {cities.map((c) => (
+                <option key={c.name} value={c.name}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          {errors.city && (
+            <p className="mt-1 text-sm text-red-600" role="alert">
+              {errors.city}
+            </p>
+          )}
+        </div>
       </div>
 
       <InputField
@@ -168,7 +328,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
         onChange={handleChange}
         error={errors.profileImage}
       />
-      {/* Avatar preview */}
+
       <div className="flex justify-center my-4">
         <UserAvatar
           name={formData.name || "?"}

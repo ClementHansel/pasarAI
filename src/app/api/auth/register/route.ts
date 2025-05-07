@@ -63,12 +63,7 @@ export async function POST(req: Request) {
     }
 
     // Map role string to Prisma Role enum
-    let accountRole: Role = Role.BUYER; // Default to BUYER
-    if (role === "SELLER") {
-      accountRole = Role.SELLER;
-    } else {
-      accountRole = Role.BUYER;
-    }
+    const accountRole: Role = role === "SELLER" ? Role.SELLER : Role.BUYER;
 
     // Check if the account already exists
     const existingAccount = await getAccountByEmail(email);
@@ -91,9 +86,10 @@ export async function POST(req: Request) {
 
     // Look up currency by name (since name is not unique, use findFirst)
     const currencyRecord = await db.currency.findFirst({
-      where: { name: currency },
+      where: { code: currency },
     });
     if (!currencyRecord) {
+      console.error("Currency not found:", currency);
       return NextResponse.json({ error: "Invalid currency" }, { status: 400 });
     }
 
@@ -119,7 +115,6 @@ export async function POST(req: Request) {
 
       if (referrer) {
         // Create referral entry and generate vouchers
-        await createReferralVouchers(referrer.id, newAccount.id);
         await createReferralVouchers(referrer.id, newAccount.id);
       }
     }
@@ -162,7 +157,7 @@ export async function POST(req: Request) {
 
     if (error instanceof Error) {
       return NextResponse.json(
-        { error: "Internal server error", details: error.message },
+        { error: "Internal server error" },
         { status: 500 }
       );
     }

@@ -39,7 +39,6 @@ export const InputField: React.FC<InputFieldProps> = ({
           error ? "border-red-500" : "border-gray-300"
         }`}
         placeholder={placeholder}
-        aria-invalid={!!error}
         aria-describedby={error ? `${name}-error` : undefined}
       />
       <div className="absolute left-3 top-2.5" aria-hidden="true">

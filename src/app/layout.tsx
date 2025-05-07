@@ -6,6 +6,7 @@ import Header from "@/components/layout/homepage/header/Header";
 import Footer from "@/components/layout/homepage/Footer";
 import { WalletProvider } from "@/context/WalletContext";
 import { SessionProvider } from "next-auth/react";
+import { SearchProvider } from "@/context/SearchContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,11 +29,13 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-white text-black min-h-screen flex flex-col`}
       >
         <SessionProvider>
-          <Header />
-          <main className="flex-grow">
-            <WalletProvider>{children}</WalletProvider>
-          </main>
-          <Footer />
+          <SearchProvider>
+            <Header />
+            <main className="flex-grow">
+              <WalletProvider>{children}</WalletProvider>
+            </main>
+            <Footer />
+          </SearchProvider>
         </SessionProvider>
       </body>
     </html>
