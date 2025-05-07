@@ -28,6 +28,16 @@ export async function GET(req: Request) {
     const url = new URL(req.url);
     const searchParams = url.searchParams;
 
+    // 🚀 New: Fetch only categories if getCategories=true
+    const getCategories = searchParams.get("getCategories") === "true";
+    if (getCategories) {
+      const categories = await db.category.findMany({
+        select: { name: true },
+        distinct: ["name"],
+      });
+      return NextResponse.json({ categories: categories.map((c) => c.name) });
+    }
+
     // --- Extract Query Parameters ---
     const market = searchParams.get("market"); // domestic or global
     const city = searchParams.get("city");
@@ -84,15 +94,6 @@ export async function GET(req: Request) {
         orderBy.push({ createdAt: "desc" });
       }
     }
-
-    // 🚀 Future implementation (commented for now):
-    // Sorting by distance once buyer location is available
-    /*
-    if (sortByDistance === "closest") {
-      orderBy.push({ distance: "asc" });
-      // Note: Requires calculating distance manually or with raw SQL queries
-    }
-    */
 
     // Search debounced
     const search = searchParams.get("search");

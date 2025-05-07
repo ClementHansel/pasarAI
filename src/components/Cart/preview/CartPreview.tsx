@@ -47,7 +47,7 @@ const CartPreview: React.FC<CartPreviewProps> = ({
           <ShoppingBag className="w-16 h-16 text-gray-200 mb-4" />
           <p className="text-gray-500 mb-4">Your cart is empty</p>
           <Link
-            href="/products"
+            href="/product"
             className="text-primary hover:text-primary-dark font-medium"
           >
             Continue Shopping

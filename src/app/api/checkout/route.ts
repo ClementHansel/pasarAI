@@ -46,16 +46,6 @@ export async function POST(req: NextRequest) {
         }
       }
 
-      // Defensive: check first product is not null
-      const firstProduct = products[0];
-      if (!firstProduct) {
-        throw new Error("No products found in cart.");
-      }
-      const sellerId = firstProduct.accountId;
-      if (!sellerId) {
-        throw new Error("Seller ID not found for the product(s).");
-      }
-
       // Create the order along with associated order items
       return await tx.order.create({
         data: {

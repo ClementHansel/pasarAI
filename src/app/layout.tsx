@@ -1,5 +1,4 @@
-"use client";
-
+// src/app/layout.tsx
 import { Geist, Geist_Mono } from "next/font/google";
 import "@/styles/globals.css";
 import Header from "@/components/layout/homepage/header/Header";
@@ -7,6 +6,7 @@ import Footer from "@/components/layout/homepage/Footer";
 import { WalletProvider } from "@/context/WalletContext";
 import { SessionProvider } from "next-auth/react";
 import { SearchProvider } from "@/context/SearchContext";
+import { ProductFilterProvider } from "@/context/ProductCategoryContext"; // ✅ Import provider
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -30,7 +30,11 @@ export default function RootLayout({
       >
         <SessionProvider>
           <SearchProvider>
-            <Header />
+            <ProductFilterProvider>
+              {" "}
+              {/* ✅ Wrap Header here */}
+              <Header />
+            </ProductFilterProvider>
             <main className="flex-grow">
               <WalletProvider>{children}</WalletProvider>
             </main>
