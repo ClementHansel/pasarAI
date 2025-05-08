@@ -1,83 +1,132 @@
-import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
-import { verifyAccessToken } from '@/lib/middleware'
+// src/middleware.ts (updated)
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+import { Role } from "@prisma/client";
+import { db } from "./src/lib/db/db";
 
-// Define public paths that don't require authentication
-const publicPaths = [
-  '/',
-  '/market',
-  '/products',
-  '/login',
-  '/register',
-  '/forgot-password',
-  '/api/auth/login',
-  '/api/auth/register'
-]
+const PUBLIC_PATHS = [
+  "/",
+  "/market",
+  "/product",
+  "/product/:path*",
+  "/login",
+  "/register",
+  "/forgot-password",
+  "/verify-account",
+];
 
-// Paths that require seller authentication
-const sellerPaths = [
-  '/seller',
-  '/dashboard',
-  '/products/create',
-  '/products/edit'
-]
+const ADMIN_PATHS = ["/admin/:path*"];
+const SELLER_PATHS = ["/seller/:path*", "/products/create", "/products/edit"];
+const AUTH_PATHS = ["/login", "/register"];
 
-// Paths that require buyer authentication
-const buyerPaths = [
-  '/cart',
-  '/checkout',
-  '/wishlist',
-  '/orders'
-]
+export async function middleware(req: NextRequest) {
+  const { pathname } = req.nextUrl;
+  const sessionToken = req.cookies.get("next-auth.session-token")?.value;
 
-export function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl
-  
-  // Allow public paths
-  if (publicPaths.some(path => pathname.startsWith(path))) {
-    return NextResponse.next()
+  // Check public paths
+  if (isPublicPath(pathname)) {
+    return NextResponse.next();
   }
 
-  // Get token from cookie
-  const token = request.cookies.get('token')?.value
-
-  if (!token) {
-    return NextResponse.redirect(new URL('/login', request.url))
+  // Validate session
+  if (!sessionToken) {
+    return redirectToLogin(req, pathname);
   }
 
-  // Verify token and get user role
-  const user = verifyAccessToken(token)
-  
-  if (!user) {
-    return NextResponse.redirect(new URL('/login', request.url))
-  }
+  try {
+    const dbSession = await db.session.findUnique({
+      where: { sessionToken },
+      include: { account: true },
+    });
 
-  // Check seller-only paths
-  if (sellerPaths.some(path => pathname.startsWith(path))) {
-    if (user.role !== 'SELLER') {
-      return NextResponse.redirect(new URL('/market', request.url))
+    if (!dbSession || new Date(dbSession.expires) < new Date()) {
+      return redirectToLogin(req, pathname);
     }
-  }
 
-  // Check buyer-only paths
-  if (buyerPaths.some(path => pathname.startsWith(path))) {
-    if (user.role !== 'BUYER') {
-      return NextResponse.redirect(new URL('/market', request.url))
+    const { account } = dbSession;
+    if (!account.isVerified && pathname !== "/verify-account") {
+      return NextResponse.redirect(new URL("/verify-account", req.url));
     }
-  }
 
-  return NextResponse.next()
+    // Role-based path checks
+    if (isAdminPath(pathname) && account.role !== Role.ADMIN) {
+      return redirectToUnauthorized(req);
+    }
+
+    if (isSellerPath(pathname) && !isSellerAuthorized(account.role)) {
+      return redirectToUnauthorized(req);
+    }
+
+    // Redirect authenticated users from auth pages
+    if (AUTH_PATHS.some(p => pathname.startsWith(p))) {
+      return redirectToDashboard(account.role, req);
+    }
+
+    // Track session activity
+    await trackSessionActivity(req, dbSession);
+
+    // Add user headers
+    const headers = new Headers(req.headers);
+    headers.set("x-user-id", account.id);
+    headers.set("x-user-role", account.role);
+
+    return NextResponse.next({ request: { headers } });
+  } catch (error) {
+    console.error("Middleware error:", error);
+    return redirectToLogin(req, pathname);
+  }
+}
+
+// Helper functions
+function isPublicPath(pathname: string) {
+  return PUBLIC_PATHS.some(p => 
+    pathname === p || pathname.startsWith(p.replace(":path*", ""))
+  );
+}
+
+function isAdminPath(pathname: string) {
+  return ADMIN_PATHS.some(p => pathname.startsWith(p.replace(":path*", "")));
+}
+
+function isSellerPath(pathname: string) {
+  return SELLER_PATHS.some(p => pathname.startsWith(p.replace(":path*", "")));
+}
+
+function isSellerAuthorized(role: Role) {
+  return [Role.SELLER, Role.ADMIN].includes(role);
+}
+
+async function trackSessionActivity(req: NextRequest, session: any) {
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0];
+  await db.sessionActivity.create({
+    data: {
+      accountId: session.accountId,
+      activity: `PAGE_VISIT:${req.nextUrl.pathname}`,
+      ipAddress: ip || "unknown",
+      userAgent: req.headers.get("user-agent") || undefined,
+    },
+  });
+}
+
+function redirectToLogin(req: NextRequest, pathname: string) {
+  const url = new URL("/login", req.url);
+  url.searchParams.set("callbackUrl", pathname);
+  return NextResponse.redirect(url);
+}
+
+function redirectToUnauthorized(req: NextRequest) {
+  return NextResponse.redirect(new URL("/unauthorized", req.url));
+}
+
+function redirectToDashboard(role: Role, req: NextRequest) {
+  const dashboardPaths = {
+    [Role.ADMIN]: "/admin/dashboard",
+    [Role.SELLER]: "/seller/dashboard",
+    [Role.BUYER]: "/dashboard",
+  };
+  return NextResponse.redirect(new URL(dashboardPaths[role] || "/dashboard", req.url));
 }
 
 export const config = {
-  matcher: [
-    /*
-     * Match all request paths except:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public folder
-     */
-    '/((?!_next/static|_next/image|favicon.ico|public).*)',
-  ],
-}
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|public).*)"],
+};

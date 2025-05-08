@@ -1,3 +1,4 @@
+// src/components/auth/LoginForm.tsx
 import React, { useState } from "react";
 import { Eye, EyeOff, Mail, Lock } from "lucide-react";
 import Link from "next/link";
@@ -11,25 +12,37 @@ interface LoginFormProps {
 }
 
 const LoginForm: React.FC<LoginFormProps> = ({ isLoading, onSubmit }) => {
-  const params = useSearchParams();
-  const [email, setEmail] = useState(params.get("email") || "");
+  const searchParams = useSearchParams();
+  const [email, setEmail] = useState(searchParams.get("email") || "");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
+  const callbackUrl = searchParams.get("callbackUrl") || "/";
 
   const handleSocialLogin = async (provider: "google" | "github") => {
-    await signIn(provider);
+    try {
+      toast.loading("Redirecting to provider...");
+      await signIn(provider, { callbackUrl });
+    } catch (error) {
+      toast.error("Failed to connect with provider");
+      console.error(error);
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Basic validation
     if (!email || !password) {
       toast.error("Please fill in all fields");
       return;
     }
+    
     if (!email.includes("@")) {
       toast.error("Please enter a valid email address");
       return;
     }
+    
     onSubmit(email, password);
   };
 
@@ -50,6 +63,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ isLoading, onSubmit }) => {
             onChange={(e) => setEmail(e.target.value)}
             className="appearance-none block w-full px-3 py-2 pl-10 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
             placeholder="Enter your email"
+            required
           />
           <Mail className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
         </div>
@@ -70,6 +84,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ isLoading, onSubmit }) => {
             onChange={(e) => setPassword(e.target.value)}
             className="appearance-none block w-full px-3 py-2 pl-10 pr-10 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
             placeholder="Enter your password"
+            required
           />
           <Lock className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
           <button
@@ -91,6 +106,8 @@ const LoginForm: React.FC<LoginFormProps> = ({ isLoading, onSubmit }) => {
           <input
             id="remember-me"
             type="checkbox"
+            checked={rememberMe}
+            onChange={(e) => setRememberMe(e.target.checked)}
             className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
           />
           <label

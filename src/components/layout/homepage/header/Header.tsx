@@ -13,10 +13,14 @@ import Link from "next/link";
 import { Menu } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useSearch } from "@/context/SearchContext";
+import { useSession } from "next-auth/react";
+import { Role } from "@prisma/client";
 
 const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const pathname = usePathname();
+  const { data: session } = useSession();
+  
   const isChatOrMessagePage =
     pathname?.startsWith("/chat") || pathname?.startsWith("/message");
 
@@ -29,12 +33,32 @@ const Header = () => {
 
   const { query, setQuery, submitSearch } = useSearch();
 
-  // Define navigation items based on page type
+  // Get user role
+  const userRole = session?.user?.role;
+  const isAdmin = userRole === Role.ADMIN;
+  const isSeller = userRole === Role.SELLER;
+  const isAuthenticated = !!session?.user;
+
+  // Define navigation items based on page type and user role
   const mainNavItems = [
     { href: "/market", label: "Market" },
     { href: "/product", label: "Products" },
-    { href: "/wallet", label: "Wallet" },
   ];
+
+  // Add role-specific nav items
+  if (isAuthenticated) {
+    mainNavItems.push({ href: "/wallet", label: "Wallet" });
+    
+    if (isAdmin) {
+      mainNavItems.push({ href: "/admin/dashboard", label: "Admin Dashboard" });
+    }
+    
+    if (isSeller || isAdmin) {
+      mainNavItems.push({ href: "/seller/dashboard", label: "Seller Dashboard" });
+    }
+    
+    mainNavItems.push({ href: "/dashboard", label: "My Dashboard" });
+  }
 
   const homepageOnlyNav = [
     { href: "/#featured-product", label: "Featured Product" },
@@ -90,8 +114,12 @@ const Header = () => {
           {/* Icons */}
           <div className="flex items-center space-x-4">
             <CartPopover />
-            <MessagePopover />
-            <NotificationPopover />
+            {isAuthenticated && (
+              <>
+                <MessagePopover />
+                <NotificationPopover />
+              </>
+            )}
             <UserMenuPopover />
           </div>
         </div>
