@@ -23,17 +23,20 @@ export const authOptions: NextAuthOptions = {
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
+        console.log("🚀 ~ authorize ~ credentials:", credentials)
         if (!credentials?.email || !credentials.password) return null;
 
         const account = await db.account.findUnique({
           where: { email: credentials.email },
         });
+        console.log("🚀 ~ authorize ~ account:", account)
         if (!account || !account.password || !account.isVerified) return null;
 
-        const isValid = await bcrypt.compare(
+        const isValid =  bcrypt.compare(
           credentials.password,
           account.password
         );
+        console.log("🚀 ~ authorize ~ isValid:", credentials.password, account.password)
         if (!isValid) return null;
 
         return {
@@ -87,6 +90,7 @@ export const authOptions: NextAuthOptions = {
   },
   callbacks: {
     async jwt({ token, user }) {
+      console.log("🚀 ~ jwt ~ user:", user)
       if (user) {
         token.id = user.id;
         token.email = user.email;
