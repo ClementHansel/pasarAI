@@ -26,7 +26,7 @@ export default function LoginPage() {
         return;
       }
       toast.success("Login successful!");
-      router.push("/market");
+      router.push("/");
     } finally {
       setIsLoading(false);
     }

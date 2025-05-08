@@ -1,3 +1,4 @@
+// arc/lib/auth/authUtils.ts
 import bcrypt from "bcryptjs";
 import jwt, { JwtPayload } from "jsonwebtoken";
 import { randomBytes } from "crypto";
@@ -10,7 +11,7 @@ const ACCESS_TOKEN_EXPIRES_IN = "15m";
 const REFRESH_TOKEN_EXPIRES_IN = "7d";
 
 // --- Custom Role Type ---
-type Role = "ADMIN" | "BUYER" | "MODERATOR" | "SELLER";
+type Role = "ADMIN" | "BUYER" | "SELLER";
 
 // --- PASSWORD UTILS ---
 export async function hashPassword(password: string): Promise<string> {
@@ -126,9 +127,8 @@ export function isAdmin(account: { role: Role }): boolean {
   return account.role === "ADMIN";
 }
 
-// Additional Role-Specific Checks
 export function isSeller(account: { role: Role }): boolean {
-  return account.role === "SELLER"; // Check if account is a seller
+  return account.role === "SELLER";
 }
 
 // --- OTP / MAGIC LINK UTILS ---

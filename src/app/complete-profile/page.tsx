@@ -33,7 +33,7 @@ export default function CompleteProfilePage() {
     });
     if (res.ok) {
       toast.success("Profile completed!");
-      router.push("/market");
+      router.push("/");
     } else {
       toast.error("Failed to complete profile");
     }
