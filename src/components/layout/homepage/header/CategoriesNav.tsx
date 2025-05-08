@@ -38,7 +38,7 @@ const CategoriesNav = ({
         const data = await res.json();
 
         // Ensure that we get a correctly typed response
-        const products: Product[] = data.products;
+        const products: Product[] | [] = data?.products || [];
 
         // Extract categories from the products
         const categoriesSet = new Set<Category>();

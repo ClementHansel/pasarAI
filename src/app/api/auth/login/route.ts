@@ -37,6 +37,7 @@ export async function POST(req: Request) {
 
     // Find user
     const account = await findAccountByEmail(email);
+    console.log("🚀 ~ login POST ~ account:", account)
 
     // Basic validation
     if (

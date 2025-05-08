@@ -25,6 +25,9 @@ function formatTagsForCreateOrUpdate(tags?: string[]) {
 // GET: Fetch all products with advanced filters, pagination, and sorting
 export async function GET(req: Request) {
   try {
+    const allProducts = await prisma.product.findMany()
+    console.log("🚀 ~ GET ~ products:", allProducts)
+
     const url = new URL(req.url);
     const searchParams = url.searchParams;
 
