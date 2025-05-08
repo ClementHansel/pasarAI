@@ -1,6 +1,6 @@
 // src/app/profile/page.tsx
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { authOptions } from "@/lib/auth/auth";
 import { notFound, redirect } from "next/navigation";
 
 import ProductView from "@/components/product/ProductView";

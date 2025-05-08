@@ -1,7 +1,7 @@
 // src/app/api/auth/verify-session/route.ts
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { authOptions } from "@/lib/auth/auth";
 import { db } from "@/lib/db/db";
 
 export async function GET() {

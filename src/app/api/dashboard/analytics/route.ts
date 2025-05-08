@@ -1,4 +1,4 @@
-import { authOptions } from "@/lib/auth";
+import { authOptions } from "@/lib/auth/auth";
 import { NextRequest, NextResponse } from "next/server";
 
 import { emitAnalyticsEvent } from "@/lib/utils/analytics";

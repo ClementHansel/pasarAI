@@ -1,5 +1,6 @@
 import { Role, Session, LoginAttempt, Prisma } from "@prisma/client";
 import { db } from "../../lib/db/db";
+import { randomUUID } from "crypto";
 
 // Custom Error Classes
 export class NotFoundError extends Error {
@@ -284,22 +285,23 @@ export const logLoginAttempt = async ({
 export const saveSession = async ({
   accountId,
   refreshToken,
-  expiresAt,
+  expires,
   ipAddress,
   userAgent,
 }: {
   accountId: string;
   refreshToken: string;
-  expiresAt: Date;
+  expires: Date;
   ipAddress?: string;
   userAgent?: string;
 }): Promise<Session> => {
   try {
     return await db.session.create({
       data: {
+        sessionToken: randomUUID(),
         accountId,
         refreshToken,
-        expiresAt,
+        expires,
         ipAddress,
         userAgent,
       },
