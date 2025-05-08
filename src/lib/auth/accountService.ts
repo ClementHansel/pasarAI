@@ -30,11 +30,12 @@ export async function createSession({
     await db.session.create({
       data: {
         id: randomUUID(),
+        sessionToken: randomUUID(),
         accountId,
         refreshToken,
         userAgent,
         ipAddress: ip,
-        expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30), // 30 days
+        expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30), // 30 days
       },
     });
   } catch (error) {

@@ -35,7 +35,7 @@ const DeliveryPage = () => {
     // Check if the user is an admin
     const checkAdmin = async () => {
       const session = await getSession(); // Await the session
-      if (session?.user?.role !== "admin") {
+      if (session?.user?.role !== "ADMIN") {
         router.push("/dashboard"); // Redirect if not admin
       } else {
         fetchOrders(); // Fetch orders if the user is an admin

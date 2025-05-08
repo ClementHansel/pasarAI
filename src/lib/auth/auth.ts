@@ -7,9 +7,10 @@ import bcrypt from "bcrypt";
 import type { NextAuthOptions } from "next-auth";
 import { db } from "@/lib/db/db";
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
-import { Role } from "@prisma/client";
+
 import { mapOAuthaccountToAppaccount } from "@/lib/auth/authUtils";
 import { generateReferralCode } from "../referral/referralUtils";
+import { Role } from "@prisma/client";
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(db),
@@ -98,7 +99,7 @@ export const authOptions: NextAuthOptions = {
         });
         if (!dbAccount) {
           const o = mapOAuthaccountToAppaccount({
-            id: token.sub || token.id as string,
+            id: token.sub || (token.id as string),
             email: token.email,
             name: token.name || undefined,
             avatar: token.picture || undefined,
@@ -115,7 +116,7 @@ export const authOptions: NextAuthOptions = {
           });
         }
         token.id = dbAccount.id;
-        token.email = dbAccount.email;
+        token.email = dbAccount.email ?? "";
         token.role = dbAccount.role;
         token.hasProfile = Boolean(dbAccount.name && dbAccount.profileImage);
         token.isVerified = dbAccount.isVerified;
