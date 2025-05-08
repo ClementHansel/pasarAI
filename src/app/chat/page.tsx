@@ -15,11 +15,6 @@ const ChatPage = () => {
   const [messages, setMessages] = useState<AIChatMessage[]>([]);
   const [conversationId, setConversationId] = useState<string | null>(null);
 
-  // Wait for session
-  if (status === "loading") {
-    return <div>Loading...</div>;
-  }
-
   const accountId = session?.user?.id;
   const accountRole = session?.user?.role;
 
@@ -132,22 +127,28 @@ const ChatPage = () => {
 
   return (
     <div className="flex h-screen bg-gray-50">
-      <ChatSidebar
-        isCollapsed={isCollapsed}
-        toggleSidebar={() => setIsCollapsed(!isCollapsed)}
-      />
+      {status === "loading" ? (
+        <div className="m-auto text-gray-500 text-lg">Loading...</div>
+      ) : (
+        <>
+          <ChatSidebar
+            isCollapsed={isCollapsed}
+            toggleSidebar={() => setIsCollapsed(!isCollapsed)}
+          />
 
-      <div className="flex-1 flex flex-col">
-        <div className="flex-1 flex flex-col-reverse overflow-y-auto p-4 pb-20">
-          {messages.map((message) => (
-            <AIChatMessages key={message.id} messages={[message]} />
-          ))}
-        </div>
+          <div className="flex-1 flex flex-col">
+            <div className="flex-1 flex flex-col-reverse overflow-y-auto p-4 pb-20">
+              {messages.map((message) => (
+                <AIChatMessages key={message.id} messages={[message]} />
+              ))}
+            </div>
 
-        <div className="border-t border-gray-200 p-4 sticky bottom-4 bg-white z-10">
-          <MessageInput onSend={handleSendMessage} />
-        </div>
-      </div>
+            <div className="border-t border-gray-200 p-4 sticky bottom-4 bg-white z-10">
+              <MessageInput onSend={handleSendMessage} />
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 };
