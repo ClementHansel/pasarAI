@@ -159,7 +159,7 @@ export default function ProductsExplorer() {
                   name={p.name}
                   price={p.price}
                   description={p.description}
-                  imageUrl={p.imageUrls[0]}
+                  imageUrl={p.imageUrls?.[0] || "/images/placeholder.png"}
                   rating={p.rating}
                   labels={p.labels}
                   discount={p.discount}

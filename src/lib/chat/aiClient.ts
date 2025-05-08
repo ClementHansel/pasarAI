@@ -21,8 +21,7 @@ export async function callAI(prompt: string): Promise<string> {
       headers: {
         Authorization: `Bearer ${API_KEY}`,
         "Content-Type": "application/json",
-        "HTTP-Referer":
-          "https://pasar-ai-git-master-greedybugz-gmailcoms-projects.vercel.app/",
+        "HTTP-Referer": "https://pasar-ai.vercel.app/",
         "X-Title": "PasarAi",
       },
       body: JSON.stringify(payload),
