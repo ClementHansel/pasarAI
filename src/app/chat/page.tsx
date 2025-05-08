@@ -1,6 +1,8 @@
+// src/app/chat/page.tsx
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
 import ChatSidebar from "@/components/chat/ChatSidebar";
 import MessageInput from "@/components/chat/ChatInput";
 import AIChatMessages, {
@@ -8,16 +10,22 @@ import AIChatMessages, {
 } from "@/components/chat/AIChatMessages";
 
 const ChatPage = () => {
+  const { data: session, status } = useSession();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [messages, setMessages] = useState<AIChatMessage[]>([]);
   const [conversationId, setConversationId] = useState<string | null>(null);
 
-  // Assume account info comes from a secure source (auth/session)
-  const accountId = "acc_123"; // Replace with real authenticated accountId
-  const accountRole = "SELLER"; // Replace with real role from session
+  // Wait for session
+  if (status === "loading") {
+    return <div>Loading...</div>;
+  }
 
-  // Fetch the latest conversation and messages on first load
+  const accountId = session?.user?.id;
+  const accountRole = session?.user?.role;
+
   useEffect(() => {
+    if (!accountId || !accountRole) return;
+
     const fetchConversations = async () => {
       try {
         const res = await fetch(
@@ -27,10 +35,9 @@ const ChatPage = () => {
 
         if (Array.isArray(data) && data.length > 0) {
           const latest = data[0];
-          setConversationId(latest.id); // Set conversationId from existing conversation
+          setConversationId(latest.id);
           setMessages(latest.messages || []);
         } else {
-          // Start with assistant message if no conversation yet
           setMessages([
             {
               id: "init",
@@ -51,20 +58,20 @@ const ChatPage = () => {
   }, [accountId, accountRole]);
 
   const handleSendMessage = async (content: string) => {
+    if (!accountId || !accountRole) return;
+
     const userMessage: AIChatMessage = {
       id: Date.now().toString(),
       content,
       role: "user",
       timestamp: new Date().toISOString(),
       accountId,
-      conversationId: conversationId || "", // Use the conversationId
+      conversationId: conversationId || "",
     };
 
-    // Optimistically show user message
     setMessages((prev) => [userMessage, ...prev]);
 
     try {
-      // Step 1: Save user message to database
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -78,27 +85,15 @@ const ChatPage = () => {
       });
 
       const data = await res.json();
-
       if (!res.ok) {
         console.error("Failed to send message", data.error);
         return;
       }
 
-      const savedUserMessage: AIChatMessage = {
-        ...data.message,
-        timestamp: new Date().toISOString(),
-      };
-
-      setMessages((prev) => [savedUserMessage, ...prev]);
-
-      // Update conversationId if it's newly created
-      if (data.conversationId) {
-        setConversationId(data.conversationId);
-      }
-
+      setMessages((prev) => [data.message, ...prev]);
       const newConversationId = data.conversationId;
+      if (newConversationId) setConversationId(newConversationId);
 
-      // Step 2: Call the AI response API with the user's message
       const aiRes = await fetch("/api/ai", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -106,41 +101,30 @@ const ChatPage = () => {
       });
 
       const aiData = await aiRes.json();
-
       if (!aiRes.ok || !aiData.result) {
         console.error("AI response failed", aiData.error);
         return;
       }
 
-      const aiResponse = aiData.result;
-
-      // Step 3: Save the AI message to DB
       const assistantRes = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          content: aiResponse,
+          content: aiData.result,
           role: "assistant",
           accountId,
           accountRole,
-          conversationId: newConversationId, // Make sure the new conversationId is used
+          conversationId: newConversationId,
         }),
       });
 
       const assistantData = await assistantRes.json();
-
       if (!assistantRes.ok) {
         console.error("Failed to save assistant message", assistantData.error);
         return;
       }
 
-      const savedAssistantMessage: AIChatMessage = {
-        ...assistantData.message,
-        timestamp: new Date().toISOString(),
-      };
-
-      // Step 4: Show assistant message in UI
-      setMessages((prev) => [savedAssistantMessage, ...prev]);
+      setMessages((prev) => [assistantData.message, ...prev]);
     } catch (err) {
       console.error("Message send error", err);
     }
