@@ -26,13 +26,6 @@ export async function comparePassword(
   return bcrypt.compare(plainText, hashedPassword);
 }
 
-export async function verifyPassword(
-  plainPassword: string,
-  hashedPassword: string
-) {
-  return bcrypt.compare(plainPassword, hashedPassword);
-}
-
 // --- TOKEN PAYLOAD TYPES ---
 export type AccessTokenPayload = {
   sub: string;

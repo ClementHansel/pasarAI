@@ -51,7 +51,7 @@ export default function ProductsExplorer() {
       .then((res) => res.json() as Promise<ApiResponse>)
       .then(({ products: list, pagination }) => {
         setProducts(list);
-        setTotalPages(pagination.totalPages);
+        if (pagination?.totalPages) setTotalPages(pagination.totalPages);
       })
       .catch(console.error)
       .finally(() => setLoading(false));
@@ -148,11 +148,11 @@ export default function ProductsExplorer() {
                 />
               ))}
             </div>
-          ) : products.length === 0 ? (
+          ) : products?.length === 0 ? (
             <p className="text-center text-gray-500 py-8">No products found.</p>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {products.map((p) => (
+              {products?.map((p) => (
                 <ProductCard
                   key={p.id}
                   id={p.id}
