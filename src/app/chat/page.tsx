@@ -27,7 +27,7 @@ const ChatPage = () => {
 
         if (Array.isArray(data) && data.length > 0) {
           const latest = data[0];
-          setConversationId(latest.id);
+          setConversationId(latest.id); // Set conversationId from existing conversation
           setMessages(latest.messages || []);
         } else {
           // Start with assistant message if no conversation yet
@@ -57,7 +57,7 @@ const ChatPage = () => {
       role: "user",
       timestamp: new Date().toISOString(),
       accountId,
-      conversationId: conversationId ?? "",
+      conversationId: conversationId || "", // Use the conversationId
     };
 
     // Optimistically show user message
@@ -72,8 +72,8 @@ const ChatPage = () => {
           content,
           role: "user",
           accountId,
-          conversationId,
           accountRole,
+          conversationId: conversationId || "",
         }),
       });
 
@@ -84,9 +84,19 @@ const ChatPage = () => {
         return;
       }
 
-      const savedUserMessage = data.message;
-      const newConversationId = savedUserMessage.conversationId;
-      setConversationId(newConversationId);
+      const savedUserMessage: AIChatMessage = {
+        ...data.message,
+        timestamp: new Date().toISOString(),
+      };
+
+      setMessages((prev) => [savedUserMessage, ...prev]);
+
+      // Update conversationId if it's newly created
+      if (data.conversationId) {
+        setConversationId(data.conversationId);
+      }
+
+      const newConversationId = data.conversationId;
 
       // Step 2: Call the AI response API with the user's message
       const aiRes = await fetch("/api/ai", {
@@ -112,8 +122,8 @@ const ChatPage = () => {
           content: aiResponse,
           role: "assistant",
           accountId,
-          conversationId: newConversationId,
           accountRole,
+          conversationId: newConversationId, // Make sure the new conversationId is used
         }),
       });
 

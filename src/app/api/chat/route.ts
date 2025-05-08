@@ -20,6 +20,13 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "Missing accountId" }, { status: 400 });
     }
 
+    console.log(
+      "Fetching conversations for accountId:",
+      accountId,
+      "and role:",
+      role
+    );
+
     const conversations = await db.chatConversation.findMany({
       where: {
         accountId,
@@ -34,8 +41,11 @@ export async function GET(req: Request) {
       orderBy: { updatedAt: "desc" },
     });
 
+    console.log("Conversations:", conversations);
+
     return NextResponse.json(conversations, { status: 200 });
   } catch (error) {
+    console.error("Error fetching conversations:", error);
     return handleError(error);
   }
 }
@@ -47,6 +57,7 @@ export async function POST(req: Request) {
     const parsed = ChatMessageSchema.safeParse(body);
 
     if (!parsed.success) {
+      console.error("Validation failed:", parsed.error.flatten());
       return NextResponse.json(
         { error: "Invalid request", details: parsed.error.flatten() },
         { status: 400 }
@@ -67,15 +78,19 @@ export async function POST(req: Request) {
       let conversation;
 
       if (!conversationId) {
-        // In real usage, you might want to pass the actual account role here separately
+        // Create new conversation if none exists
         conversation = await tx.chatConversation.create({
           data: {
             accountId,
             title: content.slice(0, 50) || "New Chat",
-            role: accountRole, // 👈 Placeholder - should be passed from client if needed
+            role: accountRole, // Account role passed from client
           },
         });
+
+        // Return the new conversationId
+        console.log("Created new conversation:", conversation.id);
       } else {
+        // Retrieve existing conversation
         conversation = await tx.chatConversation.findUnique({
           where: { id: conversationId },
         });
@@ -85,7 +100,8 @@ export async function POST(req: Request) {
         }
       }
 
-      const message = await tx.chatMessage.create({
+      // Save user message to the database
+      const userMessage = await tx.chatMessage.create({
         data: {
           content,
           role: role as ChatRole,
@@ -94,17 +110,64 @@ export async function POST(req: Request) {
         },
       });
 
+      // Update conversation timestamp
       await tx.chatConversation.update({
         where: { id: conversation.id },
         data: { updatedAt: new Date() },
       });
 
-      return [message];
+      // Step 2: AI Response - send the user's message to AI for a response
+      const aiResponse = await fetchAIResponse(content); // Call the AI response logic
+      console.log("AI Response:", aiResponse);
+
+      if (aiResponse) {
+        // Save AI message to the database
+        const assistantMessage = await tx.chatMessage.create({
+          data: {
+            content: aiResponse,
+            role: "assistant",
+            accountId,
+            conversationId: conversation.id,
+          },
+        });
+
+        return [userMessage, assistantMessage];
+      } else {
+        return [userMessage]; // Return just user message if no AI response
+      }
     });
 
-    return NextResponse.json({ message }, { status: 201 });
+    // Return the conversationId with the saved message
+    return NextResponse.json(
+      { message, conversationId: message.conversationId }, // Send the conversationId in the response
+      { status: 201 }
+    );
   } catch (error) {
+    console.error("Server error:", error);
     return handleError(error);
+  }
+}
+
+// Helper function to fetch AI response (ensure it's correct)
+async function fetchAIResponse(content: string): Promise<string | null> {
+  try {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/ai`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt: content }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok || !data.result) {
+      console.error("AI response failed", data.error);
+      return null;
+    }
+
+    return data.result;
+  } catch (err) {
+    console.error("AI fetch error", err);
+    return null;
   }
 }
 
