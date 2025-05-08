@@ -127,6 +127,7 @@ export default function FinanceCenter() {
                   onChange={(e) =>
                     setAction(e.target.value as "top-up" | "withdraw")
                   }
+                  aria-label="Toggle for top up or withdraw"
                   className="flex-1 border-gray-200 rounded-lg"
                 >
                   <option value="top-up">Top-Up</option>
