@@ -1,6 +1,5 @@
-// src/components/dashboard/ForecastingAnalytics/TrendPrediction.tsx
 "use client";
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { Line } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -23,19 +22,8 @@ ChartJS.register(
   Legend
 );
 
-// Define the type for the chart data structure
-interface ChartData {
-  labels: string[];
-  datasets: {
-    label: string;
-    data: number[];
-    borderColor: string;
-    backgroundColor: string;
-    fill: boolean;
-  }[];
-}
-
-const initialPredictionData: ChartData = {
+// Static chart data
+const initialPredictionData = {
   labels: [
     "Jan",
     "Feb",
@@ -62,37 +50,20 @@ const initialPredictionData: ChartData = {
 };
 
 const TrendPrediction: React.FC = () => {
-  const [prediction, setPrediction] = useState<ChartData>(
-    initialPredictionData
-  );
-
-  // Simulate fetching prediction data (replace with actual logic)
-  useEffect(() => {
-    setTimeout(() => {
-      setPrediction((prevPrediction) => ({
-        ...prevPrediction,
-        datasets: [
-          {
-            ...prevPrediction.datasets[0],
-            data: [
-              13000, 14500, 16000, 18000, 20000, 22000, 24000, 26000, 28000,
-              30000,
-            ],
-          },
-        ],
-      }));
-    }, 2000); // Simulate API call
-  }, []); // Empty dependency array means this runs once after the component mounts
-
   return (
-    <div className="bg-white p-6 rounded-lg shadow w-full">
+    <div className="bg-white p-6 rounded-lg shadow w-full h-96">
+      {" "}
+      {/* Fixed height */}
       <h2 className="text-2xl font-bold mb-6">Trend Prediction</h2>
       <p className="text-sm text-gray-600 mb-6">
         Forecasting future trends based on historical data.
       </p>
       <Line
-        data={prediction}
-        options={{ responsive: true, maintainAspectRatio: false }}
+        data={initialPredictionData} // Static data used directly
+        options={{
+          responsive: true,
+          maintainAspectRatio: true, // Keep aspect ratio
+        }}
       />
     </div>
   );

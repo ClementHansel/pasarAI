@@ -1,65 +1,46 @@
-export type AttendanceStatus =
-  | "Checked In"
-  | "Checked Out"
-  | "Absent"
-  | "Late"
-  | "On Leave";
+export type AttendanceData = {
+  employeeId: string;
+  date: string;
+  status: "Present" | "Absent" | "Remote" | "Leave";
+};
 
-export interface AttendanceData {
-  employee: string;
-  status: AttendanceStatus;
-  timestamp: string;
-}
+export type EmployeePerformanceData = {
+  employeeId: string;
+  score: number;
+  month: string;
+};
 
-export interface EmployeePerformanceData {
-  name: string;
+export type EmployeeSatisfactionData = {
+  employeeId: string;
+  level: "Satisfied" | "Neutral" | "Dissatisfied";
+  month: string;
+};
+
+export type PayrollStatusData = {
+  employeeId: string;
+  status: "Paid" | "Pending" | "Failed";
+  month: string;
+};
+
+export type TasksWorkflowData = {
+  employeeId: string;
   completedTasks: number;
-}
+  pendingTasks: number;
+};
 
-export interface EmployeeSatisfactionData {
-  name: string;
-  satisfactionScore: number; // 1 to 100 scale
-}
+export type TeamCollaborationScoreData = {
+  teamId: string;
+  score: number;
+};
 
-export interface PayrollStatusData {
-  name: string;
-  payrollStatus: "Paid" | "Pending";
-}
+export type TrainingProgressData = {
+  employeeId: string;
+  completedModules: number;
+  totalModules: number;
+};
 
-export interface TasksWorkflowData {
-  id: number;
-  title: string;
-  progress: number;
-  status: "Not Started" | "In Progress" | "Completed";
-}
-
-export interface TeamCollaborationScoreData {
-  teamName: string;
-  collaborationScore: number;
-}
-
-export interface TrainingProgressData {
-  name: string;
-  trainingCourse: string;
-  completion: number; // Percentage of completion
-}
-
-export interface WorkingHoursSummaryData {
-  name: string;
-  hoursWorked: number;
-}
-
-export interface EmployeeInsightsData {
-  attendance: AttendanceData[];
-  performance: EmployeePerformanceData[];
-  satisfaction: EmployeeSatisfactionData[];
-  payroll: PayrollStatusData[];
-  tasks: TasksWorkflowData[];
-  collaboration: TeamCollaborationScoreData[];
-  training: TrainingProgressData[];
-  workingHours: WorkingHoursSummaryData[];
-}
-
-export type FetchInsightResponse =
-  | { error: string }
-  | Partial<EmployeeInsightsData>;
+export type WorkingHoursSummaryData = {
+  employeeId: string;
+  hours: number;
+  month: string;
+};

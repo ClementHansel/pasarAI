@@ -1,4 +1,3 @@
-// src/components/dashboard/ForecastingAnalytics/YearComparison.tsx
 import React from "react";
 import { Line } from "react-chartjs-2";
 import {
@@ -44,7 +43,9 @@ const yearComparisonData = {
 
 const YearComparison: React.FC = () => {
   return (
-    <div className="bg-white p-6 rounded-lg shadow w-full">
+    <div className="bg-white p-6 rounded-lg shadow w-full h-96">
+      {" "}
+      {/* Fixed height */}
       <h2 className="text-2xl font-bold mb-6">Year-over-Year Comparison</h2>
       <p className="text-sm text-gray-600 mb-6">
         Compare trends in key metrics (Revenue, Profit, and Demand) across
@@ -52,7 +53,10 @@ const YearComparison: React.FC = () => {
       </p>
       <Line
         data={yearComparisonData}
-        options={{ responsive: true, maintainAspectRatio: false }}
+        options={{
+          responsive: true,
+          maintainAspectRatio: true,
+        }}
       />
     </div>
   );

@@ -22,7 +22,7 @@ export default function DashboardLayout({
 
       <main
         className={`flex-1 overflow-y-auto transition-all duration-300 ${
-          isSidebarOpen ? "ml-64" : "ml-16"
+          isSidebarOpen ? "ml-32" : "ml-16"
         }`}
       >
         <div className="p-6">{children}</div>

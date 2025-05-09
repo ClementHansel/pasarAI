@@ -1,53 +1,54 @@
 // src/types/insights.ts
 
-export interface ActiveUsersInsight {
+export type ActiveUser = {
   date: string;
-  activeUsers: number;
-}
+  count: number;
+};
 
-export interface ChurnRateInsight {
+export type ChurnRate = {
   date: string;
-  churnRate: number;
-}
+  percentage: number;
+};
 
-export interface AcquisitionCostInsight {
+export type AcquisitionCost = {
   date: string;
-  acquisitionCost: number;
-}
+  cost: number;
+};
 
-export interface CustomerGrowthInsight {
+export type CustomerGrowth = {
   date: string;
-  newCustomers: number;
-}
+  growth: number;
+};
 
-export interface LifetimeValueInsight {
+export type LifetimeValue = {
   date: string;
-  lifetimeValue: number;
-}
-
-export interface RetentionRateInsight {
-  date: string;
-  retentionRate: number;
-}
-
-export interface NewVsReturningInsight {
-  date: string;
-  newCustomerCount: number;
-  returningCustomerCount: number;
-}
-
-export interface TopCustomer {
-  name: string;
   value: number;
-}
+};
+
+export type RetentionRate = {
+  date: string;
+  percentage: number;
+};
+
+export type NewVsReturning = {
+  date: string;
+  new: number;
+  returning: number;
+};
+
+export type TopCustomer = {
+  name: string;
+  totalSpend: number;
+  lastPurchase: string;
+};
 
 export type InsightsData = {
-  activeUsers?: ActiveUsersInsight[];
-  churnRate?: ChurnRateInsight[];
-  acquisitionCost?: AcquisitionCostInsight[];
-  customerGrowth?: CustomerGrowthInsight[];
-  lifetimeValue?: LifetimeValueInsight[];
-  retentionRate?: RetentionRateInsight[];
-  newVsReturning?: NewVsReturningInsight[];
-  topCustomers?: TopCustomer[];
+  activeUsers: ActiveUser[];
+  churnRate: ChurnRate[];
+  acquisitionCost: AcquisitionCost[];
+  customerGrowth: CustomerGrowth[];
+  lifetimeValue: LifetimeValue[];
+  retentionRate: RetentionRate[];
+  newVsReturning: NewVsReturning[];
+  topCustomers: TopCustomer[];
 };

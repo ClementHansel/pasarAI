@@ -1,20 +1,29 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import {
-  ActiveUsersInsight,
-  ChurnRateInsight,
-  AcquisitionCostInsight,
-  CustomerGrowthInsight,
-  LifetimeValueInsight,
-  RetentionRateInsight,
-  NewVsReturningInsight,
-  TopCustomer,
-  InsightsData,
-} from "@/types/analytical/customerInsights";
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  BarChart,
+  Bar,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
+
+import mockInsights from "@/data/insightsMock";
 import {
-  fetchInsights,
-  FetchInsightResponse,
-} from "@/lib/dashboard/analytical/customerInsights";
+  AcquisitionCost,
+  ActiveUser,
+  ChurnRate,
+  CustomerGrowth,
+  LifetimeValue,
+  NewVsReturning,
+  RetentionRate,
+  TopCustomer,
+} from "@/types/analytical/customerInsights";
 
 const CustomerInsightsPage = ({
   accountId,
@@ -23,171 +32,160 @@ const CustomerInsightsPage = ({
   accountId: string;
   role: string;
 }) => {
-  const [activeUsers, setActiveUsers] = useState<
-    ActiveUsersInsight[] | undefined
-  >(undefined);
-  const [churnRate, setChurnRate] = useState<ChurnRateInsight[] | undefined>(
-    undefined
-  );
-  const [acquisitionCost, setAcquisitionCost] = useState<
-    AcquisitionCostInsight[] | undefined
-  >(undefined);
-  const [customerGrowth, setCustomerGrowth] = useState<
-    CustomerGrowthInsight[] | undefined
-  >(undefined);
-  const [lifetimeValue, setLifetimeValue] = useState<
-    LifetimeValueInsight[] | undefined
-  >(undefined);
-  const [retentionRate, setRetentionRate] = useState<
-    RetentionRateInsight[] | undefined
-  >(undefined);
-  const [newVsReturning, setNewVsReturning] = useState<
-    NewVsReturningInsight[] | undefined
-  >(undefined);
-  const [topCustomers, setTopCustomers] = useState<TopCustomer[] | undefined>(
-    undefined
-  );
+  const [activeUsers, setActiveUsers] = useState<ActiveUser[]>();
+  const [churnRate, setChurnRate] = useState<ChurnRate[]>();
+  const [acquisitionCost, setAcquisitionCost] = useState<AcquisitionCost[]>();
+  const [customerGrowth, setCustomerGrowth] = useState<CustomerGrowth[]>();
+  const [lifetimeValue, setLifetimeValue] = useState<LifetimeValue[]>();
+  const [retentionRate, setRetentionRate] = useState<RetentionRate[]>();
+  const [newVsReturning, setNewVsReturning] = useState<NewVsReturning[]>();
+  const [topCustomers, setTopCustomers] = useState<TopCustomer[]>();
 
   useEffect(() => {
-    const loadData = async () => {
-      // Define metrics only with valid keys from InsightsData (excluding "data")
-      const metrics: (keyof InsightsData)[] = [
-        "activeUsers",
-        "churnRate",
-        "acquisitionCost",
-        "customerGrowth",
-        "lifetimeValue",
-        "retentionRate",
-        "newVsReturning",
-        "topCustomers",
-      ];
-
-      for (const metric of metrics) {
-        const { data, error }: FetchInsightResponse = await fetchInsights(
-          metric,
-          accountId,
-          role
-        );
-
-        if (data) {
-          switch (metric) {
-            case "activeUsers":
-              setActiveUsers(data as ActiveUsersInsight[]);
-              break;
-            case "churnRate":
-              setChurnRate(data as ChurnRateInsight[]);
-              break;
-            case "acquisitionCost":
-              setAcquisitionCost(data as AcquisitionCostInsight[]);
-              break;
-            case "customerGrowth":
-              setCustomerGrowth(data as CustomerGrowthInsight[]);
-              break;
-            case "lifetimeValue":
-              setLifetimeValue(data as LifetimeValueInsight[]);
-              break;
-            case "retentionRate":
-              setRetentionRate(data as RetentionRateInsight[]);
-              break;
-            case "newVsReturning":
-              setNewVsReturning(data as NewVsReturningInsight[]);
-              break;
-            case "topCustomers":
-              setTopCustomers(data as TopCustomer[]);
-              break;
-            default:
-              break;
-          }
-        } else if (error) {
-          console.error(`Error fetching ${metric}:`, error);
-        }
-      }
-    };
-
-    loadData();
+    setActiveUsers(mockInsights.activeUsers);
+    setChurnRate(mockInsights.churnRate);
+    setAcquisitionCost(mockInsights.acquisitionCost);
+    setCustomerGrowth(mockInsights.customerGrowth);
+    setLifetimeValue(mockInsights.lifetimeValue);
+    setRetentionRate(mockInsights.retentionRate);
+    setNewVsReturning(mockInsights.newVsReturning);
+    setTopCustomers(mockInsights.topCustomers);
   }, [accountId, role]);
 
   return (
-    <div>
-      <h1>Customer Insights</h1>
-
-      {/* Active Users */}
+    <div className="p-6 space-y-8">
+      <h1 className="text-2xl font-bold">Customer Insights</h1>
       <div>
-        <h2>Active Users</h2>
-        {activeUsers ? (
-          <div>{/* Render Active Users insights */}</div>
-        ) : (
-          <p>No active users data</p>
+        {/* Top Customers */}
+        {topCustomers && (
+          <div>
+            <h2 className="text-xl font-semibold">Top Customers</h2>
+            <ul className="space-y-2">
+              {topCustomers.map((customer, idx) => (
+                <li key={idx} className="border p-3 rounded shadow-sm">
+                  <p className="font-medium">{customer.name}</p>
+                  <p>Total Spend: ${customer.totalSpend}</p>
+                  <p>Last Purchase: {customer.lastPurchase}</p>
+                </li>
+              ))}
+            </ul>
+          </div>
         )}
       </div>
 
-      {/* Churn Rate */}
-      <div>
-        <h2>Churn Rate</h2>
-        {churnRate ? (
-          <div>{/* Render Churn Rate insights */}</div>
-        ) : (
-          <p>No churn rate data</p>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* Active Users */}
+        {activeUsers && (
+          <div>
+            <h2 className="text-xl font-semibold">Active Users</h2>
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={activeUsers}>
+                <CartesianGrid stroke="#eee" strokeDasharray="5 5" />
+                <XAxis dataKey="date" />
+                <YAxis />
+                <Tooltip />
+                <Line type="monotone" dataKey="count" stroke="#8884d8" />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
         )}
-      </div>
 
-      {/* Acquisition Cost */}
-      <div>
-        <h2>Acquisition Cost</h2>
-        {acquisitionCost ? (
-          <div>{/* Render Acquisition Cost insights */}</div>
-        ) : (
-          <p>No acquisition cost data</p>
+        {/* Churn Rate */}
+        {churnRate && (
+          <div>
+            <h2 className="text-xl font-semibold">Churn Rate (%)</h2>
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={churnRate}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="date" />
+                <YAxis />
+                <Tooltip />
+                <Line type="monotone" dataKey="percentage" stroke="#e74c3c" />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
         )}
-      </div>
 
-      {/* Customer Growth */}
-      <div>
-        <h2>Customer Growth</h2>
-        {customerGrowth ? (
-          <div>{/* Render Customer Growth insights */}</div>
-        ) : (
-          <p>No customer growth data</p>
+        {/* Acquisition Cost */}
+        {acquisitionCost && (
+          <div>
+            <h2 className="text-xl font-semibold">Acquisition Cost</h2>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={acquisitionCost}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="date" />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="cost" fill="#3498db" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         )}
-      </div>
 
-      {/* Lifetime Value */}
-      <div>
-        <h2>Lifetime Value</h2>
-        {lifetimeValue ? (
-          <div>{/* Render Lifetime Value insights */}</div>
-        ) : (
-          <p>No lifetime value data</p>
+        {/* Customer Growth */}
+        {customerGrowth && (
+          <div>
+            <h2 className="text-xl font-semibold">Customer Growth</h2>
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={customerGrowth}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="date" />
+                <YAxis />
+                <Tooltip />
+                <Line dataKey="growth" stroke="#2ecc71" />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
         )}
-      </div>
 
-      {/* Retention Rate */}
-      <div>
-        <h2>Retention Rate</h2>
-        {retentionRate ? (
-          <div>{/* Render Retention Rate insights */}</div>
-        ) : (
-          <p>No retention rate data</p>
+        {/* Lifetime Value */}
+        {lifetimeValue && (
+          <div>
+            <h2 className="text-xl font-semibold">Lifetime Value</h2>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={lifetimeValue}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="date" />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="value" fill="#9b59b6" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         )}
-      </div>
 
-      {/* New Vs Returning */}
-      <div>
-        <h2>New vs Returning Customers</h2>
-        {newVsReturning ? (
-          <div>{/* Render New vs Returning insights */}</div>
-        ) : (
-          <p>No new vs returning data</p>
+        {/* Retention Rate */}
+        {retentionRate && (
+          <div>
+            <h2 className="text-xl font-semibold">Retention Rate (%)</h2>
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={retentionRate}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="date" />
+                <YAxis />
+                <Tooltip />
+                <Line dataKey="percentage" stroke="#f39c12" />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
         )}
-      </div>
 
-      {/* Top Customers */}
-      <div>
-        <h2>Top Customers</h2>
-        {topCustomers ? (
-          <div>{/* Render Top Customers insights */}</div>
-        ) : (
-          <p>No top customers data</p>
+        {/* New vs Returning Customers */}
+        {newVsReturning && (
+          <div>
+            <h2 className="text-xl font-semibold">New vs Returning</h2>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={newVsReturning}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="date" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="new" fill="#1abc9c" />
+                <Bar dataKey="returning" fill="#e67e22" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         )}
       </div>
     </div>

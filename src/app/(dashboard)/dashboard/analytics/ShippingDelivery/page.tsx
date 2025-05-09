@@ -19,20 +19,25 @@ const ShippingDeliveryPage: React.FC = () => {
       <h1 className="text-2xl font-bold">🚚 Shipping & Delivery</h1>
 
       {/* Grid Layout for components */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        <DelayedShipments />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <ShippingCosts />
         <DeliveryTimes />
-        <OrderTracking />
-        {/* Pass props to PackageDamageRate component */}
         <PackageDamageRate
           damageRate={damageRate}
           trend={trend}
           comparison={comparison}
         />
-        <ShippingCostPerItem />
-        <ShippingCosts />
-        <ShippingMethodComparison />
         <ShippingPerformance />
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-1 lg:grid-cols-2 gap-6">
+        <DelayedShipments />
+
+        <OrderTracking />
+
+        <ShippingCostPerItem />
+
+        <ShippingMethodComparison />
         <ShippingProviderPerformance />
       </div>
     </div>
