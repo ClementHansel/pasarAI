@@ -1,37 +1,64 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { ShoppingCart, Star } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { Label } from "@prisma/client";
+import { convertProductPrice } from "@/lib/currency/convert";
 
 interface ProductCardProps {
   id: string;
   name: string;
-  price?: number; // made optional to allow defaulting
+  price?: number;
   description: string;
   imageUrl: string;
   rating?: number;
   labels?: Label[];
   discount?: number;
   badgeText?: string;
+  marketType: "domestic" | "global"; // required
+  currency: "IDR" | "USD";
 }
 
 const ProductCard: React.FC<ProductCardProps> = ({
   id,
   name,
-  price = 0, // default price = 0
+  price = 0,
   description,
   imageUrl,
   rating = 0,
   labels,
-  discount = 0, // default discount = 0
+  discount = 0,
   badgeText,
+  marketType,
+  currency,
 }) => {
   const [isImageLoaded, setIsImageLoaded] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
+  const [convertedPrice, setConvertedPrice] = useState<number>(price);
+
+  useEffect(() => {
+    if (price <= 0) return;
+
+    const convert = async () => {
+      try {
+        const newPrice = await convertProductPrice({
+          id,
+          name,
+          price,
+          marketType,
+          currency,
+        });
+        setConvertedPrice(newPrice);
+      } catch (error) {
+        console.error("Currency conversion failed:", error);
+      }
+    };
+
+    convert();
+  }, [price, id, name, marketType, currency]);
 
   const handleAddToCart = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
@@ -51,10 +78,8 @@ const ProductCard: React.FC<ProductCardProps> = ({
     }
   };
 
-  const discountedPrice = (
-    Number(price) *
-    (1 - Number(discount) / 100)
-  ).toFixed(2);
+  const isDomestic = marketType === "domestic";
+  const discountedPrice = convertedPrice * (1 - discount / 100);
 
   return (
     <Link
@@ -76,9 +101,12 @@ const ProductCard: React.FC<ProductCardProps> = ({
           }`}
           onLoad={() => setIsImageLoaded(true)}
           loading="lazy"
-          placeholder="blur"
-          blurDataURL="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhESMIAAAAABJRU5ErkJggg=="
         />
+
+        {/* Market Type Tag */}
+        <div className="absolute top-2 left-2 bg-blue-600 text-white text-xs font-semibold px-2 py-0.5 rounded shadow-md z-10">
+          {isDomestic ? "Domestic" : "International"}
+        </div>
       </div>
 
       {/* Content */}
@@ -87,7 +115,6 @@ const ProductCard: React.FC<ProductCardProps> = ({
           {name}
         </h3>
 
-        {/* Badge Placeholder */}
         <div className="h-5 mt-1">
           {badgeText && (
             <span className="text-xs font-medium px-2 py-0.5 bg-green-100 text-green-800 rounded-full">
@@ -96,10 +123,8 @@ const ProductCard: React.FC<ProductCardProps> = ({
           )}
         </div>
 
-        {/* Description */}
         <p className="text-gray-600 text-sm line-clamp-2 my-2">{description}</p>
 
-        {/* Rating Stars Only */}
         {rating > 0 && (
           <div className="flex items-center gap-1 mb-3">
             {Array.from({ length: 5 }).map((_, idx) => (
@@ -116,34 +141,35 @@ const ProductCard: React.FC<ProductCardProps> = ({
         )}
       </div>
 
-      {/* Footer: Fixed layout for price & cart */}
+      {/* Footer */}
       <div className="relative px-4 pb-4 pt-1 border-t min-h-[4.5rem]">
         <div className="flex items-end justify-between h-full">
-          {/* Price Block */}
           <div className="flex flex-col justify-center">
             {discount > 0 ? (
               <>
                 <span className="text-sm text-gray-500 line-through mb-1">
-                  ${price.toFixed(2)}
+                  {isDomestic
+                    ? `Rp ${convertedPrice.toLocaleString("id-ID")}`
+                    : `$${convertedPrice.toFixed(2)}`}
                 </span>
                 <div className="flex items-center gap-1">
                   <span className="text-lg font-bold text-blue-600">
-                    ${discountedPrice}
+                    {isDomestic
+                      ? `Rp ${discountedPrice.toLocaleString("id-ID")}`
+                      : `$${discountedPrice.toFixed(2)}`}
                   </span>
                   <span className="text-xs text-red-500">-{discount}%</span>
                 </div>
               </>
             ) : (
-              <>
-                <span className="text-sm text-transparent mb-1">&nbsp;</span>
-                <span className="text-lg font-bold text-blue-600">
-                  ${price.toFixed(2)}
-                </span>
-              </>
+              <span className="text-lg font-bold text-blue-600">
+                {isDomestic
+                  ? `Rp ${convertedPrice.toLocaleString("id-ID")}`
+                  : `$${convertedPrice.toFixed(2)}`}
+              </span>
             )}
           </div>
 
-          {/* Add to Cart Button */}
           <button
             onClick={handleAddToCart}
             disabled={isAdding}
