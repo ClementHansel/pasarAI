@@ -1,3 +1,4 @@
+// src/components/layout/homepage/ProductCard.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -19,7 +20,7 @@ interface ProductCardProps {
   discount?: number;
   badgeText?: string;
   marketType: "domestic" | "global"; // required
-  currency: "IDR" | "USD";
+  currency: "IDR" | "USD" | string; // fallback to string for flexibility
 }
 
 const ProductCard: React.FC<ProductCardProps> = ({
@@ -38,7 +39,9 @@ const ProductCard: React.FC<ProductCardProps> = ({
   const [isImageLoaded, setIsImageLoaded] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
   const [convertedPrice, setConvertedPrice] = useState<number>(price);
+  const isDomestic = marketType === "domestic";
 
+  // Currency conversion
   useEffect(() => {
     if (price <= 0) return;
 
@@ -55,32 +58,37 @@ const ProductCard: React.FC<ProductCardProps> = ({
         setConvertedPrice(newPrice);
       } catch (error) {
         console.error("Currency conversion failed:", error);
+        setConvertedPrice(price); // Fallback
       }
     };
 
     convert();
-  }, [price, id, name, marketType, currency]);
+  }, [price, id, name, marketType, currency, description]);
 
   const handleAddToCart = async (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
     e.stopPropagation();
     setIsAdding(true);
+
     try {
       const res = await fetch("/api/cart", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id, name, price, quantity: 1, labels }),
       });
+
       if (!res.ok) throw new Error("Failed to add to cart");
+
       toast.success(`${name} added to cart!`);
-    } catch {
+    } catch (error) {
+      console.error("Add to cart error:", error);
       toast.error("Failed to add to cart.");
     } finally {
       setIsAdding(false);
     }
   };
 
-  const isDomestic = marketType === "domestic";
-  const discountedPrice = convertedPrice * (1 - discount / 100);
+  const discountedPrice = convertedPrice * (1 - (discount || 0) / 100);
 
   return (
     <Link
@@ -103,8 +111,6 @@ const ProductCard: React.FC<ProductCardProps> = ({
           onLoad={() => setIsImageLoaded(true)}
           loading="lazy"
         />
-
-        {/* Market Type Tag */}
         <div className="absolute top-2 left-2 bg-blue-600 text-white text-xs font-semibold px-2 py-0.5 rounded shadow-md z-10">
           {isDomestic ? "Domestic" : "International"}
         </div>
@@ -115,7 +121,6 @@ const ProductCard: React.FC<ProductCardProps> = ({
         <h3 className="text-base font-semibold line-clamp-1 group-hover:text-blue-600 transition-colors">
           {name}
         </h3>
-
         <div className="h-5 mt-1">
           {badgeText && (
             <span className="text-xs font-medium px-2 py-0.5 bg-green-100 text-green-800 rounded-full">
@@ -123,9 +128,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
             </span>
           )}
         </div>
-
         <p className="text-gray-600 text-sm line-clamp-2 my-2">{description}</p>
-
         {rating > 0 && (
           <div className="flex items-center gap-1 mb-3">
             {Array.from({ length: 5 }).map((_, idx) => (
@@ -146,7 +149,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
       <div className="relative px-4 pb-4 pt-1 border-t min-h-[4.5rem]">
         <div className="flex items-end justify-between h-full">
           <div className="flex flex-col justify-center">
-            {discount > 0 ? (
+            {discount ? (
               <>
                 <span className="text-sm text-gray-500 line-through mb-1">
                   {isDomestic
