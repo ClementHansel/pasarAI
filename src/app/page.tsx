@@ -6,15 +6,15 @@ import { Toaster } from "react-hot-toast";
 import AiAssistPromo from "@/components/layout/homepage/AiAssistPromo";
 import HeroSection from "@/components/layout/homepage/HeroSection";
 import { ProductFilterProvider } from "@/context/ProductCategoryContext";
-import ProductsExplorer from "@/components/layout/homepage/ProductsExplorer";
 import FinanceCenter from "@/components/layout/homepage/FinanceCenter";
+import ProductsExplorer from "@/components/layout/homepage/ProductsExplorer";
 import MarketsExplorer from "@/components/layout/homepage/MarketsExplorer";
 
 export default function HomePage() {
   return (
     <>
       <Toaster position="top-right" />
-      <main className="flex flex-col items-center bg-gray-50">
+      <main className="flex flex-col items-center bg-gray-50 min-h-screen">
         {/* AI Assistant Promo Banner */}
         <div className="w-full bg-white shadow-md">
           <AiAssistPromo />
@@ -32,15 +32,18 @@ export default function HomePage() {
             <FinanceCenter />
           </div>
 
-          {/* Products Explorer */}
-          <ProductFilterProvider>
-            <div className="bg-white p-6 rounded-lg shadow-sm">
+          {/* Products Explorer - Wrapped in ProductFilterProvider */}
+          <div>
+            <h2 className="text-3xl font-bold text-gray-800 mb-6">
+              Explore Products
+            </h2>
+            <ProductFilterProvider>
               <ProductsExplorer />
-            </div>
-          </ProductFilterProvider>
+            </ProductFilterProvider>
+          </div>
 
           {/* Markets Explorer */}
-          <div className="bg-white p-6 rounded-lg shadow-sm">
+          <div>
             <MarketsExplorer />
           </div>
         </section>
