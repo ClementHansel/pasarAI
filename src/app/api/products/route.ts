@@ -13,7 +13,6 @@ function isNewArrival(createdAt: Date): boolean {
 
 function formatTagsForCreateOrUpdate(tags?: string[]) {
   if (!tags || tags.length === 0) return undefined;
-
   return {
     connectOrCreate: tags.map((tagName) => ({
       where: { name: tagName },
@@ -22,30 +21,44 @@ function formatTagsForCreateOrUpdate(tags?: string[]) {
   };
 }
 
-// GET: Fetch all products with advanced filters, pagination, and sorting
+// GET: Fetch all products with filters, pagination, and sorting
 export async function GET(req: Request) {
   try {
-    const allProducts = await prisma.product.findMany();
-    console.log("🚀 ~ GET ~ products:", allProducts);
     const url = new URL(req.url);
     const searchParams = url.searchParams;
 
     // --- Extract Query Parameters ---
-    const market = searchParams.get("market"); // domestic or global
+    const marketType = searchParams.get("marketType"); // e.g., "domestic", "global"
     const city = searchParams.get("city");
     const province = searchParams.get("province");
     const country = searchParams.get("country");
     const categoryId = searchParams.get("categoryId");
-
     const page = parseInt(searchParams.get("page") || "1", 10);
     const limit = parseInt(searchParams.get("limit") || "10", 10);
-
     const sortByPrice = searchParams.get("sortByPrice"); // priceLow or priceHigh
     const sortByTags = searchParams.get("sortByTags"); // onSale, bestSeller, newArrival
 
+    // Validate marketType
+    const validMarketTypes = ["domestic", "global"];
+    if (marketType && !validMarketTypes.includes(marketType)) {
+      return NextResponse.json(
+        {
+          error: `Invalid marketType. Valid values: ${validMarketTypes.join(
+            ", "
+          )}`,
+        },
+        { status: 400 }
+      );
+    }
+
     // --- Build Filters ---
     const filters: Prisma.ProductWhereInput = {
-      ...(market && { marketId: market }),
+      // Filter by marketType via related Market model
+      ...(marketType && {
+        market: {
+          marketType: marketType,
+        },
+      }),
       ...(categoryId && {
         categories: {
           some: {
@@ -68,7 +81,6 @@ export async function GET(req: Request) {
 
     // --- Build Sorting ---
     const orderBy: Prisma.ProductOrderByWithRelationInput[] = [];
-
     if (sortByPrice) {
       if (sortByPrice === "priceLow") {
         orderBy.push({ price: "asc" });
@@ -76,7 +88,6 @@ export async function GET(req: Request) {
         orderBy.push({ price: "desc" });
       }
     }
-
     if (sortByTags) {
       if (sortByTags === "onSale") {
         orderBy.push({ isOnSale: "desc" });
@@ -87,16 +98,7 @@ export async function GET(req: Request) {
       }
     }
 
-    // 🚀 Future implementation (commented for now):
-    // Sorting by distance once buyer location is available
-    /*
-    if (sortByDistance === "closest") {
-      orderBy.push({ distance: "asc" });
-      // Note: Requires calculating distance manually or with raw SQL queries
-    }
-    */
-
-    // Search debounced
+    // Search
     const search = searchParams.get("search");
     if (search) {
       filters.OR = [
@@ -121,6 +123,7 @@ export async function GET(req: Request) {
         reviews: true,
         tags: true,
         labels: true,
+        market: true, // ✅ Include market relation in the response
       },
     });
 
@@ -128,9 +131,13 @@ export async function GET(req: Request) {
       where: filters,
     });
 
-    // Return Response
+    const productsWithImageUrls = products.map((p) => ({
+      ...p,
+      imageUrls: p.image ? [p.image] : [],
+    }));
+
     return NextResponse.json({
-      products,
+      products: productsWithImageUrls,
       pagination: {
         totalProducts,
         totalPages: Math.ceil(totalProducts / limit),
@@ -152,7 +159,6 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
     const parsed = productSchema.safeParse(body);
-
     if (!parsed.success) {
       const errorMessages = parsed.error.errors
         .map((e) => e.message)
@@ -338,7 +344,7 @@ export async function PUT(req: Request) {
 
     const existing = await prisma.product.findUnique({
       where: { id },
-      include: { categories: true }, // important!
+      include: { categories: true },
     });
 
     if (!existing) {
@@ -379,7 +385,7 @@ export async function PUT(req: Request) {
           isActive,
           accountId,
           tags: {
-            set: [], // Clear old tags first
+            set: [],
             ...formatTagsForCreateOrUpdate(tags),
           },
           ...(finalCategoryId && {
@@ -430,7 +436,6 @@ export async function DELETE(req: Request) {
     }
 
     await prisma.product.delete({ where: { id } });
-
     return NextResponse.json({ message: "Product deleted" });
   } catch (error: unknown) {
     if (error instanceof Error) {

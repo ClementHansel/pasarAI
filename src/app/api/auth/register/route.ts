@@ -1,4 +1,3 @@
-// src/app/api/auth/register/route.ts
 import { NextResponse } from "next/server";
 import { hashPassword } from "@/lib/auth/authUtils";
 import { generateReferralCode } from "@/lib/referral/referralUtils";
@@ -17,8 +16,6 @@ import { db } from "@/lib/db/db";
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    console.log("Register API received body:", body);
-
     const {
       name,
       email,
@@ -31,18 +28,15 @@ export async function POST(req: Request) {
       province,
       city,
       profileImage,
-      currencyCode, // New field
+      currencyCode,
     } = body;
 
-    // 1) Required fields
     if (!name || !email || !password) {
       return NextResponse.json(
         { error: "Missing name, email, or password" },
         { status: 400 }
       );
     }
-
-    // 2) Format checks
     if (!validateEmail(email)) {
       return NextResponse.json(
         { error: "Invalid email format" },
@@ -58,8 +52,6 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
-
-    // 3) Already exists?
     if (await getAccountByEmail(email)) {
       return NextResponse.json(
         {
@@ -70,28 +62,23 @@ export async function POST(req: Request) {
       );
     }
 
-    // 4) Hash & referral code
     const hashed = await hashPassword(password);
     const newReferralCode = generateReferralCode();
 
-    // 5) Currency validation
     let currencyId: string | undefined;
     if (currencyCode) {
       const currency = await db.currency.findFirst({
         where: { code: currencyCode },
       });
-
       if (!currency) {
         return NextResponse.json(
           { error: `Currency code "${currencyCode}" not found` },
           { status: 400 }
         );
       }
-
       currencyId = currency.id;
     }
 
-    // 6) Create unverified account
     const newAccount = await createAccount({
       name,
       email,
@@ -104,10 +91,9 @@ export async function POST(req: Request) {
       province,
       city,
       profileImage,
-      currencyId, // <-- Added here
+      currencyId,
     });
 
-    // 7) Referral vouchers
     if (usedCode) {
       const referrer = await getAccountByReferralCode(usedCode);
       if (referrer) {
@@ -115,38 +101,30 @@ export async function POST(req: Request) {
       }
     }
 
-    // 8) Safety check for email
     if (!newAccount.email) {
       throw new Error("New account created without an email address");
     }
 
-    // 9) Generate verification token (after email check)
     const token = generateMagicLinkToken(newAccount.email);
     if (!token) {
       throw new Error("Failed to generate verification token");
     }
-
-    // 10) Ensure NEXT_PUBLIC_SITE_URL is set
     const rawBaseUrl = process.env.NEXT_PUBLIC_SITE_URL;
-    if (!rawBaseUrl) {
-      throw new Error("NEXT_PUBLIC_SITE_URL is not configured");
-    }
+    if (!rawBaseUrl) throw new Error("NEXT_PUBLIC_SITE_URL is not configured");
     const baseUrl = rawBaseUrl.replace(/\/$/, "");
-    const verifyUrl = `${baseUrl}/verify-account?token=${encodeURIComponent(
+    // ▶️ NEW API ROUTE PATH:
+    const verifyUrl = `${baseUrl}/api/auth/verify-account?token=${encodeURIComponent(
       token
     )}`;
 
-    // 11) Send verification email
-    console.log("Sending verification email to:", newAccount.email);
     await sendEmail(
-      "Verify your new PasarAI account", // subject
-      newAccount.email, // to
+      "Verify your new PasarAI account",
+      newAccount.email,
       `Welcome ${newAccount.name}! Please verify your account by clicking: ${verifyUrl}`,
       `<p>Welcome <strong>${newAccount.name}</strong>!</p>
        <p>Click <a href="${verifyUrl}">here</a> to verify your email address and complete registration.</p>`
     );
 
-    // 12) Respond success
     return NextResponse.json(
       {
         message:

@@ -38,7 +38,7 @@ export default function ProductsExplorer() {
     params.append("limit", String(ITEMS_PER_PAGE));
     if (search) params.append("search", search);
     if (category) params.append("categoryId", category);
-    if (market) params.append("market", market);
+    if (market) params.append("marketType", market);
     if (tab === "featured") params.append("sortByTags", "featured");
     if (tab === "topRated") params.append("sortByTags", "bestSeller");
     if (tab === "recent") params.append("sortByTags", "newArrival");
@@ -159,11 +159,15 @@ export default function ProductsExplorer() {
                   name={p.name}
                   price={p.price}
                   description={p.description}
-                  imageUrl={p.imageUrls?.[0] || "/images/placeholder.png"}
+                  imageUrl={
+                    p.imageUrls[0] || "/public/images/picture-not-found.png"
+                  }
                   rating={p.rating}
                   labels={p.labels}
                   discount={p.discount}
                   badgeText={deriveBadge(p)}
+                  marketType={p.marketType} // optional chaining to avoid errors
+                  currency={p.currency} // optional chaining to avoid errors
                 />
               ))}
             </div>
