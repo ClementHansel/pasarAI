@@ -1,5 +1,5 @@
-// src/components/AuthGuard.tsx (updated)
 "use client";
+
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "react-hot-toast";
@@ -20,57 +20,68 @@ export function AuthGuard({
   const router = useRouter();
   const { data: session, status } = useSession();
   const [isAuthorized, setIsAuthorized] = useState(false);
-  
+  const [isVerifying, setIsVerifying] = useState(true);
+
   useEffect(() => {
-    async function verify() {
+    let hasRedirected = false;
+
+    const safeRedirect = (path: string, message?: string) => {
+      if (hasRedirected) return;
+      hasRedirected = true;
+
+      if (message) toast.error(message);
+      router.push(path);
+    };
+
+    const verifySession = async () => {
       if (status === "loading") return;
 
-      if (status === "unauthenticated") {
-        redirectToLogin();
+      if (!session || !session.user) {
+        safeRedirect(
+          `/login?callbackUrl=${encodeURIComponent(window.location.pathname)}`,
+          "Please log in"
+        );
         return;
       }
 
-      if (!session?.user) {
-        toast.error("Invalid session");
-        redirectToLogin();
+      const user = session.user as typeof session.user & {
+        role?: Role;
+        isVerified?: boolean;
+      };
+
+      if (requireVerification && !user.isVerified) {
+        safeRedirect("/verify-account", "Please verify your email");
         return;
       }
 
-      if (requireVerification && !session.user.isVerified) {
-        toast.error("Please verify your email");
-        router.push("/verify-account");
-        return;
-      }
-
-      if (allowedRoles && !allowedRoles.includes(session.user.role)) {
-        toast.error("Unauthorized access");
-        router.push("/unauthorized");
+      if (allowedRoles && (!user.role || !allowedRoles.includes(user.role))) {
+        safeRedirect("/unauthorized", "Unauthorized access");
         return;
       }
 
       try {
         const res = await fetch("/api/auth/verify-session");
         if (!res.ok) throw new Error("Session verification failed");
-        
+
         const { valid } = await res.json();
         if (!valid) throw new Error("Invalid session");
 
         setIsAuthorized(true);
-      } catch (error) {
-        console.error("Verification error:", error);
-        toast.error("Session expired");
-        redirectToLogin();
+      } catch (err) {
+        console.error("Session verification failed:", err);
+        safeRedirect(
+          `/login?callbackUrl=${encodeURIComponent(window.location.pathname)}`,
+          "Session expired"
+        );
+      } finally {
+        setIsVerifying(false);
       }
-    }
+    };
 
-    verify();
+    verifySession();
   }, [status, session, allowedRoles, requireVerification, router]);
 
-  function redirectToLogin() {
-    router.push(`/login?callbackUrl=${encodeURIComponent(window.location.pathname)}`);
-  }
-
-  if (status === "loading" || !isAuthorized) {
+  if (status === "loading" || isVerifying || !isAuthorized) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900" />

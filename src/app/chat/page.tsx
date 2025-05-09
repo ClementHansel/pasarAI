@@ -15,10 +15,11 @@ const ChatPage = () => {
   const [messages, setMessages] = useState<AIChatMessage[]>([]);
   const [conversationId, setConversationId] = useState<string | null>(null);
 
-  const accountId = session?.user?.id;
-  const accountRole = session?.user?.role;
-
   useEffect(() => {
+    if (status !== "authenticated" || !session) return;
+
+    const accountId = session?.user?.id;
+    const accountRole = session?.user?.role;
     if (!accountId || !accountRole) return;
 
     const fetchConversations = async () => {
@@ -50,9 +51,14 @@ const ChatPage = () => {
     };
 
     fetchConversations();
-  }, [accountId, accountRole]);
+  }, [status, session]);
 
   const handleSendMessage = async (content: string) => {
+    if (status !== "authenticated" || !session) return;
+
+    const accountId = session.user?.id;
+    const accountRole = session.user?.role;
+
     if (!accountId || !accountRole) return;
 
     const userMessage: AIChatMessage = {
