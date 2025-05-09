@@ -13,7 +13,6 @@ import type { CartState } from "@/lib/cartStore";
 
 const ProductPage = () => {
   const addItem = useCartStore((state: CartState) => state.addItem);
-
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [filters, setFilters] = useState<ProductFilterInput>({});
   const [viewMode, setViewMode] = useState<"list" | "grid">("grid");
@@ -41,10 +40,16 @@ const ProductPage = () => {
       if (filters.inStock !== undefined)
         url.searchParams.set("inStock", String(filters.inStock));
       if (filters.sortBy) url.searchParams.set("sortBy", filters.sortBy);
-      const res = await fetch(url, { cache: "no-store" });
+
+      const res = await fetch(url.toString(), {
+        cache: "no-store",
+        credentials: "include", // <-- sends cookies/session
+      });
+
       if (!res.ok) {
         throw new Error(`Failed to fetch products: ${res.status}`);
       }
+
       const data = await res.json();
       setFilteredProducts(data.products);
     } catch (error) {
@@ -58,7 +63,7 @@ const ProductPage = () => {
       prevFiltersRef.current = filters;
       fetchProducts(); // Only fetch if filters changed
     }
-  }, [filters]);
+  }, [filters, fetchProducts]);
 
   useEffect(() => {
     fetchProducts();
@@ -105,6 +110,10 @@ const ProductPage = () => {
     },
     [addItem]
   );
+
+  if (status === "loading") {
+    return <div>Loading...</div>; // Optional: Loading state
+  }
 
   return (
     <div className="container mx-auto py-8 px-4 md:px-6">
