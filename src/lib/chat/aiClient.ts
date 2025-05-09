@@ -8,7 +8,7 @@ export async function callAI(prompt: string): Promise<string> {
   }
 
   const payload = {
-    model: "mistral/mistral-7b-instruct",
+    model: "google/gemini-2.0-flash-exp:free",
     messages: [
       { role: "system", content: "You are a helpful assistant." },
       { role: "user", content: prompt },
