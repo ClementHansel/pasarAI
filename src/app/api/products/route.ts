@@ -1,5 +1,5 @@
-import { db } from "@/lib/db/db";
-import { Prisma } from "@prisma/client";
+import { db } from "@/lib/db/db"; // Your DB connection
+import { Prisma } from "@prisma/client"; // Prisma types
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
@@ -7,6 +7,7 @@ export async function GET(req: NextRequest) {
     const url = new URL(req.url);
     const searchParams = url.searchParams;
 
+    const category = searchParams.get("category"); // Get category from query params
     const marketType = searchParams.get("marketType");
     const city = searchParams.get("city");
     const province = searchParams.get("province");
@@ -31,6 +32,13 @@ export async function GET(req: NextRequest) {
     }
 
     const filters: Prisma.ProductWhereInput = {
+      ...(category && {
+        categories: {
+          some: {
+            name: category, // Filter by category name if provided
+          },
+        },
+      }),
       ...(marketType && {
         market: {
           marketType,
