@@ -2,10 +2,10 @@
 "use client";
 import React, { useState, useEffect, useMemo } from "react";
 import { useProductFilter } from "@/context/ProductCategoryContext";
-import SearchBox from "./header/SearchBox";
+// import SearchBox from "./header/SearchBox";
 import ProductCard from "./ProductCard";
 import type { Product } from "@/types/product";
-import { useSearch } from "@/context/SearchContext";
+// import { useSearch } from "@/context/SearchContext";
 import { Loader2 } from "lucide-react";
 
 const ITEMS_PER_PAGE = 8;
@@ -14,9 +14,9 @@ type Tab = "all" | "featured" | "topRated" | "recent";
 
 export default function ProductsExplorer() {
   const { category, market, setMarket } = useProductFilter();
-  const [tab, setTab] = useState<Tab>("all");
-  const [search, setSearch] = useState<string>("");
-  const { submitSearch } = useSearch();
+  const [tab] = useState<Tab>("all");
+  // const [search, setSearch] = useState<string>("");
+  // const { submitSearch } = useSearch();
   const [page, setPage] = useState<number>(1);
   const [products, setProducts] = useState<Product[]>([]);
   const [totalPages, setTotalPages] = useState<number>(1);
@@ -28,14 +28,14 @@ export default function ProductsExplorer() {
     const params = new URLSearchParams();
     params.append("page", String(page));
     params.append("limit", String(ITEMS_PER_PAGE));
-    if (search) params.append("search", search);
+    // if (search) params.append("search", search);
     if (category) params.append("categoryId", category);
     if (market) params.append("marketType", market);
     if (tab === "featured") params.append("sortByTags", "onSale");
     if (tab === "topRated") params.append("sortByTags", "bestSeller");
     if (tab === "recent") params.append("sortByTags", "newArrival");
     return params.toString();
-  }, [search, category, market, tab, page]);
+  }, [category, market, tab, page]);
 
   // Fetch from API
   useEffect(() => {
@@ -62,10 +62,10 @@ export default function ProductsExplorer() {
     if (page < totalPages) setPage((p) => p + 1);
   };
 
-  const handleTabClick = (t: Tab) => {
-    setTab(t);
-    setPage(1);
-  };
+  // const handleTabClick = (t: Tab) => {
+  //   setTab(t);
+  //   setPage(1);
+  // };
 
   const handleMarketChange = (m: "domestic" | "global") => {
     setMarket(m);
