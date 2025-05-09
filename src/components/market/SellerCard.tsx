@@ -1,61 +1,67 @@
 // src/components/market/SellerCard.tsx
 "use client";
-
-import { useRouter } from "next/navigation";
-import { Store, TrendingUp, MapPin, Globe } from "lucide-react";
-import type { Seller } from "@/types/market";
+import React, { useState } from "react";
+import Link from "next/link";
+// import Image from "next/image";
+import { Star } from "lucide-react";
+import { Seller } from "@/types/market";
 
 interface SellerCardProps {
   seller: Seller;
 }
 
-export const SellerCard = ({ seller }: SellerCardProps) => {
-  const router = useRouter();
-
-  const handleClick = () => {
-    router.push(`/market/seller/${seller.id}`);
-  };
+export const SellerCard: React.FC<SellerCardProps> = ({ seller }) => {
+  const [imageLoaded] = useState(false);
+  const [rating] = useState(seller.rating || 0);
+  const isVerified = seller.verified || false;
 
   return (
-    <div
-      onClick={handleClick}
-      className="group bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden cursor-pointer border border-gray-100 hover:border-blue-300 flex flex-row w-full"
+    <Link
+      href={`/profile/${seller.id}`}
+      className="group bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden flex flex-col h-full"
     >
-      <div className="bg-blue-50 p-4 flex items-center">
-        <Store className="text-blue-600" size={24} />
-      </div>
-
-      <div className="flex-1 p-4">
-        <div className="flex justify-between items-start">
-          <h3 className="font-semibold text-gray-800 line-clamp-1">
-            {seller.name}
-          </h3>
-          {seller.rating && (
-            <div className="flex items-center bg-white px-2 py-1 rounded-full border border-gray-100">
-              <TrendingUp className="text-green-500 mr-1" size={14} />
-              <span className="text-xs font-medium">{seller.rating}/5</span>
-            </div>
-          )}
-        </div>
-
-        <div className="flex items-center text-gray-500 text-sm mt-2">
-          <MapPin size={14} className="mr-1" />
-          <span className="line-clamp-1">
-            {seller.location || "Location not specified"}
+      {/* Seller Avatar */}
+      <div className="relative h-40 w-full bg-gray-100">
+        {!imageLoaded && (
+          <div className="absolute inset-0 bg-gray-100 animate-pulse" />
+        )}
+        {/* <Image
+          src={seller. || "/images/avatar-default.png"}
+          alt={seller.name}
+          fill
+          onLoad={() => setImageLoaded(true)}
+          className={`object-cover transition-opacity duration-300 ${
+            imageLoaded ? "opacity-100" : "opacity-0"
+          }`}
+        /> */}
+        {isVerified && (
+          <span className="absolute top-2 right-2 bg-green-100 text-green-800 text-xs font-semibold px-2 py-0.5 rounded-full">
+            Verified
           </span>
-        </div>
-
-        <div className="flex items-center justify-between mt-2">
-          <div className="flex items-center text-gray-500 text-sm">
-            <Globe size={14} className="mr-1" />
-            <span>{seller.currency}</span>
-          </div>
-
-          <button className="text-xs bg-blue-100 hover:bg-blue-200 text-blue-700 px-2 py-1 rounded-md transition-colors">
-            View Details
-          </button>
-        </div>
+        )}
       </div>
-    </div>
+
+      {/* Seller Info */}
+      <div className="p-4 flex-1 flex flex-col">
+        <h3 className="font-semibold text-gray-800 group-hover:text-blue-600 transition-colors">
+          {seller.name}
+        </h3>
+
+        <div className="mt-2 flex items-center">
+          {Array.from({ length: 5 }).map((_, idx) => (
+            <Star
+              key={idx}
+              className={`w-4 h-4 ${
+                idx < rating ? "text-yellow-400 fill-current" : "text-gray-300"
+              }`}
+            />
+          ))}
+        </div>
+
+        <p className="text-sm text-gray-500 mt-2">
+          {seller.productCount || 0} products
+        </p>
+      </div>
+    </Link>
   );
 };

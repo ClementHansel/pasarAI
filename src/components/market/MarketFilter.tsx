@@ -1,14 +1,17 @@
+// src/components/market/MarketFilter.tsx
 "use client";
+import { Search } from "lucide-react";
+import React, { useState } from "react";
 
-import { useState } from "react";
-import { Search } from "lucide-react"; // Icon library
-
-export interface MarketFilterProps {
+interface MarketFilterProps {
   onSearch: (query: string) => void;
   placeholder: string;
 }
 
-export const MarketFilter = ({ onSearch }: MarketFilterProps) => {
+export const MarketFilter: React.FC<MarketFilterProps> = ({
+  onSearch,
+  placeholder,
+}) => {
   const [query, setQuery] = useState("");
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -25,7 +28,7 @@ export const MarketFilter = ({ onSearch }: MarketFilterProps) => {
       />
       <input
         type="text"
-        placeholder="Search sellers, cities, or regions..."
+        placeholder={placeholder}
         value={query}
         onChange={handleChange}
         className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-full shadow-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"

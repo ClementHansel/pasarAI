@@ -1,4 +1,3 @@
-// src/components/layout/homepage/ProductCard.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -8,6 +7,7 @@ import { ShoppingCart, Star } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { Label } from "@prisma/client";
 import { convertProductPrice } from "@/lib/currency/convert";
+import { Currency } from "@/types/product";
 
 interface ProductCardProps {
   id: string;
@@ -20,7 +20,7 @@ interface ProductCardProps {
   discount?: number;
   badgeText?: string;
   marketType: "domestic" | "global"; // required
-  currency: "IDR" | "USD" | string; // fallback to string for flexibility
+  currency: Currency; // use Currency type from product.ts
 }
 
 const ProductCard: React.FC<ProductCardProps> = ({

@@ -1,303 +1,201 @@
+// src/app/product/page.tsx
 "use client";
+import React, { useState, useEffect, useMemo } from "react";
+import { useProductFilter } from "@/context/ProductCategoryContext";
+import type { Product } from "@/types/product";
+import { useSearch } from "@/context/SearchContext";
+import { Loader2 } from "lucide-react";
+import SearchBox from "@/components/layout/homepage/header/SearchBox";
+import ProductCard from "@/components/product/ProductCard";
 
-import { useEffect, useState, useCallback, useRef } from "react";
-import { cn } from "@/lib/utils";
-import { Product, ProductType } from "@/types/product";
-import type { ProductFilterInput } from "@/types/product";
-import ProductFilter from "@/components/product/ProductFilter";
-import { LocationFilter } from "@/components/market/LocationFilter";
-import ProductCategory from "@/components/product/ProductCategory";
-import { Home, Globe, RefreshCw, Grid, List, Sliders, X } from "lucide-react";
-import { useCartStore } from "@/lib/cartStore";
-import type { CartState } from "@/lib/cartStore";
+const ITEMS_PER_PAGE = 8;
 
-const ProductPage = () => {
-  const addItem = useCartStore((state: CartState) => state.addItem);
-  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
-  const [filters, setFilters] = useState<ProductFilterInput>({});
-  const [viewMode, setViewMode] = useState<"list" | "grid">("grid");
-  const [showMobileFilters, setShowMobileFilters] = useState(false);
-  const [searchInput, setSearchInput] = useState("");
+type Tab = "all" | "featured" | "topRated" | "recent";
 
-  const prevFiltersRef = useRef<ProductFilterInput | null>(null);
+export default function ProductPage() {
+  const { category, market, setMarket } = useProductFilter();
+  const [tab] = useState<Tab>("all");
+  const [search, setSearch] = useState<string>("");
+  const { submitSearch } = useSearch();
+  const [page, setPage] = useState<number>(1);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [totalPages, setTotalPages] = useState<number>(1);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const fetchProducts = useCallback(async () => {
-    try {
-      const url = new URL("/api/products", window.location.origin);
-      if (filters.marketType)
-        url.searchParams.set("market", filters.marketType);
-      if (filters.city) url.searchParams.set("city", filters.city);
-      if (filters.region) url.searchParams.set("province", filters.region);
-      if (filters.region && filters.marketType === "global")
-        url.searchParams.set("country", filters.region);
-      if (filters.categoryId)
-        url.searchParams.set("categoryId", filters.categoryId);
-      if (filters.search) url.searchParams.set("search", filters.search);
-      if (filters.minPrice !== undefined)
-        url.searchParams.set("minPrice", String(filters.minPrice));
-      if (filters.maxPrice !== undefined)
-        url.searchParams.set("maxPrice", String(filters.maxPrice));
-      if (filters.inStock !== undefined)
-        url.searchParams.set("inStock", String(filters.inStock));
-      if (filters.sortBy) url.searchParams.set("sortBy", filters.sortBy);
+  // Build query string for API
+  const queryString = useMemo(() => {
+    const params = new URLSearchParams();
+    params.append("page", String(page));
+    params.append("limit", String(ITEMS_PER_PAGE));
 
-      const res = await fetch(url.toString(), {
-        cache: "no-store",
-        credentials: "include", // <-- sends cookies/session
-      });
+    if (search) params.append("search", search);
+    if (category) params.append("categoryId", category);
+    if (market) params.append("marketType", market);
 
-      if (!res.ok) {
-        throw new Error(`Failed to fetch products: ${res.status}`);
-      }
+    // Sort by tags
+    if (tab === "featured") params.append("sortByTags", "onSale");
+    if (tab === "topRated") params.append("sortByTags", "bestSeller");
+    if (tab === "recent") params.append("sortByTags", "newArrival");
 
-      const data = await res.json();
-      setFilteredProducts(data.products);
-    } catch (error) {
-      console.error("Error fetching products:", error);
-    }
-  }, [filters]);
+    return params.toString();
+  }, [search, category, market, tab, page]);
 
+  // Fetch products from API
   useEffect(() => {
-    const prev = prevFiltersRef.current;
-    if (JSON.stringify(prev) !== JSON.stringify(filters)) {
-      prevFiltersRef.current = filters;
-      fetchProducts(); // Only fetch if filters changed
-    }
-  }, [filters, fetchProducts]);
+    setLoading(true);
+    setError(null);
 
-  useEffect(() => {
-    fetchProducts();
-  }, [fetchProducts]);
+    fetch(`/api/products?${queryString}`)
+      .then((res) => {
+        if (!res.ok)
+          throw new Error(`Failed to fetch products (HTTP ${res.status})`);
+        return res.json();
+      })
+      .then(({ products }) => {
+        setProducts(products);
+        setTotalPages(Math.ceil(products.length / ITEMS_PER_PAGE));
+      })
+      .catch((err) => {
+        console.error("Product fetch error:", err);
+        setError("Failed to load products");
+      })
+      .finally(() => setLoading(false));
+  }, [queryString]);
 
-  const handleFilterChange = useCallback((newFilters: ProductFilterInput) => {
-    setFilters((prev) => ({ ...prev, ...newFilters }));
-    if (typeof newFilters.search === "string")
-      setSearchInput(newFilters.search);
-  }, []);
+  const handleLoadMore = () => {
+    if (page < totalPages) setPage((p) => p + 1);
+  };
 
-  const handleViewChange = useCallback((value: "list" | "grid") => {
-    setViewMode(value);
-  }, []);
+  const handleMarketChange = (m: "domestic" | "global") => {
+    setMarket(m);
+    setPage(1);
+  };
 
-  const toggleProductType = useCallback((type: ProductType) => {
-    setFilters((prev) => ({ ...prev, marketType: type }));
-  }, []);
+  const deriveBadge = (p: Product) => {
+    if (p.isNewArrival) return "New Arrival";
+    if (p.isBestSeller) return "Best Seller";
+    if (p.isOnSale) return "On Sale";
+    if (p.isFeatured) return "Featured";
+    return undefined;
+  };
 
-  const resetFilters = useCallback(() => {
-    setFilters({});
-  }, []);
+  const getMarketDisplay = (mt: string) =>
+    mt === "domestic" ? "Domestic" : "International";
 
-  const handleLocationFilterChange = useCallback(
-    (type: "region" | "subRegion" | "city", value: string) => {
-      setFilters((prev) => ({ ...prev, [type]: value }));
-    },
-    []
-  );
+  if (loading && products.length === 0) {
+    return (
+      <div className="flex justify-center items-center py-16">
+        <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+        <p className="text-gray-600 ml-3">Loading products...</p>
+      </div>
+    );
+  }
 
-  const handleAddToCart = useCallback(
-    (product: Product) => {
-      addItem({
-        productId: product.id,
-        id: product.id.toString(),
-        name: product.name,
-        price: product.price,
-        discountedPrice: product.originalPrice ?? 0,
-        quantity: 1,
-        image: product.imageUrls[0],
-        marketId: product.marketId,
-        marketName: product.location?.region ?? product.marketId,
-      });
-    },
-    [addItem]
-  );
+  if (error) {
+    return (
+      <div className="py-8 text-center">
+        <p className="text-red-600 mb-2">Failed to load products</p>
+        <button
+          onClick={() => window.location.reload()}
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
 
   return (
-    <div className="container mx-auto py-8 px-4 md:px-6">
-      <header className="mb-10 text-center">
-        <h1 className="text-4xl font-bold text-gray-900 mb-3">
-          Product Marketplace
-        </h1>
-        <p className="text-gray-600 text-lg max-w-3xl mx-auto">
-          Discover local and global products. Filter by category, search items,
-          and find the best deals.
-        </p>
-      </header>
+    <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <h2 className="text-3xl font-bold text-gray-800 mb-6 text-center">
+        Product Marketplace
+      </h2>
 
-      {/* Product Type Tabs */}
+      {/* Market Type Tabs */}
       <div className="flex justify-center mb-8">
-        <div className="bg-gray-100 p-1 rounded-2xl inline-flex gap-2">
-          {["domestic", "global"].map((type) => (
-            <button
-              key={type}
-              onClick={() => toggleProductType(type as ProductType)}
-              className={cn(
-                "flex items-center px-8 py-3 rounded-xl transition-all",
-                filters.marketType === type
-                  ? "bg-white text-blue-600 shadow-lg"
-                  : "text-gray-500 hover:bg-gray-50"
-              )}
-            >
-              {type === "domestic" ? (
-                <Home className="mr-2 h-5 w-5" />
-              ) : (
-                <Globe className="mr-2 h-5 w-5" />
-              )}
-              <span className="font-semibold">
-                {type === "domestic" ? "Domestic (IDR)" : "Global (USD)"}
-              </span>
-            </button>
-          ))}
+        <div className="inline-flex bg-gray-100 rounded-lg p-1">
+          <button
+            onClick={() => handleMarketChange("domestic")}
+            className={`px-6 py-2 rounded-md transition ${
+              market === "domestic"
+                ? "bg-white text-blue-600 shadow-sm"
+                : "text-gray-700 hover:bg-gray-200"
+            }`}
+          >
+            Domestic
+          </button>
+          <button
+            onClick={() => handleMarketChange("global")}
+            className={`px-6 py-2 rounded-md transition ${
+              market === "global"
+                ? "bg-indigo-600 text-white"
+                : "text-gray-700 hover:bg-gray-200"
+            }`}
+          >
+            International
+          </button>
         </div>
       </div>
 
       {/* Control Bar */}
-      <div className="bg-white rounded-2xl shadow-lg mb-6 p-6">
+      <div className="bg-white rounded-xl shadow-lg mb-6 p-6">
         <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
-          <div className="w-full md:w-1/3">
-            <ProductFilter
-              value={{ ...filters, search: searchInput }}
-              onFilterChange={handleFilterChange}
-            />
-          </div>
-
-          <div className="flex items-center gap-3 w-full md:w-auto">
-            <LocationFilter
-              marketType={filters.marketType || "domestic"}
-              markets={[] /* Replace with actual data fetching/state */}
-              selectedFilters={{
-                region: filters.region || "",
-                subRegion: filters.subregion || "",
-                city: filters.city || "",
+          <div className="w-full md:w-1/2">
+            <SearchBox
+              value={search}
+              onChange={(value) => {
+                setSearch(value);
+                setPage(1);
               }}
-              onFilterChange={handleLocationFilterChange}
-              isMobile={false} // Explicitly set isMobile for desktop
+              onSubmit={submitSearch}
             />
-            <div className="hidden md:flex items-center gap-4">
-              {(filters.search || filters.categoryId || filters.region) && (
-                <button
-                  onClick={resetFilters}
-                  className="flex items-center gap-2 px-4 py-2 text-blue-600 hover:bg-blue-50 rounded-xl"
-                >
-                  <RefreshCw size={16} />
-                  <span>Reset</span>
-                </button>
-              )}
-            </div>
-
-            <div className="hidden md:flex items-center bg-gray-100 rounded-xl p-1 gap-1">
-              {["grid", "list"].map((mode) => (
-                <button
-                  key={mode}
-                  onClick={() => setViewMode(mode as "grid" | "list")}
-                  className={cn(
-                    "p-2 rounded-lg",
-                    viewMode === mode && "bg-white shadow-sm"
-                  )}
-                >
-                  {mode === "grid" ? <Grid size={18} /> : <List size={18} />}
-                </button>
-              ))}
-            </div>
           </div>
         </div>
-      </div>
-
-      {showMobileFilters && (
-        <div className="md:hidden bg-white rounded-2xl shadow-lg mb-6 p-6">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-semibold">Filters</h3>
-            <button
-              onClick={() => setShowMobileFilters(false)}
-              className="text-gray-500 hover:text-gray-700"
-              aria-label="Show mobile filters"
-            >
-              <X size={24} />
-            </button>
-          </div>
-          <div className="space-y-4">
-            <ProductFilter
-              value={{ ...filters, search: searchInput }}
-              onFilterChange={handleFilterChange}
-            />
-            <LocationFilter
-              marketType={filters.marketType || "domestic"}
-              markets={filters.marketType === "domestic" ? [] : []}
-              selectedFilters={{
-                region: filters.region || "",
-                subRegion: filters.subregion || "",
-                city: filters.city || "",
-              }}
-              onFilterChange={handleLocationFilterChange}
-              isMobile={true} // Explicitly set isMobile for mobile
-            />
-            <button
-              onClick={resetFilters}
-              className="w-full py-2 px-4 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-100"
-            >
-              Reset Filters
-            </button>
-          </div>
-        </div>
-      )}
-
-      <div className="md:hidden mb-4">
-        <button
-          onClick={() => setShowMobileFilters(true)}
-          className="w-full py-2 px-4 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-100 flex items-center justify-center gap-2"
-        >
-          <Sliders size={18} />
-          Show Filters
-        </button>
       </div>
 
       {/* Main Content */}
-      <div className="bg-white rounded-2xl shadow-lg p-6">
+      <div className="bg-white rounded-xl shadow-lg p-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-          <h2 className="text-2xl font-bold text-gray-900">
-            {filters.marketType === "domestic" ? "Local" : "Global"} Products
-          </h2>
-
+          <h3 className="text-2xl font-bold text-gray-800">
+            {getMarketDisplay(market || "domestic")} Products
+          </h3>
           <div className="flex items-center gap-3 text-sm text-gray-500">
-            <Sliders size={18} />
-            <span>{viewMode === "grid" ? "Grid" : "List"} View</span>
-            <div className="flex items-center gap-3 text-sm text-gray-500">
-              <button
-                onClick={() => handleViewChange("grid")}
-                className={`flex items-center gap-1 px-2 py-1 rounded hover:text-black transition ${
-                  viewMode === "grid" ? "text-black font-semibold" : ""
-                }`}
-              >
-                <Grid size={18} />
-                <span>Grid</span>
-              </button>
-
-              <span className="text-gray-300">|</span>
-
-              <button
-                onClick={() => handleViewChange("list")}
-                className={`flex items-center gap-1 px-2 py-1 rounded hover:text-black transition ${
-                  viewMode === "list" ? "text-black font-semibold" : ""
-                }`}
-              >
-                <List size={18} />
-                <span>List</span>
-              </button>
-            </div>
+            <span>{products.length} products found</span>
           </div>
         </div>
 
-        <ProductCategory
-          type={filters.marketType || "domestic"}
-          searchTerm={filters.search || ""}
-          categoryFilter={filters.categoryId || ""}
-          viewMode={viewMode}
-          selectedFilters={filters}
-          products={filteredProducts}
-          onAddToCart={handleAddToCart}
-        />
-      </div>
-    </div>
-  );
-};
+        {/* Product List */}
+        <div className="space-y-6">
+          {products.length === 0 ? (
+            <div className="text-center py-12 text-gray-500 bg-gray-50 rounded-xl">
+              No products found matching your criteria
+            </div>
+          ) : (
+            products.map((product) => (
+              <ProductCard
+                key={product.id}
+                {...product}
+                badgeText={deriveBadge(product)}
+                marketType={getMarketDisplay(product.marketType || "Domestic")}
+                currency={product.currency?.code || "IDR"}
+              />
+            ))
+          )}
+        </div>
 
-export default ProductPage;
+        {/* Pagination */}
+        {products.length > 0 && page < totalPages && (
+          <div className="flex justify-center mt-10">
+            <button
+              onClick={handleLoadMore}
+              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Load More Products
+            </button>
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}

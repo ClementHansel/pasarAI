@@ -1,23 +1,13 @@
+// src/components/layout/homepage/MarketPage.tsx
 "use client";
-import { useState, useEffect, useCallback } from "react";
-import { Spinner } from "react-bootstrap";
-import { MarketCategory } from "@/components/market/MarketCategory";
-import { MarketFilter } from "@/components/market/MarketFilter";
-import { MarketComparison } from "@/components/market/MarketComparison";
-import { LocationFilter } from "@/components/market/LocationFilter";
-import { City, MarketRegion, MarketType, SubRegion } from "@/types/market";
+import React, { useState, useEffect, useCallback } from "react";
 import { cn } from "@/lib/utils";
-import {
-  BarChart2,
-  Filter,
-  Globe,
-  Grid,
-  Home,
-  List,
-  RefreshCw,
-  Sliders,
-  X,
-} from "lucide-react";
+import { LocationFilter } from "@/components/market/LocationFilter";
+import { MarketFilter } from "@/components/market/MarketFilter";
+import { MarketCategory } from "@/components/market/MarketCategory";
+import { MarketComparison } from "@/components/market/MarketComparison";
+import { BarChart2, Filter, Home, Globe, RefreshCw, X } from "lucide-react";
+import type { MarketRegion, MarketType } from "@/types/market";
 
 const MarketPage = () => {
   const [marketType, setMarketType] = useState<MarketType>("domestic");
@@ -30,100 +20,87 @@ const MarketPage = () => {
     subRegion: "",
     city: "",
   });
-
   const [marketData, setMarketData] = useState<MarketRegion[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Fetch data from API
   const fetchMarketData = useCallback(async () => {
     setIsLoading(true);
     setError(null);
+
     try {
       const params = new URLSearchParams({
         type: marketType,
-        search: searchQuery,
-        region: filters.region,
-        subRegion: filters.subRegion,
-        city: filters.city,
+        ...(searchQuery && { search: searchQuery }),
+        ...(filters.region && { region: filters.region }),
+        ...(filters.subRegion && { subRegion: filters.subRegion }),
+        ...(filters.city && { city: filters.city }),
       });
 
       const response = await fetch(`/api/markets?${params.toString()}`);
-      if (!response.ok) {
-        throw new Error(`Error ${response.status}`);
-      }
+      if (!response.ok)
+        throw new Error(`Failed to load market data (HTTP ${response.status})`);
 
       const data = await response.json();
-      if (data.success && data.data) {
+      if (data.success) {
         setMarketData(data.data);
       } else {
-        setError("Failed to load market data.");
+        setError("No market data returned");
       }
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Unknown error";
-      setError(message);
+      const errorMessage = err instanceof Error ? err.message : "Unknown error";
+      setError(errorMessage);
+      console.error("Market fetch error:", errorMessage);
     } finally {
       setIsLoading(false);
     }
   }, [marketType, searchQuery, filters]);
 
+  // Initial load and refresh when filters change
   useEffect(() => {
     fetchMarketData();
   }, [fetchMarketData]);
 
-  const handleFilterChange = (
-    filterType: keyof typeof filters,
-    value: string
-  ) => {
-    setFilters((prev) => ({
-      ...prev,
-      [filterType]: value,
-      ...(filterType === "region" && { subRegion: "", city: "" }),
-      ...(filterType === "subRegion" && { city: "" }),
-    }));
-  };
-
+  // Reset filters
   const resetFilters = () => {
     setFilters({ region: "", subRegion: "", city: "" });
     setSearchQuery("");
   };
 
-  const handleMarketTypeChange = (type: MarketType) => {
-    setMarketType(type);
-    resetFilters();
-  };
+  // Count total sellers across all regions
+  const sellerCount = marketData.reduce((total, region) => {
+    return (
+      total +
+      region.subRegions.reduce((subTotal, subRegion) => {
+        return (
+          subTotal +
+          subRegion.cities.reduce((cityTotal, city) => {
+            return cityTotal + city.sellers.length;
+          }, 0)
+        );
+      }, 0)
+    );
+  }, 0);
 
-  const sellerCount = marketData.reduce(
-    (account: number, region: MarketRegion) =>
-      account +
-      region.subRegions.reduce(
-        (subRegionAccount: number, subRegion: SubRegion) =>
-          subRegionAccount +
-          subRegion.cities.reduce(
-            (cityAccount: number, city: City) =>
-              cityAccount + city.sellers.length,
-            0
-          ),
-        0
-      ),
-    0
-  );
-
+  // Render loading state
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-96">
-        <Spinner />
-        <p className="ml-4 text-gray-500">Loading market data...</p>
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full" />
+        <p className="ml-3 text-gray-500">Loading market data...</p>
       </div>
     );
   }
 
+  // Render error state
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center h-96 text-red-500">
-        <p>Error: {error}</p>
+      <div className="flex flex-col items-center justify-center h-64 text-red-500 bg-red-50 rounded-xl p-6">
+        <p className="mb-4">Error: {error}</p>
         <button
           onClick={fetchMarketData}
-          className="mt-4 px-4 py-2 bg-red-500 text-white rounded-md"
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
         >
           Retry
         </button>
@@ -133,14 +110,15 @@ const MarketPage = () => {
 
   return (
     <div className="container mx-auto py-8 px-4 md:px-6">
+      {/* Header */}
       <header className="mb-10 text-center">
         <h1 className="text-4xl font-bold text-gray-900 mb-3">
           Market Explorer
         </h1>
         <p className="text-gray-600 text-lg max-w-3xl mx-auto">
           Connect with sellers across{" "}
-          {marketType === "domestic" ? "local" : "global"} markets. Filter by
-          location, compare markets, and find the best opportunities.
+          {marketType === "domestic" ? "local" : "global"} markets. Find
+          verified sellers and compare opportunities.
         </p>
       </header>
 
@@ -150,7 +128,10 @@ const MarketPage = () => {
           {["domestic", "global"].map((type) => (
             <button
               key={type}
-              onClick={() => handleMarketTypeChange(type as MarketType)}
+              onClick={() => {
+                setMarketType(type as MarketType);
+                resetFilters();
+              }}
               className={cn(
                 "flex items-center px-8 py-3 rounded-xl transition-all",
                 marketType === type
@@ -164,7 +145,9 @@ const MarketPage = () => {
                 <Globe className="mr-2 h-5 w-5" />
               )}
               <span className="font-semibold">
-                {type === "domestic" ? "Domestic (IDR)" : "Global (USD)"}
+                {type === "domestic"
+                  ? "Domestic Markets"
+                  : "International Markets"}
               </span>
             </button>
           ))}
@@ -177,7 +160,9 @@ const MarketPage = () => {
           <div className="w-full md:w-1/3">
             <MarketFilter
               onSearch={setSearchQuery}
-              placeholder={`Search ${marketType} markets...`}
+              placeholder={`Search ${
+                marketType === "domestic" ? "local" : "global"
+              } markets...`}
             />
           </div>
 
@@ -195,9 +180,8 @@ const MarketPage = () => {
                 marketType={marketType}
                 markets={marketData}
                 selectedFilters={filters}
-                onFilterChange={handleFilterChange}
+                onFilterChange={setFilters}
               />
-
               {(filters.region || filters.subRegion || filters.city) && (
                 <button
                   onClick={resetFilters}
@@ -209,7 +193,7 @@ const MarketPage = () => {
               )}
             </div>
 
-            <div className="hidden md:flex items-center bg-gray-100 rounded-xl p-1 gap-1">
+            <div className="hidden md:flex items-center bg-gray-100 rounded-xl p-1">
               {["grid", "list"].map((mode) => (
                 <button
                   key={mode}
@@ -219,7 +203,69 @@ const MarketPage = () => {
                     viewMode === mode && "bg-white shadow-sm"
                   )}
                 >
-                  {mode === "grid" ? <Grid size={18} /> : <List size={18} />}
+                  {mode === "grid" ? (
+                    <svg width="18" height="18" viewBox="0 0 24 24">
+                      <rect
+                        x="4"
+                        y="4"
+                        width="6"
+                        height="6"
+                        rx="1"
+                        className="fill-current"
+                      />
+                      <rect
+                        x="14"
+                        y="4"
+                        width="6"
+                        height="6"
+                        rx="1"
+                        className="fill-current"
+                      />
+                      <rect
+                        x="4"
+                        y="14"
+                        width="6"
+                        height="6"
+                        rx="1"
+                        className="fill-current"
+                      />
+                      <rect
+                        x="14"
+                        y="14"
+                        width="6"
+                        height="6"
+                        rx="1"
+                        className="fill-current"
+                      />
+                    </svg>
+                  ) : (
+                    <svg width="18" height="18" viewBox="0 0 24 24">
+                      <rect
+                        x="3"
+                        y="5"
+                        width="18"
+                        height="2"
+                        rx="1"
+                        className="fill-current"
+                      />
+                      <rect
+                        x="3"
+                        y="10"
+                        width="18"
+                        height="2"
+                        rx="1"
+                        className="fill-current"
+                      />
+                      <rect
+                        x="3"
+                        y="15"
+                        width="18"
+                        height="2"
+                        rx="1"
+                        className="fill-current"
+                      />
+                    </svg>
+                  )}
                 </button>
               ))}
             </div>
@@ -248,19 +294,21 @@ const MarketPage = () => {
             <button
               onClick={() => setShowMobileFilters(false)}
               className="text-gray-500 hover:text-gray-700"
-              aria-label="Show mobile filters"
+              aria-label="Close filters"
             >
               <X size={24} />
             </button>
           </div>
+
           <div className="space-y-4">
             <LocationFilter
               marketType={marketType}
               markets={marketData}
               selectedFilters={filters}
-              onFilterChange={handleFilterChange}
+              onFilterChange={setFilters}
               isMobile={true}
             />
+
             <button
               onClick={resetFilters}
               className="w-full py-2 px-4 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-100"
@@ -272,7 +320,7 @@ const MarketPage = () => {
         </div>
       )}
 
-      {/* Comparison Section */}
+      {/* Market Comparison */}
       {showComparison && (
         <div className="bg-white rounded-2xl shadow-lg mb-6 overflow-hidden">
           <div className="bg-blue-50 p-4 flex justify-between items-center">
@@ -280,7 +328,7 @@ const MarketPage = () => {
             <button
               onClick={() => setShowComparison(false)}
               className="text-gray-500 hover:text-gray-700"
-              aria-label="Show Comparison"
+              aria-label="Close comparison"
             >
               <X size={24} />
             </button>
@@ -291,22 +339,53 @@ const MarketPage = () => {
         </div>
       )}
 
-      {/* Main Content */}
+      {/* Results Section */}
       <div className="bg-white rounded-2xl shadow-lg p-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
           <h2 className="text-2xl font-bold text-gray-900">
-            {marketType === "domestic" ? "Local" : "Global"} Sellers
+            {marketType === "domestic" ? "Local" : "International"} Sellers
             <span className="text-gray-500 ml-2 text-lg">
               ({sellerCount} results)
             </span>
           </h2>
 
           <div className="flex items-center gap-3 text-sm text-gray-500">
-            <Sliders size={18} />
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              className="fill-current"
+            >
+              <rect
+                x="3"
+                y="3"
+                width="18"
+                height="18"
+                rx="2"
+                className="fill-gray-200"
+              />
+              <rect
+                x="6"
+                y="6"
+                width="12"
+                height="4"
+                rx="1"
+                className="fill-blue-600"
+              />
+              <rect
+                x="6"
+                y="12"
+                width="8"
+                height="4"
+                rx="1"
+                className="fill-blue-600"
+              />
+            </svg>
             <span>{viewMode === "grid" ? "Grid" : "List"} View</span>
           </div>
         </div>
 
+        {/* Market Grid */}
         <MarketCategory
           type={marketType}
           regions={marketData}
