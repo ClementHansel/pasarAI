@@ -96,7 +96,6 @@ const ProductForm = ({
           sku: initialData.sku || "",
           isActive:
             initialData.isActive !== undefined ? initialData.isActive : true,
-          accountId: initialData.accountId || "",
           marketId: initialData.marketId || "",
           label: initialData.label || "",
           discount: initialData.discount || "",
@@ -143,9 +142,9 @@ const ProductForm = ({
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
+          ...formData,
           accountId: session.user.id, // Add accountId to the request body
           role: session.user.role,
-          ...formData, // Send the product data
         }),
       });
 
