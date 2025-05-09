@@ -82,7 +82,7 @@ export async function GET(request: NextRequest) {
     `;
     await sendEmail(
       "Welcome! Your account is verified",
-      account.email,
+      account.email ?? "",
       `Referral: ${account.referralCode}, Voucher: ${userVoucher.code}`,
       userHtml
     );

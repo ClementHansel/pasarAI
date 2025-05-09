@@ -1,5 +1,4 @@
 // src/components/layout/homepage/header/UserMenuPopover.tsx
-
 import React from "react";
 import { User, LogOut, Settings, ShoppingBag } from "lucide-react";
 import {
@@ -15,19 +14,21 @@ import Image from "next/image";
 const UserMenuPopover = () => {
   const router = useRouter();
   const { data: session, status } = useSession();
-  
+  const accountId = session?.user?.id;
   const isAuthenticated = status === "authenticated";
-  const isAdmin = session?.user?.role === Role.ADMIN;
-  const isSeller = session?.user?.role === Role.SELLER;
-  
+  const userRole = session?.user?.role;
+
+  const isAdmin = userRole === Role.ADMIN;
+  const isSeller = userRole === Role.SELLER;
+
   return (
     <Popover>
       <PopoverTrigger className="relative">
-        {session?.user?.hasProfile ? (
+        {session?.user?.image ? (
           <div className="w-8 h-8 rounded-full overflow-hidden">
-            <Image 
-              src={session?.user?.image || "/placeholder-avatar.png"} 
-              alt="Profile" 
+            <Image
+              src={session.user.image || "/public/globe.svg"}
+              alt="Profile"
               width={32}
               height={32}
               className="object-cover"
@@ -43,48 +44,45 @@ const UserMenuPopover = () => {
             <div className="mb-4">
               <h4 className="font-semibold">{session.user.email}</h4>
               <p className="text-sm text-gray-500">
-                {session.user.role.charAt(0) + session.user.role.slice(1).toLowerCase()}
+                {session.user.role.charAt(0) +
+                  session.user.role.slice(1).toLowerCase()}
               </p>
             </div>
             <ul className="text-sm space-y-1">
-              {isAdmin && (
+              {/* Unified Dashboard for Admin and Seller */}
+              {(isAdmin || isSeller) && (
                 <li
                   className="flex items-center gap-2 hover:text-primary cursor-pointer py-1.5"
-                  onClick={() => router.push("/admin/dashboard")}
+                  onClick={() => router.push("/dashboard")}
                 >
                   <Settings className="w-4 h-4" />
-                  Admin Dashboard
+                  My Dashboard
                 </li>
               )}
-              
-              {(isSeller || isAdmin) && (
+
+              {/* Wallet for all authenticated users */}
+              {isAuthenticated && (
                 <li
                   className="flex items-center gap-2 hover:text-primary cursor-pointer py-1.5"
-                  onClick={() => router.push("/seller/dashboard")}
+                  onClick={() => router.push("/wallet")}
                 >
                   <ShoppingBag className="w-4 h-4" />
-                  Seller Dashboard
+                  Wallet
                 </li>
               )}
-              
+
+              {/* Profile for all users */}
               <li
                 className="flex items-center gap-2 hover:text-primary cursor-pointer py-1.5"
-                onClick={() => router.push("/dashboard")}
-              >
-                <User className="w-4 h-4" />
-                My Dashboard
-              </li>
-              
-              <li
-                className="flex items-center gap-2 hover:text-primary cursor-pointer py-1.5"
-                onClick={() => router.push("/profile")}
+                onClick={() => router.push(`/profile/${accountId}`)}
               >
                 <Settings className="w-4 h-4" />
-                Profile Settings
+                Profile
               </li>
-              
+
+              {/* Sign Out for all */}
               <li
-                className="flex items-center gap-2 hover:text-primary cursor-pointer py-1.5 text-red-500 hover:text-red-600"
+                className="flex items-center gap-2  cursor-pointer py-1.5 text-red-500 hover:text-red-600"
                 onClick={() => signOut({ callbackUrl: "/" })}
               >
                 <LogOut className="w-4 h-4" />

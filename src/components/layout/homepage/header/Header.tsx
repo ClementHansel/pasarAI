@@ -1,6 +1,5 @@
 // src/components/layout/homepage/header/Header.tsx
 "use client";
-
 import React, { useState } from "react";
 import Logo from "./Logo";
 import SearchBox from "./SearchBox";
@@ -8,66 +7,27 @@ import NotificationPopover from "./NotificationPopover";
 import MessagePopover from "./MessagePopover";
 import UserMenuPopover from "./UserMenuPopover";
 import CartPopover from "./CartPopover";
-import CategoriesNav from "./CategoriesNav";
 import Link from "next/link";
 import { Menu } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useSearch } from "@/context/SearchContext";
-import { useSession } from "next-auth/react";
-import { Role } from "@prisma/client";
 
 const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const pathname = usePathname();
-  const { data: session } = useSession();
-  
-  const isChatOrMessagePage =
-    pathname?.startsWith("/chat") || pathname?.startsWith("/message");
-
-  // Check if we're on auth pages (login/register)
-  const isAuthPage =
-    pathname === "/login" || pathname === "/register" || isChatOrMessagePage;
-
-  // Check if we're on the homepage
-  const isHomePage = pathname === "/";
-
   const { query, setQuery, submitSearch } = useSearch();
 
-  // Get user role
-  const userRole = session?.user?.role;
-  const isAdmin = userRole === Role.ADMIN;
-  const isSeller = userRole === Role.SELLER;
-  const isAuthenticated = !!session?.user;
+  const isAuthPage =
+    pathname === "/login" ||
+    pathname === "/register" ||
+    pathname.startsWith("/chat") ||
+    pathname.startsWith("/message");
 
-  // Define navigation items based on page type and user role
   const mainNavItems = [
     { href: "/market", label: "Market" },
     { href: "/product", label: "Products" },
   ];
 
-  // Add role-specific nav items
-  if (isAuthenticated) {
-    mainNavItems.push({ href: "/wallet", label: "Wallet" });
-    
-    if (isAdmin) {
-      mainNavItems.push({ href: "/admin/dashboard", label: "Admin Dashboard" });
-    }
-    
-    if (isSeller || isAdmin) {
-      mainNavItems.push({ href: "/seller/dashboard", label: "Seller Dashboard" });
-    }
-    
-    mainNavItems.push({ href: "/dashboard", label: "My Dashboard" });
-  }
-
-  const homepageOnlyNav = [
-    { href: "/#featured-product", label: "Featured Product" },
-    { href: "/#topupandbills", label: "Top up & Bills" },
-    { href: "/#all-products", label: "All Products" },
-    { href: "/#gift-cards", label: "Gift Cards" },
-  ];
-
-  // If we're on an auth page, only show the logo
   if (isAuthPage) {
     return (
       <header className="w-full bg-white border-b">
@@ -114,12 +74,8 @@ const Header = () => {
           {/* Icons */}
           <div className="flex items-center space-x-4">
             <CartPopover />
-            {isAuthenticated && (
-              <>
-                <MessagePopover />
-                <NotificationPopover />
-              </>
-            )}
+            <MessagePopover />
+            <NotificationPopover />
             <UserMenuPopover />
           </div>
         </div>
@@ -133,9 +89,8 @@ const Header = () => {
           />
         </div>
 
-        {/* Navigation - Desktop */}
+        {/* Unified Navigation */}
         <nav className="hidden lg:flex items-center justify-between py-3">
-          <CategoriesNav setIsMobileMenuOpen={setIsMobileMenuOpen} />
           <div className="flex items-center space-x-6">
             {mainNavItems.map((item) => (
               <Link
@@ -146,17 +101,6 @@ const Header = () => {
                 {item.label}
               </Link>
             ))}
-
-            {isHomePage &&
-              homepageOnlyNav.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className="underline-hover-effect text-sm hover:text-primary transition-colors"
-                >
-                  {item.label}
-                </Link>
-              ))}
           </div>
         </nav>
 
@@ -173,17 +117,6 @@ const Header = () => {
                   {item.label}
                 </Link>
               ))}
-
-              {isHomePage &&
-                homepageOnlyNav.map((item) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className="underline-hover-effect text-sm hover:text-primary px-4 py-2"
-                  >
-                    {item.label}
-                  </Link>
-                ))}
             </nav>
           </div>
         )}

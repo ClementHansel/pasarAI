@@ -50,6 +50,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
           price,
           marketType,
           currency,
+          description,
         });
         setConvertedPrice(newPrice);
       } catch (error) {
