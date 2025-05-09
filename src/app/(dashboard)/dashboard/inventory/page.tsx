@@ -1,5 +1,6 @@
 "use client";
 
+import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import ProductForm from "@/components/dashboard/inventory/ProductForm";
 import ProductList from "@/components/dashboard/inventory/ProductList";
@@ -8,27 +9,34 @@ import { Spinner } from "react-bootstrap";
 import { Market, Product } from "@/types/inventory";
 
 const InventoryPage = () => {
+  const { data: session, status } = useSession();
   const [products, setProducts] = useState<Product[]>([]);
   const [markets, setMarkets] = useState<Market[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [showForm, setShowForm] = useState(false);
+  const [error, setError] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(true);
+  const [showForm, setShowForm] = useState<boolean>(false);
 
   const fetchProducts = async () => {
+    if (!session?.user) return;
+
     setLoading(true);
     try {
-      const token = localStorage.getItem("accessToken");
+      const queryParams = new URLSearchParams({
+        accountId: session.user.id,
+        role: session.user.role,
+      }).toString();
 
-      const res = await fetch("/api/products/seller", {
+      const res = await fetch(`/api/inventory?${queryParams}`, {
+        method: "GET",
         headers: {
-          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
         },
       });
 
       if (!res.ok) {
         const err = await res.json();
-        throw new Error(err.error || "Unauthorized");
+        throw new Error(err.error || "Failed to fetch products");
       }
 
       const data = await res.json();
@@ -36,9 +44,9 @@ const InventoryPage = () => {
       setMarkets(data.markets || []);
     } catch (err: unknown) {
       if (err instanceof Error) {
-        setError(err.message || "Failed to fetch products");
+        setError(err.message || "An unexpected error occurred");
       } else {
-        setError("An unexpected error occurred");
+        setError("An unknown error occurred");
       }
     } finally {
       setLoading(false);
@@ -46,8 +54,10 @@ const InventoryPage = () => {
   };
 
   useEffect(() => {
-    fetchProducts();
-  }, []);
+    if (status === "authenticated") {
+      fetchProducts();
+    }
+  }, [status, session]);
 
   const handleAddNew = () => {
     setSelectedProduct(null);
@@ -61,15 +71,14 @@ const InventoryPage = () => {
 
   const handleDeleteProduct = async (ids: string[]) => {
     try {
-      const token = localStorage.getItem("accessToken");
-
       await Promise.all(
         ids.map((id) =>
-          fetch(`/api/products/${id}`, {
+          fetch(`/api/inventory`, {
             method: "DELETE",
             headers: {
-              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
             },
+            body: JSON.stringify({ id }),
           })
         )
       );
@@ -80,7 +89,9 @@ const InventoryPage = () => {
     }
   };
 
-  if (loading) return <Spinner />;
+  if (status === "loading" || loading) return <Spinner />;
+  if (status !== "authenticated")
+    return <div className="text-red-500">Unauthorized</div>;
   if (error) return <div className="text-red-500">{error}</div>;
 
   return (

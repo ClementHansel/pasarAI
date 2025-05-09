@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/router"; // Corrected the import path for useRouter
+import { useRouter } from "next/navigation";
 import { Checkbox } from "@/components/ui/CheckBox";
 import MarketSelect from "./MarketSelect";
 import SubmitButton from "./SubmitButton";
@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import InputField from "./InputField";
 import { Product } from "@/types/inventory";
+import { useSession } from "next-auth/react";
 
 // Define types for ProductForm props
 type ProductFormProps = {
@@ -27,7 +28,7 @@ type ProductFormProps = {
 interface ProductFormData {
   name: string;
   description?: string;
-  price: string; // Added price
+  price: string;
   image: string;
   stock: string;
   soldCount: string;
@@ -76,6 +77,7 @@ const ProductForm = ({
   onCancel,
 }: ProductFormProps) => {
   const router = useRouter();
+  const { data: session } = useSession();
   const [formData, setFormData] = useState<ProductFormData>(
     initialData
       ? {
@@ -123,32 +125,49 @@ const ProductForm = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    setError("");
+    setLoading(true); // Set loading state
+    setError(""); // Clear any previous errors
+
+    // Check if session exists and the user info is available
+    if (!session || !session.user) {
+      setError("User not logged in");
+      setLoading(false);
+      return;
+    }
 
     try {
-      const response = await fetch("/api/products", {
+      // Send product data to API
+      const response = await fetch("/api/inventory", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          accountId: session.user.id, // Add accountId to the request body
+          role: session.user.role,
+          ...formData, // Send the product data
+        }),
       });
 
-      const result = await response.json();
+      const result = await response.json(); // Parse JSON response
 
       if (response.ok) {
-        // Call onSuccess prop if provided, otherwise redirect
+        // If successful, call the onSuccess callback or redirect
         if (onSuccess) {
           onSuccess();
         } else {
           router.push("/dashboard/inventory");
         }
       } else {
+        // Set error message if response is not ok
         setError(result.error || "Failed to create product");
       }
-    } catch {
+    } catch (error) {
+      // Catch network errors or other issues
+      console.error(error);
       setError("An error occurred. Please try again.");
     } finally {
-      setLoading(false);
+      setLoading(false); // Stop loading
     }
   };
 
