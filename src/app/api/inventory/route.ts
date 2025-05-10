@@ -2,16 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db/db";
 import { Prisma } from "@prisma/client";
 
-const isAuthorized = async (accountId: string, role: string) => {
-  if (!accountId || !role || !["admin", "seller"].includes(role)) {
-    return {
-      session: null,
-      error: NextResponse.json({ error: "Unauthorized" }, { status: 403 }),
-    };
-  }
-  return { session: { accountId, role }, error: null };
-};
-
 // GET only products for a specific seller (inventory)
 export async function GET(req: NextRequest) {
   try {
@@ -74,24 +64,26 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const { accountId, role } = await req.json(); // Get accountId and role passed from frontend
-
-  if (!accountId || !role) {
-    return NextResponse.json({ error: "Missing user info" }, { status: 400 });
-  }
-
-  // Check if the session is authorized
-  const { session, error } = await isAuthorized(accountId, role);
-  if (error) return error;
-
   try {
     const body = await req.json();
 
     // Validate required fields
-    const { name, price, stock, categoryId } = body;
-    if (!name || !price || !stock || !categoryId) {
+    const { accountId, role, marketId, name, price, stock } = body;
+    if (!accountId || !role || !marketId || !name || !price || !stock) {
       return NextResponse.json(
         { error: "Missing required fields" },
+        { status: 400 }
+      );
+    }
+
+    // Convert price and stock to appropriate types
+    const priceFloat = parseFloat(price); // Convert price to float
+    const stockInt = parseInt(stock, 10); // Convert stock to integer
+
+    // Check if price and stock are valid
+    if (isNaN(priceFloat) || isNaN(stockInt)) {
+      return NextResponse.json(
+        { error: "Invalid price or stock values" },
         { status: 400 }
       );
     }
@@ -99,8 +91,11 @@ export async function POST(req: NextRequest) {
     // Create the product with the provided data and associated sellerId
     const createdProduct = await db.product.create({
       data: {
-        ...body,
-        accountId: session.accountId,
+        name,
+        price: priceFloat, // Use the converted price
+        stock: stockInt, // Use the converted stock
+        account: { connect: { id: accountId } },
+        market: { connect: { id: marketId } },
       },
     });
 
@@ -124,10 +119,6 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ error: "Missing user info" }, { status: 400 });
   }
 
-  // Check if the session is authorized
-  const { session, error } = await isAuthorized(accountId, role);
-  if (error) return error;
-
   try {
     const body = await req.json();
     const { id, ...updateData } = body;
@@ -146,8 +137,7 @@ export async function PUT(req: NextRequest) {
     // Check if the product exists and ensure it's allowed for the current role
     if (
       !existingProduct ||
-      (session.role === "seller" &&
-        existingProduct.accountId !== session.accountId)
+      (role === "seller" && existingProduct.accountId !== accountId)
     ) {
       return NextResponse.json(
         { error: "Forbidden or not found" },
@@ -180,10 +170,6 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ error: "Missing user info" }, { status: 400 });
   }
 
-  // Check if the session is authorized
-  const { session, error } = await isAuthorized(accountId, role);
-  if (error) return error;
-
   try {
     const { id } = await req.json();
 
@@ -201,8 +187,7 @@ export async function DELETE(req: NextRequest) {
     // Check if the product exists and ensure it's allowed for the current role
     if (
       !existingProduct ||
-      (session.role === "seller" &&
-        existingProduct.accountId !== session.accountId)
+      (role === "seller" && existingProduct.accountId !== accountId)
     ) {
       return NextResponse.json(
         { error: "Forbidden or not found" },
