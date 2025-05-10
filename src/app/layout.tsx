@@ -8,6 +8,7 @@ import Footer from "@/components/layout/homepage/Footer";
 import { WalletProvider } from "@/context/WalletContext";
 import { SessionProvider } from "next-auth/react";
 import { SearchProvider } from "@/context/SearchContext";
+import { ProductFilterProvider } from "@/context/ProductCategoryContext";
 
 // Import floating widgets container
 import FloatingWidgetContainer from "@/components/floating/FloatingWidgetContainer";
@@ -34,11 +35,13 @@ export default function RootLayout({
       >
         <SessionProvider>
           <SearchProvider>
-            <Header />
-            <main className="flex-grow">
-              <WalletProvider>{children}</WalletProvider>
-            </main>
-            <Footer />
+            <ProductFilterProvider>
+              <Header />
+              <main className="flex-grow">
+                <WalletProvider>{children}</WalletProvider>
+              </main>
+              <Footer />
+            </ProductFilterProvider>
             <FloatingWidgetContainer />
           </SearchProvider>
         </SessionProvider>

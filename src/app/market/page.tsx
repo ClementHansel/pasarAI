@@ -3,18 +3,15 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { LocationFilter } from "@/components/market/LocationFilter";
-import { MarketFilter } from "@/components/market/MarketFilter";
-import { MarketCategory } from "@/components/market/MarketCategory";
+import { MarketListView } from "@/components/market/MarketListView";
 import { MarketComparison } from "@/components/market/MarketComparison";
 import { BarChart2, Filter, Home, Globe, RefreshCw, X } from "lucide-react";
 import type { MarketRegion, MarketType } from "@/types/market";
 
 const MarketPage = () => {
   const [marketType, setMarketType] = useState<MarketType>("domestic");
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [showComparison, setShowComparison] = useState(false);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
   const [filters, setFilters] = useState({
     region: "",
     subRegion: "",
@@ -31,8 +28,7 @@ const MarketPage = () => {
 
     try {
       const params = new URLSearchParams({
-        type: marketType,
-        ...(searchQuery && { search: searchQuery }),
+        type: marketType, // Include marketType in the API request
         ...(filters.region && { region: filters.region }),
         ...(filters.subRegion && { subRegion: filters.subRegion }),
         ...(filters.city && { city: filters.city }),
@@ -55,7 +51,7 @@ const MarketPage = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [marketType, searchQuery, filters]);
+  }, [marketType, filters]);
 
   // Initial load and refresh when filters change
   useEffect(() => {
@@ -65,23 +61,7 @@ const MarketPage = () => {
   // Reset filters
   const resetFilters = () => {
     setFilters({ region: "", subRegion: "", city: "" });
-    setSearchQuery("");
   };
-
-  // Count total sellers across all regions
-  const sellerCount = marketData.reduce((total, region) => {
-    return (
-      total +
-      region.subRegions.reduce((subTotal, subRegion) => {
-        return (
-          subTotal +
-          subRegion.cities.reduce((cityTotal, city) => {
-            return cityTotal + city.sellers.length;
-          }, 0)
-        );
-      }, 0)
-    );
-  }, 0);
 
   // Render loading state
   if (isLoading) {
@@ -117,7 +97,7 @@ const MarketPage = () => {
         </h1>
         <p className="text-gray-600 text-lg max-w-3xl mx-auto">
           Connect with sellers across{" "}
-          {marketType === "domestic" ? "local" : "global"} markets. Find
+          {marketType === "domestic" ? "local" : "International"} markets. Find
           verified sellers and compare opportunities.
         </p>
       </header>
@@ -125,11 +105,11 @@ const MarketPage = () => {
       {/* Market Type Tabs */}
       <div className="flex justify-center mb-8">
         <div className="bg-gray-100 p-1 rounded-2xl inline-flex gap-2">
-          {["domestic", "global"].map((type) => (
+          {["domestic", "global"].map((type: MarketType) => (
             <button
               key={type}
               onClick={() => {
-                setMarketType(type as MarketType);
+                setMarketType(type);
                 resetFilters();
               }}
               className={cn(
@@ -158,18 +138,21 @@ const MarketPage = () => {
       <div className="bg-white rounded-2xl shadow-lg mb-6 p-6">
         <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
           <div className="w-full md:w-1/3">
-            <MarketFilter
-              onSearch={setSearchQuery}
+            {/* <MarketFilter
+              onFilter={(query) => {
+                setSearchQuery(query);
+              }}
               placeholder={`Search ${
                 marketType === "domestic" ? "local" : "global"
               } markets...`}
-            />
+            /> */}
           </div>
 
           <div className="flex items-center gap-3 w-full md:w-auto">
             <button
-              className="md:hidden flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-xl"
               onClick={() => setShowMobileFilters(!showMobileFilters)}
+              className="md:hidden flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-xl"
+              aria-label="Filters"
             >
               <Filter size={18} />
               <span>Filters</span>
@@ -182,6 +165,7 @@ const MarketPage = () => {
                 selectedFilters={filters}
                 onFilterChange={setFilters}
               />
+
               {(filters.region || filters.subRegion || filters.city) && (
                 <button
                   onClick={resetFilters}
@@ -191,83 +175,6 @@ const MarketPage = () => {
                   <span>Reset</span>
                 </button>
               )}
-            </div>
-
-            <div className="hidden md:flex items-center bg-gray-100 rounded-xl p-1">
-              {["grid", "list"].map((mode) => (
-                <button
-                  key={mode}
-                  onClick={() => setViewMode(mode as "grid" | "list")}
-                  className={cn(
-                    "p-2 rounded-lg",
-                    viewMode === mode && "bg-white shadow-sm"
-                  )}
-                >
-                  {mode === "grid" ? (
-                    <svg width="18" height="18" viewBox="0 0 24 24">
-                      <rect
-                        x="4"
-                        y="4"
-                        width="6"
-                        height="6"
-                        rx="1"
-                        className="fill-current"
-                      />
-                      <rect
-                        x="14"
-                        y="4"
-                        width="6"
-                        height="6"
-                        rx="1"
-                        className="fill-current"
-                      />
-                      <rect
-                        x="4"
-                        y="14"
-                        width="6"
-                        height="6"
-                        rx="1"
-                        className="fill-current"
-                      />
-                      <rect
-                        x="14"
-                        y="14"
-                        width="6"
-                        height="6"
-                        rx="1"
-                        className="fill-current"
-                      />
-                    </svg>
-                  ) : (
-                    <svg width="18" height="18" viewBox="0 0 24 24">
-                      <rect
-                        x="3"
-                        y="5"
-                        width="18"
-                        height="2"
-                        rx="1"
-                        className="fill-current"
-                      />
-                      <rect
-                        x="3"
-                        y="10"
-                        width="18"
-                        height="2"
-                        rx="1"
-                        className="fill-current"
-                      />
-                      <rect
-                        x="3"
-                        y="15"
-                        width="18"
-                        height="2"
-                        rx="1"
-                        className="fill-current"
-                      />
-                    </svg>
-                  )}
-                </button>
-              ))}
             </div>
 
             <button
@@ -334,63 +241,36 @@ const MarketPage = () => {
             </button>
           </div>
           <div className="p-6">
-            <MarketComparison marketType={marketType} />
+            <MarketComparison
+              marketType={marketType as "domestic" | "global"}
+            />
           </div>
         </div>
       )}
 
       {/* Results Section */}
       <div className="bg-white rounded-2xl shadow-lg p-6">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
           <h2 className="text-2xl font-bold text-gray-900">
             {marketType === "domestic" ? "Local" : "International"} Sellers
             <span className="text-gray-500 ml-2 text-lg">
-              ({sellerCount} results)
+              (
+              {marketData.reduce(
+                (acc, region) => acc + region.sellers.length,
+                0
+              )}{" "}
+              results)
             </span>
           </h2>
-
-          <div className="flex items-center gap-3 text-sm text-gray-500">
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              className="fill-current"
-            >
-              <rect
-                x="3"
-                y="3"
-                width="18"
-                height="18"
-                rx="2"
-                className="fill-gray-200"
-              />
-              <rect
-                x="6"
-                y="6"
-                width="12"
-                height="4"
-                rx="1"
-                className="fill-blue-600"
-              />
-              <rect
-                x="6"
-                y="12"
-                width="8"
-                height="4"
-                rx="1"
-                className="fill-blue-600"
-              />
-            </svg>
-            <span>{viewMode === "grid" ? "Grid" : "List"} View</span>
-          </div>
         </div>
 
-        {/* Market Grid */}
-        <MarketCategory
-          type={marketType}
-          regions={marketData}
-          viewMode={viewMode}
-          searchQuery={searchQuery}
+        {/* Market List */}
+        <MarketListView
+          type={marketType as "domestic" | "global"}
+          regions={marketData.map((region) => ({
+            ...region,
+            location: region.location,
+          }))}
         />
       </div>
     </div>

@@ -1,13 +1,64 @@
 import { db } from "@/lib/db/db"; // Your DB connection
-import { Prisma } from "@prisma/client"; // Prisma types
 import { NextRequest, NextResponse } from "next/server";
 
+// Define custom types for Product and related filters
+interface Product {
+  id: string;
+  name: string;
+  description?: string;
+  price: number;
+  image?: string;
+  isOnSale?: boolean;
+  isBestSeller?: boolean;
+  isNewArrival?: boolean;
+  createdAt: Date;
+  market?: {
+    marketType: "domestic" | "global";
+  };
+  categories?: Array<{ id: string; name: string }>;
+  account?: {
+    city?: string;
+    province?: string;
+    country?: string;
+  };
+  tags?: Array<{ name: string }>;
+  labels?: Array<{ name: string }>;
+}
+
+type ProductWhereInput = {
+  OR?: Array<{
+    name?: { contains: string; mode: "insensitive" };
+    description?: { contains: string; mode: "insensitive" };
+    tags?: { some: { name: { contains: string; mode: "insensitive" } } };
+  }>;
+  name?: { contains: string; mode: "insensitive" };
+  description?: { contains: string; mode: "insensitive" };
+  tags?: { some: { name: { contains: string; mode: "insensitive" } } };
+  market?: { marketType: "domestic" | "global" };
+  categories?: { some: { id?: string; name?: string } };
+  account?: {
+    is: {
+      city?: string;
+      province?: string;
+      country?: string;
+    };
+  };
+};
+
+type ProductOrderByInput = {
+  price?: "asc" | "desc";
+  isOnSale?: "desc";
+  isBestSeller?: "desc";
+  createdAt?: "desc";
+};
+
+// Update the API logic to use these custom types
 export async function GET(req: NextRequest) {
   try {
     const url = new URL(req.url);
     const searchParams = url.searchParams;
 
-    const category = searchParams.get("category"); // Get category from query params
+    const category = searchParams.get("category");
     const marketType = searchParams.get("marketType");
     const city = searchParams.get("city");
     const province = searchParams.get("province");
@@ -31,17 +82,17 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const filters: Prisma.ProductWhereInput = {
+    const filters: ProductWhereInput = {
       ...(category && {
         categories: {
           some: {
-            name: category, // Filter by category name if provided
+            name: category,
           },
         },
       }),
       ...(marketType && {
         market: {
-          marketType,
+          marketType: marketType as "domestic" | "global",
         },
       }),
       ...(categoryId && {
@@ -72,7 +123,7 @@ export async function GET(req: NextRequest) {
       ];
     }
 
-    const orderBy: Prisma.ProductOrderByWithRelationInput[] = [];
+    const orderBy: ProductOrderByInput[] = [];
     if (sortByPrice === "priceLow") orderBy.push({ price: "asc" });
     if (sortByPrice === "priceHigh") orderBy.push({ price: "desc" });
 
@@ -96,11 +147,11 @@ export async function GET(req: NextRequest) {
           labels: true,
           market: true,
         },
-      }),
+      }) as Promise<Product[]>,
       db.product.count({ where: filters }),
     ]);
 
-    const productsWithImageUrls = products.map((p) => ({
+    const productsWithImageUrls = products.map((p: Product) => ({
       ...p,
       imageUrls: p.image ? [p.image] : [],
     }));

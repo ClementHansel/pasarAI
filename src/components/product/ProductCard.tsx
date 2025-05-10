@@ -12,6 +12,7 @@ interface ProductCardProps extends Product {
   badgeText?: string;
   marketType: "domestic" | "global";
   currency: "IDR" | "USD";
+  onViewProducts?: (marketType: "domestic" | "global") => void; // Add callback prop
 }
 
 const ProductCard: React.FC<ProductCardProps> = ({
@@ -25,6 +26,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
   badgeText,
   marketType,
   currency,
+  onViewProducts, // Destructure the callback prop
 }) => {
   const [isImageLoaded, setIsImageLoaded] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
@@ -76,7 +78,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
     }
   };
 
-  const isDomestic = marketType === "Domestic";
+  const isDomestic = marketType === "domestic";
   const discountedPrice = convertedPrice * (1 - (discount || 0) / 100);
 
   return (
@@ -141,7 +143,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
                     : "bg-indigo-100 text-indigo-800"
                 }`}
               >
-                {marketType}
+                {marketType === "domestic" ? "Domestic" : "International"}
               </span>
               {badgeText && (
                 <>
@@ -161,6 +163,15 @@ const ProductCard: React.FC<ProductCardProps> = ({
           >
             <ShoppingCart className="w-5 h-5" />
             <span>{isAdding ? "Adding..." : "Add to Cart"}</span>
+          </button>
+        </div>
+        <div className="flex items-center justify-between">
+          <button
+            onClick={() => onViewProducts?.(marketType)}
+            className="text-sm text-blue-600 hover:underline"
+          >
+            View {marketType === "domestic" ? "Domestic" : "International"}{" "}
+            Products
           </button>
         </div>
       </div>

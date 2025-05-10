@@ -8,12 +8,30 @@ import { Loader2 } from "lucide-react";
 import SearchBox from "@/components/layout/homepage/header/SearchBox";
 import ProductCard from "@/components/product/ProductCard";
 
+// Define a local MarketType enum to match the Prisma schema
+// enum MarketType {
+//   Domestic = "domestic",
+//   Global = "global",
+// }
+
 const ITEMS_PER_PAGE = 8;
 
 type Tab = "all" | "featured" | "topRated" | "recent";
 
+// Update the getMarketDisplay function to map backend values to frontend labels
+// function getMarketDisplay(marketType: MarketType): string {
+//   switch (marketType) {
+//     case MarketType.Domestic:
+//       return "Domestic";
+//     case MarketType.Global:
+//       return "International";
+//     default:
+//       return "Unknown";
+//   }
+// }
+
 export default function ProductPage() {
-  const { category, market, setMarket } = useProductFilter();
+  const { category } = useProductFilter();
   const [tab] = useState<Tab>("all");
   const [search, setSearch] = useState<string>("");
   const { submitSearch } = useSearch();
@@ -22,6 +40,22 @@ export default function ProductPage() {
   const [totalPages, setTotalPages] = useState<number>(1);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedMarketType, setSelectedMarketType] = useState<
+    "all" | "domestic" | "global"
+  >("all"); // Track selected market type
+
+  // Function to handle filtering by market type
+  const handleViewProductsByMarket = (marketType: "domestic" | "global") => {
+    setSelectedMarketType(marketType);
+  };
+
+  // Filter products based on selected market type
+  const filteredProducts = useMemo(() => {
+    if (selectedMarketType === "all") return products;
+    return products.filter(
+      (product) => product.market?.marketType === selectedMarketType
+    );
+  }, [products, selectedMarketType]);
 
   // Build query string for API
   const queryString = useMemo(() => {
@@ -31,7 +65,6 @@ export default function ProductPage() {
 
     if (search) params.append("search", search);
     if (category) params.append("categoryId", category);
-    if (market) params.append("marketType", market);
 
     // Sort by tags
     if (tab === "featured") params.append("sortByTags", "onSale");
@@ -39,7 +72,7 @@ export default function ProductPage() {
     if (tab === "recent") params.append("sortByTags", "newArrival");
 
     return params.toString();
-  }, [search, category, market, tab, page]);
+  }, [search, category, tab, page]);
 
   // Fetch products from API
   useEffect(() => {
@@ -67,11 +100,6 @@ export default function ProductPage() {
     if (page < totalPages) setPage((p) => p + 1);
   };
 
-  const handleMarketChange = (m: "domestic" | "global") => {
-    setMarket(m);
-    setPage(1);
-  };
-
   const deriveBadge = (p: Product) => {
     if (p.isNewArrival) return "New Arrival";
     if (p.isBestSeller) return "Best Seller";
@@ -79,9 +107,6 @@ export default function ProductPage() {
     if (p.isFeatured) return "Featured";
     return undefined;
   };
-
-  const getMarketDisplay = (mt: string) =>
-    mt === "domestic" ? "Domestic" : "International";
 
   if (loading && products.length === 0) {
     return (
@@ -116,9 +141,9 @@ export default function ProductPage() {
       <div className="flex justify-center mb-8">
         <div className="inline-flex bg-gray-100 rounded-lg p-1">
           <button
-            onClick={() => handleMarketChange("domestic")}
+            onClick={() => handleViewProductsByMarket("domestic")}
             className={`px-6 py-2 rounded-md transition ${
-              market === "domestic"
+              selectedMarketType === "domestic"
                 ? "bg-white text-blue-600 shadow-sm"
                 : "text-gray-700 hover:bg-gray-200"
             }`}
@@ -126,14 +151,24 @@ export default function ProductPage() {
             Domestic
           </button>
           <button
-            onClick={() => handleMarketChange("global")}
+            onClick={() => handleViewProductsByMarket("global")}
             className={`px-6 py-2 rounded-md transition ${
-              market === "global"
+              selectedMarketType === "global"
                 ? "bg-indigo-600 text-white"
                 : "text-gray-700 hover:bg-gray-200"
             }`}
           >
             International
+          </button>
+          <button
+            onClick={() => handleViewProductsByMarket("all")}
+            className={`px-6 py-2 rounded-md transition ${
+              selectedMarketType === "all"
+                ? "bg-gray-300 text-gray-800"
+                : "text-gray-700 hover:bg-gray-200"
+            }`}
+          >
+            All
           </button>
         </div>
       </div>
@@ -158,34 +193,39 @@ export default function ProductPage() {
       <div className="bg-white rounded-xl shadow-lg p-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
           <h3 className="text-2xl font-bold text-gray-800">
-            {getMarketDisplay(market || "domestic")} Products
+            {selectedMarketType === "all"
+              ? "All Products"
+              : selectedMarketType === "domestic"
+              ? "Domestic Products"
+              : "International Products"}
           </h3>
           <div className="flex items-center gap-3 text-sm text-gray-500">
-            <span>{products.length} products found</span>
+            <span>{filteredProducts.length} products found</span>
           </div>
         </div>
 
         {/* Product List */}
         <div className="space-y-6">
-          {products.length === 0 ? (
+          {filteredProducts.length === 0 ? (
             <div className="text-center py-12 text-gray-500 bg-gray-50 rounded-xl">
               No products found matching your criteria
             </div>
           ) : (
-            products.map((product) => (
+            filteredProducts.map((product) => (
               <ProductCard
                 key={product.id}
                 {...product}
                 badgeText={deriveBadge(product)}
-                marketType={getMarketDisplay(product.marketType || "Domestic")}
-                currency={product.currency?.code || "IDR"}
+                marketType={product.market?.marketType || "domestic"}
+                currency={product.currency || "IDR"}
+                onViewProducts={handleViewProductsByMarket} // Pass the callback
               />
             ))
           )}
         </div>
 
         {/* Pagination */}
-        {products.length > 0 && page < totalPages && (
+        {filteredProducts.length > 0 && page < totalPages && (
           <div className="flex justify-center mt-10">
             <button
               onClick={handleLoadMore}

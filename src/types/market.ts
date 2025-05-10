@@ -45,6 +45,7 @@ export interface MarketRegion {
   region: string;
   subRegions: SubRegion[];
   sellers: Seller[];
+  location?: string; // Added location field
 }
 
 // Selected filters for UI

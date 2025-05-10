@@ -95,14 +95,23 @@ function groupMarkets(raws: MarketWithRelations[]): MarketRegion[] {
 }
 
 // GET: fetch and group markets
-export async function GET(request: NextRequest) {
+export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
-    const { searchParams } = new URL(request.url);
-    const type = (searchParams.get("type") as string) || "domestic";
+    const url = new URL(request.url);
+    const type =
+      (url.searchParams.get("type") as "domestic" | "global") || "domestic";
+    const region = url.searchParams.get("region") ?? undefined;
+    const subRegion = url.searchParams.get("subRegion") ?? undefined;
+    const city = url.searchParams.get("city") ?? undefined;
 
     // 1. Fetch raw flat markets
     const rawMarkets = await db.market.findMany({
-      where: { marketType: type },
+      where: {
+        marketType: type,
+        ...(region ? { region: { name: region } } : {}),
+        ...(subRegion ? { subRegion: { name: subRegion } } : {}),
+        ...(city ? { city: { name: city } } : {}),
+      },
       orderBy: { region: { name: "asc" } },
       include: {
         currency: true,
@@ -116,25 +125,30 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    // 2. Clean and fix seller currency
-    const markets = rawMarkets.map((market) => ({
-      ...market,
-      sellers: market.sellers.map((seller) => ({
-        ...seller,
-        currency: seller.currency?.name ?? null,
+    // 2. Normalize seller.currency and include location in the response
+    const markets: MarketWithRelations[] = rawMarkets.map((m) => ({
+      ...m,
+      location: m.location,
+      region: m.region ? { ...m.region, id: String(m.region.id) } : null,
+      subRegion: m.subRegion
+        ? { ...m.subRegion, id: String(m.subRegion.id) }
+        : null,
+      city: m.city ? { ...m.city, id: String(m.city.id) } : null,
+      sellers: m.sellers.map((s: SellerWithRelations) => ({
+        ...s,
+        currency: s.currency?.name ?? null,
       })),
-    })) as MarketWithRelations[];
+    }));
 
-    // 3. Group markets into region -> subRegion -> city -> sellers
+    // 3. Group into Region→SubRegion→City→Sellers
     const groupedMarkets = groupMarkets(markets);
 
-    // 4. Return grouped result
-    return NextResponse.json(
-      { success: true, data: groupedMarkets },
-      { status: 200 }
-    );
-  } catch (err) {
-    return handleApiError(err, "[GET] /api/markets");
+    return NextResponse.json({
+      success: true,
+      data: groupedMarkets,
+    });
+  } catch (error) {
+    return handleApiError(error, "Failed to fetch markets");
   }
 }
 
@@ -143,7 +157,6 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const validated = MarketCreateSchema.parse(body);
-
     const createdMarket = await db.market.create({
       data: {
         ...validated,
@@ -175,7 +188,6 @@ export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
     const validated = MarketUpdateSchema.parse(body);
-
     const updatedMarket = await db.market.update({
       where: { id: validated.id },
       data: {
