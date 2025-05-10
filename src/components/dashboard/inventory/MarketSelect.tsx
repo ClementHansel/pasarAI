@@ -4,7 +4,7 @@ import React from "react";
 
 interface MarketSelectProps {
   market: string;
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onChange: (value: string) => void;
 }
 
 const MarketSelect: React.FC<MarketSelectProps> = ({ market, onChange }) => {
@@ -16,9 +16,9 @@ const MarketSelect: React.FC<MarketSelectProps> = ({ market, onChange }) => {
           <input
             type="radio"
             name="market"
-            value="domestic"
-            checked={market === "domestic"}
-            onChange={onChange}
+            value="Domestic"
+            checked={market === "Domestic"}
+            onChange={(e) => onChange(e.target.value)}
             className="mr-2"
           />
           Domestic
@@ -27,9 +27,9 @@ const MarketSelect: React.FC<MarketSelectProps> = ({ market, onChange }) => {
           <input
             type="radio"
             name="market"
-            value="global"
-            checked={market === "global"}
-            onChange={onChange}
+            value="Global"
+            checked={market === "Global"}
+            onChange={(e) => onChange(e.target.value)}
             className="mr-2"
           />
           Global

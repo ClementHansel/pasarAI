@@ -45,7 +45,6 @@ interface ProductFormData {
   discount: string;
   featured: boolean;
   createdAt: string;
-  market: string;
 }
 
 const initialState: ProductFormData = {
@@ -63,12 +62,11 @@ const initialState: ProductFormData = {
   sku: "",
   isActive: true,
   accountId: "",
-  marketId: "",
+  marketId: "domestic",
   label: "",
   createdAt: new Date().toISOString().slice(0, 16), // format for datetime-local
   discount: "",
   featured: false,
-  market: "domestic", // Default value for market
 };
 
 const ProductForm = ({
@@ -96,12 +94,12 @@ const ProductForm = ({
           sku: initialData.sku || "",
           isActive:
             initialData.isActive !== undefined ? initialData.isActive : true,
-          marketId: initialData.marketId || "",
+          accountId: initialData.accountId || "",
+          marketId: initialData.marketId || "domestic",
           label: initialData.label || "",
           discount: initialData.discount || "",
           featured:
             initialData.featured !== undefined ? initialData.featured : false,
-          market: initialData.market || "domestic", // Ensure market is set
         }
       : initialState
   );
@@ -124,49 +122,65 @@ const ProductForm = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true); // Set loading state
-    setError(""); // Clear any previous errors
+    setLoading(true);
+    setError("");
 
-    // Check if session exists and the user info is available
     if (!session || !session.user) {
       setError("User not logged in");
       setLoading(false);
       return;
     }
 
+    // Prepare the payload for API, only sending required fields
+    const { name, price, stock, marketId } = formData;
+
+    // Ensure marketId is either 'Global' or 'Domestic'
+    if (marketId !== "Global" && marketId !== "Domestic") {
+      setError("Invalid market selection.");
+      setLoading(false);
+      return;
+    }
+
+    // Check for missing required fields
+    if (!name || !price || !stock || !marketId) {
+      setError("Please fill in all required fields.");
+      setLoading(false);
+      return;
+    }
+
     try {
-      // Send product data to API
+      // Send the necessary data to the API
       const response = await fetch("/api/inventory", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          ...formData,
-          accountId: session.user.id, // Add accountId to the request body
+          accountId: session.user.id,
           role: session.user.role,
+          name,
+          price,
+          stock,
+          marketId, // Send marketId directly
         }),
       });
 
-      const result = await response.json(); // Parse JSON response
+      const result = await response.json();
 
       if (response.ok) {
-        // If successful, call the onSuccess callback or redirect
         if (onSuccess) {
           onSuccess();
         } else {
           router.push("/dashboard/inventory");
         }
       } else {
-        // Set error message if response is not ok
         setError(result.error || "Failed to create product");
       }
     } catch (error) {
-      // Catch network errors or other issues
       console.error(error);
       setError("An error occurred. Please try again.");
     } finally {
-      setLoading(false); // Stop loading
+      setLoading(false);
     }
   };
 
@@ -308,8 +322,10 @@ const ProductForm = ({
           </label>
         </div>
 
-        {/* Market Select */}
-        <MarketSelect market={formData.market} onChange={handleChange} />
+        <MarketSelect
+          market={formData.marketId}
+          onChange={(value) => setFormData({ ...formData, marketId: value })}
+        />
 
         {/* Submit Button */}
         <SubmitButton loading={loading} />

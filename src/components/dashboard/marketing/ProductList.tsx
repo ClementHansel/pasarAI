@@ -1,5 +1,3 @@
-// src/components/dashboard/marketing/ProductList.tsx
-
 "use client";
 
 import Image from "next/image";
@@ -13,6 +11,17 @@ interface ProductListProps {
 }
 
 export default function ProductList({ products, openModal }: ProductListProps) {
+  if (products.length === 0) {
+    return (
+      <div className="text-center">
+        <h2 className="text-lg font-semibold">No products available</h2>
+        <p className="text-sm text-muted-foreground">
+          There are no active marketing campaigns or products to display.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
       {products.map((product) => (

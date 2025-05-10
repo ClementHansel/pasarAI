@@ -3,31 +3,26 @@
 import { db } from "@/lib/db/db";
 import { UpdateOrderSchema } from "@/lib/validation/orderSchemas";
 import { OrderStatus } from "@prisma/client";
-import {
-  withSellerAuth,
-  withAnyAuth,
-  AuthenticatedRequest,
-} from "@/lib/middleware";
-import { NextResponse } from "next/server";
+import { withAnyAuth, AuthenticatedRequest } from "@/lib/middleware";
+import { NextRequest, NextResponse } from "next/server";
 
-export const GET = withSellerAuth(async (req: AuthenticatedRequest) => {
-  const seller = req.user;
+export const GET = async (req: NextRequest) => {
+  const sellerId = req.nextUrl.searchParams.get("sellerId");
 
-  if (!seller?.id || seller.role !== "SELLER") {
+  if (!sellerId) {
     return NextResponse.json(
-      { message: "Unauthorized. Seller access only." },
-      { status: 403 }
+      { message: "Missing sellerId in query parameters." },
+      { status: 400 }
     );
   }
 
   try {
-    // Fetch all orders that include at least one product owned by this seller
     const orders = await db.order.findMany({
       where: {
         orderItems: {
           some: {
             product: {
-              accountId: seller.id, // product belongs to this seller
+              accountId: sellerId,
             },
           },
         },
@@ -38,7 +33,7 @@ export const GET = withSellerAuth(async (req: AuthenticatedRequest) => {
             product: true,
           },
         },
-        buyer: true, // optional if you want buyer info
+        buyer: true,
       },
       orderBy: { createdAt: "desc" },
     });
@@ -51,7 +46,7 @@ export const GET = withSellerAuth(async (req: AuthenticatedRequest) => {
       { status: 500 }
     );
   }
-});
+};
 
 // PATCH order status with audit logging
 export const PATCH = withAnyAuth(async (req: AuthenticatedRequest) => {

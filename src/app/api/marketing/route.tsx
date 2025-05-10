@@ -1,10 +1,7 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db/db";
-import { Product } from "@prisma/client";
 import { z } from "zod";
-import { withSellerAuth } from "@/lib/middleware";
 
-// Define Zod schema to validate incoming data for product updates
 const ProductUpdateSchema = z.object({
   id: z.string().uuid(),
   isFeatured: z.boolean().optional(),
@@ -14,113 +11,86 @@ const ProductUpdateSchema = z.object({
   duration: z.number().optional(),
 });
 
-export const GET = withSellerAuth(async (req) => {
+export async function GET(req: NextRequest) {
   try {
-    // Ensure 'req.user' is populated with the seller's info
-    const sellerId = req.user?.id;
+    const url = new URL(req.url);
+    const searchParams = url.searchParams;
 
-    if (!sellerId) {
-      return NextResponse.json(
-        { error: "Seller not authenticated" },
-        { status: 401 }
-      );
+    const accountId = searchParams.get("accountId");
+
+    if (!accountId) {
+      return NextResponse.json({ error: "Missing accountId" }, { status: 400 });
     }
 
-    // Fetch products that belong to this seller (you can modify this based on your schema)
-    const products: Product[] = await db.product.findMany({
+    const products = await db.product.findMany({
       where: {
-        accountId: sellerId, // Use accountId to filter by seller
+        accountId,
       },
       orderBy: {
-        createdAt: "desc", // Sort by creation date or any other field
+        createdAt: "desc",
       },
     });
 
     return NextResponse.json(products);
   } catch (error) {
-    console.error("Error fetching seller's products:", error);
+    console.error("[MARKETING_GET_ERROR]", error);
     return NextResponse.json(
-      { error: "Failed to fetch products" },
+      { error: "Internal server error" },
       { status: 500 }
     );
   }
-});
+}
 
-export const PUT = withSellerAuth(async (req) => {
-  const { id, isFeatured, isNewArrival, isBestSeller, isOnSale, duration } =
-    await req.json();
-
-  // Parse and validate the incoming request body
-  let parsedData;
-
+export const PUT = async (req: NextRequest) => {
   try {
-    parsedData = ProductUpdateSchema.parse({
-      id,
-      isFeatured,
-      isNewArrival,
-      isBestSeller,
-      isOnSale,
-      duration,
-    });
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: "Invalid input data", details: error.errors },
-        { status: 400 }
-      );
-    }
-    return NextResponse.json(
-      { error: "Failed to parse request data" },
-      { status: 400 }
-    );
-  }
+    const url = new URL(req.url);
+    const searchParams = url.searchParams;
 
-  try {
-    // Ensure the user is authenticated as a SELLER and has the right to edit this product
-    const sellerId = req.user?.id;
-
-    if (!sellerId) {
-      return NextResponse.json(
-        { error: "Seller not authenticated" },
-        { status: 401 }
-      );
+    const accountId = searchParams.get("accountId");
+    if (!accountId) {
+      return NextResponse.json({ error: "Missing accountId" }, { status: 400 });
     }
 
-    // Check if the product belongs to the authenticated seller
-    const product = await db.product.findUnique({
-      where: { id },
+    const body = await req.json();
+    const parsed = ProductUpdateSchema.parse(body);
+
+    const existing = await db.product.findUnique({
+      where: { id: parsed.id },
     });
 
-    if (!product) {
+    if (!existing) {
       return NextResponse.json({ error: "Product not found" }, { status: 404 });
     }
 
-    if (product.accountId !== sellerId) {
-      // Check against accountId instead of sellerId
-      return NextResponse.json(
-        { error: "You do not have permission to update this product" },
-        { status: 403 }
-      );
+    if (existing.accountId !== accountId) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    // Update the product with the new values
-    const updatedProduct = await db.product.update({
-      where: { id },
+    const updated = await db.product.update({
+      where: { id: parsed.id },
       data: {
-        isFeatured: parsedData.isFeatured ?? undefined,
-        isNewArrival: parsedData.isNewArrival ?? undefined,
-        isBestSeller: parsedData.isBestSeller ?? undefined,
-        isOnSale: parsedData.isOnSale ?? undefined,
-        duration: parsedData.duration ?? undefined,
+        isFeatured: parsed.isFeatured,
+        isNewArrival: parsed.isNewArrival,
+        isBestSeller: parsed.isBestSeller,
+        isOnSale: parsed.isOnSale,
+        duration: parsed.duration,
       },
     });
 
-    return NextResponse.json(updatedProduct);
+    return NextResponse.json(updated);
   } catch (error) {
-    console.error("Error updating product:", error);
+    console.error("PUT /api/marketing error:", error);
+
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: "Invalid input", details: error.errors },
+        { status: 400 }
+      );
+    }
+
     return NextResponse.json(
-      { error: "Failed to update product promotion" },
+      { error: "Internal server error" },
       { status: 500 }
     );
   }
-});
+};
