@@ -76,9 +76,17 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Try to find the market by name (e.g., "domestic")
+    // Check if marketId is valid ("Global" or "Domestic")
+    if (marketId !== "Global" && marketId !== "Domestic") {
+      return NextResponse.json(
+        { error: "Invalid marketId, must be 'Global' or 'Domestic'" },
+        { status: 400 }
+      );
+    }
+
+    // Try to find the market by name ("Global" or "Domestic")
     const market = await db.market.findUnique({
-      where: { name: marketId }, // if marketId is a name like "domestic"
+      where: { name: marketId }, // Find by name, 'Global' or 'Domestic'
     });
 
     if (!market) {
@@ -104,7 +112,7 @@ export async function POST(req: NextRequest) {
         price: priceFloat, // Use the converted price
         stock: stockInt, // Use the converted stock
         account: { connect: { id: accountId } },
-        market: { connect: { id: marketId } },
+        market: { connect: { id: market.id } }, // Use the market's id from the found market
       },
     });
 

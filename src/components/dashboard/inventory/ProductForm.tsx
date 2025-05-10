@@ -134,6 +134,13 @@ const ProductForm = ({
     // Prepare the payload for API, only sending required fields
     const { name, price, stock, marketId } = formData;
 
+    // Ensure marketId is either 'Global' or 'Domestic'
+    if (marketId !== "Global" && marketId !== "Domestic") {
+      setError("Invalid market selection.");
+      setLoading(false);
+      return;
+    }
+
     // Check for missing required fields
     if (!name || !price || !stock || !marketId) {
       setError("Please fill in all required fields.");

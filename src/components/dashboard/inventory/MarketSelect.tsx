@@ -16,8 +16,8 @@ const MarketSelect: React.FC<MarketSelectProps> = ({ market, onChange }) => {
           <input
             type="radio"
             name="market"
-            value="domestic"
-            checked={market === "domestic"}
+            value="Domestic"
+            checked={market === "Domestic"}
             onChange={(e) => onChange(e.target.value)}
             className="mr-2"
           />
@@ -27,8 +27,8 @@ const MarketSelect: React.FC<MarketSelectProps> = ({ market, onChange }) => {
           <input
             type="radio"
             name="market"
-            value="global"
-            checked={market === "global"}
+            value="Global"
+            checked={market === "Global"}
             onChange={(e) => onChange(e.target.value)}
             className="mr-2"
           />
