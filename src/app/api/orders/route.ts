@@ -4,7 +4,7 @@ import { db } from "@/lib/db/db";
 import { UpdateOrderSchema } from "@/lib/validation/orderSchemas";
 import { OrderStatus } from "@prisma/client";
 import { withAnyAuth, AuthenticatedRequest } from "@/lib/middleware";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 export const GET = async (req: NextRequest) => {
   const sellerId = req.nextUrl.searchParams.get("sellerId");
