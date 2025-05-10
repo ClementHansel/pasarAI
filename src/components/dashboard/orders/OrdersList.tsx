@@ -1,50 +1,45 @@
 "use client";
+
+import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
 import { Order } from "@/types/order";
 import OrderCard from "./OrderCard";
-import { useEffect, useState } from "react";
 
 export default function OrdersList() {
+  const { data: session } = useSession();
   const [orders, setOrders] = useState<Order[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    // Fetch the orders on component mount
     const fetchOrders = async () => {
+      if (!session?.user?.id) return;
+
       try {
-        const token = localStorage.getItem("token"); // Adjust based on where you store your JWT
-
-        const userRes = await fetch("/api/auth/check", {
+        const res = await fetch(`/api/orders?sellerId=${session.user.id}`, {
           headers: {
-            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
           },
         });
 
-        if (!userRes.ok) {
-          throw new Error("Failed to verify user");
-        }
+        if (!res.ok) throw new Error("Failed to fetch orders");
 
-        const { user } = await userRes.json();
-
-        const orderRes = await fetch(`/api/seller-orders?sellerId=${user.id}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        if (!orderRes.ok) {
-          throw new Error("Failed to fetch orders");
-        }
-
-        const data: Order[] = await orderRes.json();
+        const data: Order[] = await res.json();
         setOrders(data);
       } catch (err) {
         setError("An error occurred while fetching orders.");
         console.error(err);
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchOrders();
-  }, []);
+  }, [session?.user?.id]);
+
+  if (loading) {
+    return <p className="text-gray-500 mt-6">Loading orders...</p>;
+  }
 
   if (error) {
     return <p className="text-red-500 mt-6">{error}</p>;

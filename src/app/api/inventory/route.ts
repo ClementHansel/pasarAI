@@ -76,6 +76,15 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Try to find the market by name (e.g., "domestic")
+    const market = await db.market.findUnique({
+      where: { name: marketId }, // if marketId is a name like "domestic"
+    });
+
+    if (!market) {
+      return NextResponse.json({ error: "Market not found" }, { status: 404 });
+    }
+
     // Convert price and stock to appropriate types
     const priceFloat = parseFloat(price); // Convert price to float
     const stockInt = parseInt(stock, 10); // Convert stock to integer
